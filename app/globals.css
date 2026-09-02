@@ -440,7 +440,8 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
 }
 .portrait-media {
   position: relative;
-  flex: 1;
+  flex: none;
+  height: 560px;
   overflow: hidden;
 }
 .portrait-media img {
@@ -449,6 +450,8 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* 原图为 2:3 竖构图：锚定顶部，完整保住脸部与乱发，只裁底部衣摆 */
+  object-position: center top;
   display: block;
 }
 /* 悬停光泽扫过 */
@@ -620,8 +623,11 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
     padding-bottom: 85px;
   }
   .portrait-frame {
-    min-height: 330px;
+    min-height: 0;
     padding: 12px;
+  }
+  .portrait-media {
+    height: 420px;
   }
   .about-copy {
     padding-top: 0;
