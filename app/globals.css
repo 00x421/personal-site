@@ -625,6 +625,7 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
   .portrait-frame {
     min-height: 0;
     padding: 12px;
+    order: -1;
   }
   .portrait-media {
     height: 420px;

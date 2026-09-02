@@ -3,15 +3,14 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { articles, getArticle } from '@/data/articles';
-import { siteConfig } from '@/lib/site-config';
 
 export function generateStaticParams() { return articles.map((article) => ({ slug: article.slug })); }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const article = getArticle(slug);
-  if (!article) return { title: `文章不存在 — ${siteConfig.brand}` };
-  return { title: `${article.title} — ${siteConfig.brand}`, description: article.description, alternates: { canonical: `/articles/${article.slug}` }, openGraph: { title: article.title, description: article.description, type: 'article', publishedTime: article.published, authors: [siteConfig.name], tags: article.tags } };
+  if (!article) return { title: '文章不存在 — Linling Qi' };
+  return { title: `${article.title} — Linling Qi`, description: article.description, alternates: { canonical: `/articles/${article.slug}` }, openGraph: { title: article.title, description: article.description, type: 'article', publishedTime: article.published, authors: ['Linling Qi'], tags: article.tags } };
 }
 
 export default async function ArticleDetailPage({ params }: { params: Promise<{ slug: string }> }) {
