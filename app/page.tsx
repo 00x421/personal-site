@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDownRight, ArrowUpRight, Code2, Mail, Sparkles } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Code2, Mail, Moon, Sparkles, Sun } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ export default function Home() {
     <nav className="site-nav" aria-label="主导航">
       <a className="brand" href="#top" aria-label="回到顶部">XWSX<span>·</span></a>
       <div className="nav-links"><a href="#work">项目</a><a href="#about">关于</a><a href="#stack">技术</a><a href="#writing">文章</a></div>
-      <a className="nav-contact" href="mailto:techlocker@163.com">联系我 <ArrowUpRight size={15} /></a>
+      <div className="nav-actions"><ThemeToggleButton /><a className="nav-contact" href="mailto:techlocker@163.com">联系我 <ArrowUpRight size={15} /></a></div>
     </nav>
     <section id="top" className="hero section-wrap">
       <div className="eyebrow"><Sparkles size={14} /> 软件工程师 · 产品构建者 · 2026</div>
@@ -45,4 +45,24 @@ export default function Home() {
     <section className="cta section-wrap"><div><span className="eyebrow">有一个值得解决的问题？</span><h2>一起把它<br /><em>变成现实。</em></h2></div><Button nativeButton={false} className="mail-button" render={<a href="mailto:techlocker@163.com" aria-label="发送邮件到 techlocker@163.com" />}><Mail size={17} /> techlocker@163.com <ArrowUpRight size={17} /></Button></section>
     <footer className="site-footer section-wrap"><span>© 2026 XWSX · 信我所行</span><div><a href="https://github.com/00x421" target="_blank" rel="noreferrer"><Code2 size={16} /> GitHub · 00x421</a><a href="mailto:techlocker@163.com">Email</a></div><span>Designed with intent</span></footer>
   </main>;
+}
+
+/** 主题切换按钮：无状态实现，读写 <html data-theme> + localStorage，图标显隐交给 CSS */
+function ThemeToggleButton() {
+  function toggle() {
+    const root = document.documentElement;
+    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    try {
+      localStorage.setItem('theme', next);
+    } catch {
+      // 隐私模式下 localStorage 不可用，静默降级
+    }
+  }
+  return (
+    <button type="button" className="theme-toggle" onClick={toggle} aria-label="切换明暗主题" title="切换明暗主题">
+      <Sun size={15} className="theme-icon theme-icon-sun" />
+      <Moon size={15} className="theme-icon theme-icon-moon" />
+    </button>
+  );
 }
