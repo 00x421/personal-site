@@ -10,7 +10,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const article = getArticle(slug);
   if (!article) return { title: '文章不存在 — XWSX' };
-  return { title: `${article.title} — XWSX`, description: article.description, alternates: { canonical: `/articles/${article.slug}` }, openGraph: { title: article.title, description: article.description, type: 'article', publishedTime: article.published, authors: ['Linling Qi'], tags: article.tags } };
+  return { title: `${article.title} — XWSX`, description: article.description, alternates: { canonical: `/articles/${article.slug}` }, openGraph: { title: article.title, description: article.description, type: 'article', publishedTime: article.published, authors: ['Linling Qi'], tags: article.tags, images: [] }, twitter: { images: [] } };
 }
 
 export default async function ArticleDetailPage({ params }: { params: Promise<{ slug: string }> }) {

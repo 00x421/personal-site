@@ -14,7 +14,7 @@ export const articles: Article[] = [
     title: '先把系统做小，再把价值做大',
     description: '关于我如何拆解复杂需求，用一个可以被验证的小闭环开始产品工作。',
     published: '2026-08-18',
-    readTime: '6 min read',
+    readTime: '1 min read',
     tags: ['产品思考', '工程实践'],
     body: [
       { heading: '复杂不是功能多', paragraphs: ['很多项目一开始就试图覆盖所有场景，但复杂度往往来自没有找到最小的因果链。我的习惯是先写下用户要完成的唯一一件事，再删掉所有不能帮助这件事完成的内容。', '当这个小闭环可以被真实使用，团队才有了继续投入的证据。'] },
@@ -26,7 +26,7 @@ export const articles: Article[] = [
     title: 'AI 应该藏在工作流里，而不是站在聚光灯下',
     description: '从一次真实的产品实验出发，记录我对 AI 功能边界、提示词和信任感的思考。',
     published: '2026-07-04',
-    readTime: '8 min read',
+    readTime: '1 min read',
     tags: ['AI 应用', '产品设计'],
     body: [
       { heading: '先理解人如何工作', paragraphs: ['AI 功能最容易失败的地方，是把模型能力当成了用户价值。真正要观察的是：用户在什么时刻卡住，哪些信息已经在他们手边，系统可以替他们减少哪一次切换。'] },
@@ -38,7 +38,7 @@ export const articles: Article[] = [
     title: '前端细节不是装饰，是产品的一部分',
     description: '从键盘焦点、加载状态到错误文案，聊聊我认为值得认真对待的前端细节。',
     published: '2026-05-22',
-    readTime: '5 min read',
+    readTime: '1 min read',
     tags: ['前端开发', '可访问性'],
     body: [
       { heading: '细节决定节奏', paragraphs: ['一个按钮是否有明确的按下反馈，一段空状态是否告诉用户如何开始，都会改变产品给人的节奏感。它们不显眼，却一直在影响体验。'] },
