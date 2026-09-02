@@ -9,8 +9,8 @@ export function generateStaticParams() { return articles.map((article) => ({ slu
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const article = getArticle(slug);
-  if (!article) return { title: '文章不存在 — Linling Qi' };
-  return { title: `${article.title} — Linling Qi`, description: article.description, alternates: { canonical: `/articles/${article.slug}` }, openGraph: { title: article.title, description: article.description, type: 'article', publishedTime: article.published, authors: ['Linling Qi'], tags: article.tags } };
+  if (!article) return { title: '文章不存在 — XWSX' };
+  return { title: `${article.title} — XWSX`, description: article.description, alternates: { canonical: `/articles/${article.slug}` }, openGraph: { title: article.title, description: article.description, type: 'article', publishedTime: article.published, authors: ['Linling Qi'], tags: article.tags } };
 }
 
 export default async function ArticleDetailPage({ params }: { params: Promise<{ slug: string }> }) {

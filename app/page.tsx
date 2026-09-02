@@ -22,13 +22,13 @@ export default function Home() {
   const visibleProjects = active === '全部' ? projects : projects.filter((project) => project.type === active);
   return <main>
     <nav className="site-nav" aria-label="主导航">
-      <a className="brand" href="#top" aria-label="回到顶部">LQ<span>·</span></a>
+      <a className="brand" href="#top" aria-label="回到顶部">XWSX<span>·</span></a>
       <div className="nav-links"><a href="#work">项目</a><a href="#about">关于</a><a href="#stack">技术</a><a href="#writing">文章</a></div>
       <a className="nav-contact" href="mailto:techlocker@163.com">联系我 <ArrowUpRight size={15} /></a>
     </nav>
     <section id="top" className="hero section-wrap">
       <div className="eyebrow"><Sparkles size={14} /> 软件工程师 · 产品构建者 · 2026</div>
-      <div className="hero-grid"><h1>把复杂的<br /><em>想法，做得清晰。</em></h1><div className="hero-note"><p>你好，我是 <strong>Linling Qi</strong>，一名喜欢把模糊问题变成可靠产品的程序员。我在设计、代码与 AI 的交界处工作。</p><div className="code-line"><span>const</span> focus = <b>&quot;make it useful&quot;</b>;</div><a href="#work" className="text-link">看看我在做什么 <ArrowDownRight size={17} /></a></div></div>
+      <div className="hero-grid"><h1>把复杂的<br /><em>想法，做得清晰。</em></h1><div className="hero-note"><p>你好，我是 <strong>Linling Qi</strong>，一名喜欢把模糊问题变成可靠产品的程序员。我在设计、代码与 AI 的交界处工作。</p><div className="code-line"><span>const</span> motto = <b>&quot;信我所行&quot;</b>;</div><a href="#work" className="text-link">看看我在做什么 <ArrowDownRight size={17} /></a></div></div>
       <div className="hero-rail" aria-hidden="true"><span>PRODUCT THINKING</span><i /><span>CREATIVE TECHNOLOGY</span><i /><span>HUMAN-CENTERED</span></div>
     </section>
     <section id="work" className="section-wrap work-section">
@@ -43,6 +43,6 @@ export default function Home() {
     <section id="about" className="about-section section-wrap"><div className="about-copy"><span className="section-index">03 /</span><h2>我相信好的数字产品，<br />应该既<strong>聪明</strong>，也<strong>有人味</strong>。</h2><p>我喜欢拆解模糊的问题：先理解人在什么情境下行动，再用可靠的系统和克制的界面，让每一步都自然发生。</p><p>这里不仅收录最终产出，也记录问题、取舍与思考。因为真正有价值的工作，通常发生在“看起来简单”之前。</p><a href="mailto:techlocker@163.com" className="text-link">聊聊一个想法 <ArrowUpRight size={17} /></a></div><div className="portrait-frame"><div className="portrait-head"><span>LQ / PORTRAIT</span><span>23</span></div><div className="portrait-media">{/* oxlint-disable-next-line no-img-element -- 手绘 PNG 保持原始纸纹质感，不走图片优化管道 */}<img src="/personal-portrait-scribble.jpg" alt="Linling Qi 的手绘程序员肖像" /><div className="portrait-shine" aria-hidden="true" /></div><div className="portrait-foot"><span>CODE / COFFEE / IDEAS</span><span>01—01</span></div></div></section>
     <section id="stack" className="section-wrap stack-section"><div className="section-head"><div><span className="section-index">04 /</span><h2>能力与技术</h2></div><Code2 size={28} strokeWidth={1.5} /></div><div className="skill-list">{skills.map(([name, description], index) => <article key={name}><span>0{index + 1}</span><h3>{name}</h3><p>{description}</p><ArrowUpRight size={20} /></article>)}</div></section>
     <section className="cta section-wrap"><div><span className="eyebrow">有一个值得解决的问题？</span><h2>一起把它<br /><em>变成现实。</em></h2></div><Button nativeButton={false} className="mail-button" render={<a href="mailto:techlocker@163.com" aria-label="发送邮件到 techlocker@163.com" />}><Mail size={17} /> techlocker@163.com <ArrowUpRight size={17} /></Button></section>
-    <footer className="site-footer section-wrap"><span>© 2026 Linling Qi</span><div><a href="https://github.com/00x421" target="_blank" rel="noreferrer"><Code2 size={16} /> GitHub · 00x421</a><a href="mailto:techlocker@163.com">Email</a></div><span>Designed with intent</span></footer>
+    <footer className="site-footer section-wrap"><span>© 2026 XWSX · 信我所行</span><div><a href="https://github.com/00x421" target="_blank" rel="noreferrer"><Code2 size={16} /> GitHub · 00x421</a><a href="mailto:techlocker@163.com">Email</a></div><span>Designed with intent</span></footer>
   </main>;
 }

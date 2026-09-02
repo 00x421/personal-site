@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { articles } from '@/data/articles';
 
 export const metadata: Metadata = {
-  title: '技术文章 — Linling Qi',
+  title: '技术文章 — XWSX',
   description: '关于产品思考、前端工程、AI 应用与可访问性的技术文章。',
   alternates: { canonical: '/articles' },
 };
