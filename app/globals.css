@@ -16,8 +16,6 @@
   --portrait-ink: #4f4d48;
   --body-text: #4e4d49;
   --cta-text: #18172b;
-  --orb: #aaa5f6;
-  --orb-shadow: #877ce2;
   --grid-line: rgba(23, 23, 27, 0.055);
   --noise-opacity: 0.05;
 }
@@ -37,8 +35,6 @@
   --portrait-ink: #8f8f8a;
   --body-text: #b5b3ad;
   --cta-text: #14141d;
-  --orb: #8f83ee;
-  --orb-shadow: #6f63d6;
   --grid-line: rgba(236, 233, 225, 0.05);
   --noise-opacity: 0.07;
 }
@@ -423,34 +419,54 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
   padding-top: 150px;
   padding-bottom: 150px;
 }
-.portrait-placeholder {
-  position: relative;
+/* 手绘肖像相框（PortraitCard） */
+.portrait-frame {
+  width: 100%;
   min-height: 465px;
-  overflow: hidden;
   background: var(--portrait-bg);
-  padding: 21px;
+  border: 1px solid var(--line);
+  padding: 16px;
   display: flex;
-  justify-content: space-between;
   flex-direction: column;
+  gap: 12px;
   color: var(--portrait-ink);
   font: 700 10px monospace;
   letter-spacing: 0.08em;
 }
-.portrait-placeholder .orb {
-  position: absolute;
-  width: 340px;
-  height: 340px;
-  background: var(--orb);
-  left: 50%;
-  top: 48%;
-  border-radius: 43% 57% 52% 48%;
-  transform: translate(-50%, -50%) rotate(25deg);
-  box-shadow: inset -30px -25px var(--orb-shadow);
+.portrait-head,
+.portrait-foot {
+  display: flex;
+  justify-content: space-between;
 }
-.portrait-placeholder p {
+.portrait-media {
   position: relative;
-  z-index: 1;
-  align-self: flex-end;
+  flex: 1;
+  overflow: hidden;
+}
+.portrait-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* 悬停光泽扫过 */
+.portrait-shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 58%
+  );
+  transform: translateX(-130%);
+  transition: transform 0.9s ease;
+}
+.portrait-frame:hover .portrait-shine {
+  transform: translateX(130%);
 }
 .about-copy {
   padding-top: 44px;
@@ -603,12 +619,9 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
     padding-top: 85px;
     padding-bottom: 85px;
   }
-  .portrait-placeholder {
+  .portrait-frame {
     min-height: 330px;
-  }
-  .portrait-placeholder .orb {
-    width: 235px;
-    height: 235px;
+    padding: 12px;
   }
   .about-copy {
     padding-top: 0;
@@ -894,7 +907,7 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
 .about-cell {
   display: flex;
 }
-.portrait-cell .portrait-placeholder,
+.portrait-cell .portrait-frame,
 .about-cell .about-copy {
   width: 100%;
 }
@@ -919,24 +932,12 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
   }
 }
 
-/* 肖像区 blob 呼吸效果 */
-.portrait-placeholder .orb {
-  animation: orb-breathe 14s ease-in-out infinite;
-}
-@keyframes orb-breathe {
-  0%,
-  100% {
-    border-radius: 43% 57% 52% 48%;
-  }
-  50% {
-    border-radius: 57% 43% 48% 52%;
-  }
-}
-
-/* 用户偏好减弱动效时，关闭 CSS 装饰动画 */
+/* 用户偏好减弱动效时，关闭 CSS 装饰动画与光泽扫过 */
 @media (prefers-reduced-motion: reduce) {
-  .project-symbol div,
-  .portrait-placeholder .orb {
+  .project-symbol div {
     animation: none;
+  }
+  .portrait-shine {
+    display: none;
   }
 }

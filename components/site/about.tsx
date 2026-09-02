@@ -1,21 +1,14 @@
 import { ArrowUpRight } from 'lucide-react';
 import { Reveal } from '@/components/motion';
+import { PortraitCard } from '@/components/site/portrait-card';
 import { siteConfig } from '@/lib/site-config';
 
-/** 关于区：肖像占位与自述 */
+/** 关于区：手绘肖像与自述 */
 export function About() {
   return (
     <section id="about" className="about-section section-wrap">
       <Reveal className="portrait-cell">
-        <div className="portrait-placeholder" aria-label="个人照片占位区">
-          <span>
-            {siteConfig.brand}
-            <br />
-            PORTRAIT
-          </span>
-          <div className="orb" />
-          <p>手绘肖像 · 即将上线</p>
-        </div>
+        <PortraitCard />
       </Reveal>
       <Reveal delay={0.12} className="about-cell">
         <div className="about-copy">
