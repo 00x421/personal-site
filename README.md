@@ -60,4 +60,4 @@ npm run start
 ## 内容维护
 
 - **新增文章**：在 `data/articles.ts` 追加条目（readTime 自动计算）→ 跑 `python subset-fonts.py`（先按文件头说明下载源字体）→ `npm run og` → `npm run build`。
-- **修改 /now 页文案**：`app/now/page.tsx` 顶部 `nowBlocks` 常量。阅读区块内容为占位，请替换为真实在读书目。
+- **修改 /now 页文案**：`app/now/page.tsx` 顶部 `nowBlocks` 常量，阅读区块保留为真实在读书目。
