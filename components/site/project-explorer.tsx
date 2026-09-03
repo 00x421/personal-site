@@ -52,8 +52,7 @@ export function ProjectExplorer() {
                     <span>{project.type}</span>
                     <span>{project.year}</span>
                   </div>
-                  <div className="project-symbol" aria-hidden="true">
-                    <b>{project.mark}</b>
+                  <div className="project-symbol" aria-hidden="true" data-mark={project.mark}>
                     <div />
                     <div />
                     <div />
@@ -77,7 +76,6 @@ export function ProjectExplorer() {
                   className="project-link"
                   href={`/projects/${project.slug}`}
                   key={project.title}
-                  aria-label={`查看 ${project.title} 案例`}
                 >
                   {card}
                 </Link>

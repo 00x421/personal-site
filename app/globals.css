@@ -28,8 +28,9 @@
   --paper: #f4f2ec;
   --line: #d8d6ce;
   --violet: #7867e8;
+  --violet-text: #6355ce;
   --lime: #d6ed56;
-  --muted: #71716e;
+  --muted: #63625c;
   /* 语义色：面板/卡片/正文（供暗色主题覆盖） */
   --raised: #eceae2;
   --card-ink: #1c1c20;
@@ -37,7 +38,7 @@
   --portrait-bg: #d8d4cc;
   --portrait-ink: #4f4d48;
   --body-text: #4e4d49;
-  --cta-text: #18172b;
+  --cta-text: #000;
   --grid-line: rgba(23, 23, 27, 0.055);
   --noise-opacity: 0.05;
 }
@@ -48,6 +49,7 @@
   --paper: #141416;
   --line: #2c2c31;
   --violet: #9186f0;
+  --violet-text: var(--violet);
   --lime: #d6ed56;
   --muted: #8f8f8a;
   --raised: #1d1d21;
@@ -56,7 +58,7 @@
   --portrait-bg: #1d1d21;
   --portrait-ink: #8f8f8a;
   --body-text: #b5b3ad;
-  --cta-text: #14141d;
+  --cta-text: #000;
   --grid-line: rgba(236, 233, 225, 0.05);
   --noise-opacity: 0.07;
 }
@@ -368,7 +370,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   gap: 14px;
 }
 .section-index {
-  color: var(--violet);
+  color: var(--violet-text);
   font: 700 11px monospace;
   letter-spacing: 0.06em;
 }
@@ -506,6 +508,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 }
 .project-card.violet {
   background: var(--violet);
+  color: #000;
 }
 .project-card.lime {
   background: var(--lime);
@@ -524,7 +527,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   height: 130px;
   margin: 12px 0;
 }
-.project-symbol b {
+.project-symbol::after {
+  content: attr(data-mark);
   position: absolute;
   bottom: -22px;
   right: -4px;

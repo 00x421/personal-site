@@ -20,7 +20,7 @@ export default function Home() {
     <main>
       <nav className="site-nav" aria-label="主导航">
         <div className="nav-brand-group">
-          <a className="brand" href="#top" aria-label="回到顶部">
+          <a className="brand" href="#top">
             {siteIdentity.brand}
             <span>·</span>
           </a>
