@@ -440,11 +440,6 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   color: var(--paper);
   border-color: var(--ink);
 }
-.project-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
 .project-rail-shell {
   overflow: hidden;
 }
@@ -870,9 +865,6 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   .section-head p {
     width: auto;
   }
-  .project-grid {
-    grid-template-columns: 1fr;
-  }
   .project-rail {
     grid-auto-columns: minmax(82vw, 82vw);
     gap: 12px;
@@ -958,11 +950,6 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   padding-top: 92px;
   padding-bottom: 110px;
   border-top: 1px solid var(--line);
-}
-.writing-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
 }
 .writing-rail-shell {
   overflow: hidden;
@@ -2053,58 +2040,6 @@ main {
 }
 
 /* ============ 动效组件 ============ */
-
-/* 无限跑马灯（Marquee） */
-.marquee {
-  overflow: hidden;
-  width: 100%;
-}
-.marquee-track {
-  display: flex;
-  align-items: center;
-  width: max-content;
-  will-change: transform;
-}
-.rail-group {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding-right: 18px;
-}
-.rail-group span {
-  display: inline-flex;
-  align-items: center;
-  gap: 18px;
-}
-.rail-group i {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--violet);
-  flex: 0 0 auto;
-}
-
-/* 3D 倾斜卡片（TiltedCard）包裹层 */
-.project-cell .project-card {
-  height: 100%;
-}
-
-/* Reveal 包裹层的网格适配：让内部卡片撑满单元格 */
-.writing-cell {
-  display: flex;
-}
-.writing-cell .writing-card {
-  width: 100%;
-}
-.portrait-cell,
-.about-cell {
-  display: flex;
-}
-.portrait-cell .portrait-frame,
-.about-cell .about-copy {
-  width: 100%;
-}
 
 /* 项目卡装饰图形的缓慢浮动（translate 属性，与 transform 互不冲突） */
 .project-symbol div {

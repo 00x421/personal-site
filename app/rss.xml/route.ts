@@ -14,7 +14,7 @@ function escapeXml(value: string) {
 }
 
 export function GET() {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:8787';
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
   const items = articles
     .map((article) => {
       const url = `${base}/articles/${article.slug}`;
