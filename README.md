@@ -28,6 +28,7 @@ npm run start
 - **数字花园微网络**：frontmatter `series` 生成系列眉标与底部阅读顺序导航；正文站内链接自动汇成对方页面的「链接到本文」反向链接（构建期 HTML 扫描，零运行时开销）。
 - **字体子集化**：`subset-fonts.py` 将 Noto Serif SC 全量 OTF 按站内实际用字子集为 woff2（`public/fonts/`），控制中文字体体积。
 - **RSS**：`app/rss.xml/route.ts` 输出 RSS 2.0，已加入 `<link rel="alternate">` 自动发现。
+- **站内搜索**：`app/search.json/route.ts` 聚合文章 / 项目 / 书架输出全文索引（缓存 1 小时），`components/site/site-search.tsx` 原生 `<dialog>` 命令面板（右下角入口 + Cmd/Ctrl+K），首次打开才懒加载索引，多关键词 AND 加权评分，标题 / 摘要命中片段实时高亮。
 - **动态 OG 图**：`npm run og` 用 satori + @resvg/resvg-js 生成 `public/og/articles/{slug}.png` 与 `public/og/projects/{slug}.png`，文章 / 案例页 metadata 自动引用。
 - **结构化数据**：布局注入 Person/WebSite JSON-LD，文章页注入 Article JSON-LD。
 - **无障碍**：Lighthouse 无障碍 100 / 最佳实践 100 / SEO 100。
