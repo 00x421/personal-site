@@ -1,10 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-/** 文章阅读进度，仅以一条细线反馈当前位置。 */
+/** 文章读完时由小狗回应的联动事件名。 */
+export const READ_COMPLETE_EVENT = 'xwsx:read-complete';
+
+/** 文章阅读进度，仅以一条细线反馈当前位置；读到底时广播事件供小狗回应。 */
 export function ReadingProgress() {
   const [progress, setProgress] = useState(0);
+  const celebratedRef = useRef(false);
 
   useEffect(() => {
     let frame = 0;
@@ -12,9 +16,13 @@ export function ReadingProgress() {
       frame = 0;
       const root = document.documentElement;
       const scrollable = root.scrollHeight - root.clientHeight;
-      setProgress(
-        scrollable > 0 ? Math.min(100, (root.scrollTop / scrollable) * 100) : 0,
-      );
+      const next =
+        scrollable > 0 ? Math.min(100, (root.scrollTop / scrollable) * 100) : 0;
+      setProgress(next);
+      if (next >= 99.5 && !celebratedRef.current) {
+        celebratedRef.current = true;
+        window.dispatchEvent(new CustomEvent(READ_COMPLETE_EVENT));
+      }
     };
     const requestUpdate = () => {
       if (!frame) frame = window.requestAnimationFrame(update);

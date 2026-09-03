@@ -68,3 +68,22 @@ export function getAllTags(): { tag: string; count: number }[] {
     .map(([tag, count]) => ({ tag, count }))
     .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 }
+
+/** 反向链接：正文里链接到本文的其他文章，按发布时间倒序。 */
+export function getBacklinks(slug: string): Article[] {
+  return articles
+    .filter(
+      (article) =>
+        article.slug !== slug &&
+        article.html.includes(`href="/articles/${slug}"`),
+    )
+    .sort((a, b) => b.published.localeCompare(a.published));
+}
+
+/** 同系列文章按发布正序（阅读顺序）；series 不存在时返回空数组。 */
+export function getSeries(series: string | undefined): Article[] {
+  if (!series) return [];
+  return articles
+    .filter((article) => article.series === series)
+    .sort((a, b) => a.published.localeCompare(b.published));
+}

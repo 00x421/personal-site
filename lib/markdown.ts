@@ -19,6 +19,8 @@ export type Article = {
   published: string;
   readTime: string;
   tags: string[];
+  /** 所属系列名；同系列文章在详情页互相导航。 */
+  series?: string;
   draft: boolean;
   /** marked 渲染后的正文 HTML（站点内容为第一方撰写，无需消毒） */
   html: string;
@@ -127,6 +129,7 @@ export function buildArticle(slug: string, raw: string): Article {
     published: str(data, 'published') ?? '',
     readTime: calcReadTime(body),
     tags: parseTags(data.tags),
+    series: str(data, 'series'),
     draft: str(data, 'draft') === 'true',
     html: marked.parse(body, { async: false, gfm: true }),
   };

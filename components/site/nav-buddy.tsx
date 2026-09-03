@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
+import { READ_COMPLETE_EVENT } from './reading-progress';
 
 const airPupStates = [
   {
@@ -55,6 +56,8 @@ export function NavBuddy() {
   /** 阅读彩蛋：文章页 40s 无交互 → 小狗打盹；任意交互唤醒。 */
   const [sleepy, setSleepy] = useState(false);
   const [justWoken, setJustWoken] = useState(false);
+  /** 读完全文的小狗庆祝彩蛋。 */
+  const [justFinished, setJustFinished] = useState(false);
   const pathname = usePathname();
   const isReading = pathname.startsWith('/articles/') && !pathname.includes('/tag/');
   // 路由切换时在 render 阶段退出睡眠态（官方「渲染期间调整 state」模式，
@@ -71,9 +74,11 @@ export function NavBuddy() {
     () => 12,
   );
   const moodPool = moodsForHour(hour);
-  const moodId = sleepy
-    ? 'sleeping'
-    : (moodPool[moodIndex % moodPool.length] ?? 'idle');
+  const moodId = justFinished
+    ? 'happy'
+    : sleepy
+      ? 'sleeping'
+      : (moodPool[moodIndex % moodPool.length] ?? 'idle');
   const state = stateById[moodId] ?? airPupStates[0];
 
   useEffect(() => {
@@ -104,13 +109,25 @@ export function NavBuddy() {
     const timer = window.setTimeout(() => {
       setOpen(false);
       setJustWoken(false);
+      setJustFinished(false);
     }, 3600);
     return () => window.clearTimeout(timer);
   }, [open, moodIndex]);
 
+  useEffect(() => {
+    const celebrate = () => {
+      setSleepy(false);
+      setJustFinished(true);
+      setOpen(true);
+    };
+    window.addEventListener(READ_COMPLETE_EVENT, celebrate);
+    return () => window.removeEventListener(READ_COMPLETE_EVENT, celebrate);
+  }, []);
+
   function greet() {
     if (sleepy) setJustWoken(true);
     setSleepy(false);
+    setJustFinished(false);
     setOpen(true);
     setMoodIndex((current) => current + 1);
   }
@@ -136,7 +153,11 @@ export function NavBuddy() {
       )}
       {open && (
         <output className="nav-buddy-tip">
-          {justWoken ? '呜……被戳醒了。读得入迷了吧。' : state.message}
+          {justFinished
+            ? '汪！从头读到尾，这篇是你的了。'
+            : justWoken
+              ? '呜……被戳醒了。读得入迷了吧。'
+              : state.message}
         </output>
       )}
     </button>
