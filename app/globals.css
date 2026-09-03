@@ -1,6 +1,28 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+/* 站点字符子集化的 Noto Serif SC（由 subset-fonts.py 生成，覆盖全站标题文案） */
+@font-face {
+  font-family: 'Noto Serif SC';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/noto-serif-sc-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Noto Serif SC';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/noto-serif-sc-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Noto Serif SC';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/noto-serif-sc-700.woff2') format('woff2');
+}
 :root {
   --ink: #17171b;
   --paper: #f4f2ec;
@@ -1054,6 +1076,48 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   color: var(--muted);
   font-size: 15px;
   line-height: 1.7;
+}
+.not-found-shell {
+  min-height: 100dvh;
+}
+.not-found-pup {
+  display: block;
+  margin: 26px 0 0 -6px;
+  animation: not-found-float 5s ease-in-out infinite;
+  filter: drop-shadow(0 10px 18px rgb(0 0 0 / 0.14));
+}
+.not-found-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  margin-top: 44px;
+}
+.not-found-actions a {
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 3px;
+  font: 12px monospace;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+.not-found-actions a:hover {
+  color: var(--violet);
+  border-color: var(--violet);
+}
+@keyframes not-found-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -7px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .not-found-pup {
+    animation: none;
+  }
 }
 .article-row {
   display: grid;

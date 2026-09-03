@@ -1,7 +1,4 @@
 import type { Metadata } from 'next';
-import '@fontsource/noto-serif-sc/400.css';
-import '@fontsource/noto-serif-sc/500.css';
-import '@fontsource/noto-serif-sc/700.css';
 import './globals.css';
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -37,6 +34,15 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
+      <head>
+        <link
+          rel="preload"
+          as="font"
+          type="font/woff2"
+          href="/fonts/noto-serif-sc-500.woff2"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {children}
