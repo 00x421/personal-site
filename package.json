@@ -10,7 +10,8 @@
     "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && vinext build",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
-    "format": "oxfmt"
+    "format": "oxfmt",
+    "og": "node --experimental-strip-types scripts/generate-og.ts"
   },
   "dependencies": {
     "lucide-react": "1.31.0",
@@ -23,6 +24,7 @@
     "@cloudflare/vite-plugin": "1.37.1",
     "@cloudflare/workers-types": "4.20260515.1",
     "@openai/sites-vite-plugin": "0.2.0",
+    "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
@@ -33,6 +35,7 @@
     "oxfmt": "0.61.0",
     "oxlint": "1.76.0",
     "oxlint-tsgolint": "7.0.2001",
+    "satori": "^0.33.4",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
     "vite": "8.0.13",

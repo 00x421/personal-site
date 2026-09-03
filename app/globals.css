@@ -1121,6 +1121,76 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
     animation: none;
   }
 }
+.now-list {
+  display: grid;
+  gap: 34px;
+  margin-top: 44px;
+}
+.now-block ul {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+.now-block li {
+  color: var(--body-text);
+  font-size: 14px;
+  line-height: 1.75;
+  max-width: 620px;
+  padding-left: 18px;
+  position: relative;
+}
+.now-block li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.72em;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--violet);
+  border-radius: 50%;
+}
+.now-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  margin-top: 44px;
+}
+.now-actions a {
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 3px;
+  font: 12px monospace;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+.now-actions a:hover {
+  color: var(--violet);
+  border-color: var(--violet);
+}
+.now-icon {
+  translate: 0 1px;
+}
+/* 路由切换的柔和进入动画：React 19.2 稳定版暂无 <ViewTransition> 导出，
+   先用纯 CSS 淡入；待其进入稳定通道后可升级为共享元素转场。 */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+  }
+}
+main {
+  animation: page-enter 220ms ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  main {
+    animation: none;
+  }
+}
 .article-row {
   display: grid;
   grid-template-columns: 70px 1fr 26px;

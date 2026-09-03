@@ -30,14 +30,14 @@ export async function generateMetadata({
       tags: article.tags,
       images: [
         {
-          url: '/og.jpg',
-          width: 1600,
-          height: 900,
+          url: `/og/articles/${article.slug}.png`,
+          width: 1200,
+          height: 630,
           alt: article.title,
         },
       ],
     },
-    twitter: { images: ['/og.jpg'] },
+    twitter: { images: [`/og/articles/${article.slug}.png`] },
   };
 }
 
@@ -49,13 +49,27 @@ export default async function ArticleDetailPage({
   const { slug } = await params;
   const article = getArticle(slug);
   if (!article) notFound();
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: article.title,
     description: article.description,
     datePublished: article.published,
-    author: { '@type': 'Person', name: 'Linling Qi' },
+    author: {
+      '@type': 'Person',
+      name: 'Linling Qi',
+      url: 'https://github.com/00x421',
+    },
+    publisher: { '@type': 'Person', name: 'Linling Qi' },
+    image: `${siteUrl}/og/articles/${article.slug}.png`,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `${siteUrl}/articles/${article.slug}`,
+    },
+    articleSection: article.tags.join('、'),
+    inLanguage: 'zh-CN',
   };
   return (
     <main className="article-page">

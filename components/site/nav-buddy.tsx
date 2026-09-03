@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 const airPupStates = [
   {
@@ -29,15 +29,41 @@ const airPupStates = [
   },
 ] as const;
 
-/** 导航吉祥物：定时切换姿势，点击打招呼并弹出气泡。 */
+const stateById = Object.fromEntries(airPupStates.map((s) => [s.id, s]));
+
+/** 按一天的时间段挑选小狗的活动状态池。 */
+function moodsForHour(hour: number) {
+  if (hour >= 23 || hour < 7) {
+    return ['sleeping', 'sleeping', 'sleeping', 'thinking'] as const;
+  }
+  if (hour < 10) return ['happy', 'idle', 'happy'] as const;
+  if (hour < 18) return ['idle', 'thinking', 'idle', 'thinking'] as const;
+  return ['idle', 'thinking', 'happy', 'sleeping'] as const;
+}
+
+/** 每小时提醒订阅者刷新，让小狗随时间切换状态池。 */
+function subscribeToHour(onChange: () => void) {
+  const timer = window.setInterval(onChange, 60_000);
+  return () => window.clearInterval(timer);
+}
+
+/** 导航吉祥物：跟随真实时钟切换姿势，点击打招呼并弹出气泡。 */
 export function NavBuddy() {
   const [open, setOpen] = useState(false);
-  const [stateIndex, setStateIndex] = useState(0);
-  const state = airPupStates[stateIndex];
+  const [moodIndex, setMoodIndex] = useState(0);
+  // 服务端快照固定为 12 点，水合前渲染与客户端一致；水合后自动切换到本地时钟。
+  const hour = useSyncExternalStore(
+    subscribeToHour,
+    () => new Date().getHours(),
+    () => 12,
+  );
+  const moodPool = moodsForHour(hour);
+  const moodId = moodPool[moodIndex % moodPool.length] ?? 'idle';
+  const state = stateById[moodId] ?? airPupStates[0];
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setStateIndex((current) => (current + 1) % airPupStates.length);
+      setMoodIndex((current) => current + 1);
     }, 6200);
     return () => window.clearInterval(timer);
   }, []);
@@ -46,11 +72,11 @@ export function NavBuddy() {
     if (!open) return;
     const timer = window.setTimeout(() => setOpen(false), 3600);
     return () => window.clearTimeout(timer);
-  }, [open, stateIndex]);
+  }, [open, moodIndex]);
 
   function greet() {
     setOpen(true);
-    setStateIndex((current) => (current + 1) % airPupStates.length);
+    setMoodIndex((current) => current + 1);
   }
 
   return (
