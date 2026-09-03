@@ -43,7 +43,7 @@ export function PortraitCard() {
         <div className="portrait-media">
           {/* oxlint-disable-next-line next/no-img-element -- 保留原始纸纹质感。 */}
           <img
-            src="/personal-portrait-scribble.jpg"
+            src="/personal-portrait-scribble.webp"
             alt={`${siteIdentity.name} 的手绘程序员肖像`}
           />
         </div>
