@@ -1308,6 +1308,23 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   text-decoration: underline dotted;
   text-underline-offset: 3px;
 }
+.search-retry {
+  margin-left: 8px;
+  padding: 2px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: none;
+  color: var(--violet-text);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+.search-retry:hover,
+.search-retry:focus-visible {
+  border-color: var(--violet);
+}
 .article-shell {
   max-width: 930px;
   margin: auto;

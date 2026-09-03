@@ -68,6 +68,7 @@ export function SiteSearch() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [entries, setEntries] = useState<Entry[] | null>(null);
+  const [indexError, setIndexError] = useState(false);
   const [active, setActive] = useState(0);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -92,10 +93,14 @@ export function SiteSearch() {
     if (fetchRef.current) return;
     const load = fetch('/search.json')
       .then((res) => res.json() as Promise<Entry[]>)
-      .then((data) => setEntries(data));
+      .then((data) => {
+        setEntries(data);
+        setIndexError(false);
+      });
     fetchRef.current = load;
     load.catch(() => {
-      fetchRef.current = null; // 失败后允许下次重试
+      fetchRef.current = null; // 失败后允许重试
+      setIndexError(true);
     });
   }, []);
 
@@ -148,7 +153,8 @@ export function SiteSearch() {
   function onInputKey(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      setActive((i) => Math.min(i + 1, results.length - 1));
+      // 索引未就绪时 results 为空，Math.max 防止 active 被压到 -1
+      setActive((i) => Math.min(Math.max(i, 0) + 1, results.length - 1));
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
       setActive((i) => Math.max(i - 1, 0));
@@ -180,6 +186,10 @@ export function SiteSearch() {
         className="search-modal"
         aria-label="搜索本站"
         onClose={() => setOpen(false)}
+        onKeyDown={(event) => {
+          // 原生 Esc 走 cancel→close；此处兜底个别环境下合成/被拦的 Escape
+          if (event.key === 'Escape') closeDialog();
+        }}
       >
         <div className="search-input-row">
           <Search size={16} className="search-input-icon" aria-hidden="true" />
@@ -208,7 +218,17 @@ export function SiteSearch() {
         </div>
 
         <ul className="search-list">
-          {entries === null && <li className="search-empty">正在准备索引…</li>}
+          {entries === null && !indexError && (
+            <li className="search-empty">正在准备索引…</li>
+          )}
+          {entries === null && indexError && (
+            <li className="search-empty">
+              索引加载失败，网络恢复后可以重试。
+              <button type="button" className="search-retry" onClick={ensureIndex}>
+                重试
+              </button>
+            </li>
+          )}
           {entries !== null && terms.length === 0 && (
             <li className="search-hint">
               <p>输入关键词，搜索全站的文章、项目与书架。</p>
