@@ -1,6 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 :root {
   --ink: #17171b;
   --paper: #f4f2ec;
@@ -21,7 +21,7 @@
 }
 
 /* 墨黑纸感的暗色主题 */
-[data-theme="dark"] {
+[data-theme='dark'] {
   --ink: #ece9e1;
   --paper: #141416;
   --line: #2c2c31;
@@ -45,8 +45,8 @@ html {
   scroll-behavior: smooth;
   color-scheme: light;
 }
-[data-theme="dark"] html,
-html[data-theme="dark"] {
+[data-theme='dark'] html,
+html[data-theme='dark'] {
   color-scheme: dark;
 }
 body {
@@ -54,7 +54,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family:
-    "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+    'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   transition:
     background-color 0.35s ease,
     color 0.35s ease;
@@ -62,7 +62,7 @@ body {
 
 /* 全站纸张噪点：一层极淡的固定颗粒，模拟纸的质感 */
 body::before {
-  content: "";
+  content: '';
   position: fixed;
   inset: 0;
   z-index: 2147483647;
@@ -85,6 +85,15 @@ button:focus-visible {
   padding-left: 34px;
   padding-right: 34px;
 }
+.reveal {
+  transition:
+    opacity 540ms ease-out var(--reveal-delay, 0ms),
+    transform 540ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms);
+}
+.reveal[data-reveal-ready='true']:not([data-reveal-visible='true']) {
+  opacity: 0;
+  transform: translateY(18px);
+}
 .site-nav {
   max-width: 1280px;
   height: 84px;
@@ -97,13 +106,81 @@ button:focus-visible {
 }
 .brand {
   font:
-    700 27px/1 "Noto Serif SC",
+    700 27px/1 'Noto Serif SC',
     Georgia,
     serif;
   letter-spacing: -2px;
 }
+.nav-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .brand span {
   color: var(--violet);
+}
+.nav-buddy {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.nav-buddy-image {
+  width: 54px;
+  height: 54px;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 3px rgb(0 0 0 / 0.08));
+  animation:
+    buddy-arrive 280ms ease-out both,
+    buddy-float 4.2s 280ms ease-in-out infinite;
+  transition: transform 0.2s ease;
+}
+.nav-buddy:hover .nav-buddy-image,
+.nav-buddy:focus-visible .nav-buddy-image {
+  transform: rotate(-5deg) scale(1.08);
+}
+.nav-buddy-tip {
+  position: absolute;
+  top: calc(100% - 3px);
+  left: 0;
+  z-index: 4;
+  width: max-content;
+  max-width: min(250px, calc(100vw - 40px));
+  padding: 10px 12px;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  background: var(--raised);
+  font:
+    11px/1.45 'PingFang SC',
+    'Microsoft YaHei',
+    sans-serif;
+  text-align: left;
+  box-shadow: 5px 5px 0 var(--violet);
+}
+@keyframes buddy-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -3px;
+  }
+}
+@keyframes buddy-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 .nav-links {
   display: flex;
@@ -155,10 +232,10 @@ button:focus-visible {
 .theme-toggle .theme-icon-sun {
   display: none;
 }
-html[data-theme="dark"] .theme-toggle .theme-icon-sun {
+html[data-theme='dark'] .theme-toggle .theme-icon-sun {
   display: block;
 }
-html[data-theme="dark"] .theme-toggle .theme-icon-moon {
+html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   display: none;
 }
 .hero {
@@ -168,7 +245,7 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
 }
 /* Hero 细网格：向上渐隐的坐标纸底纹 */
 .hero::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -204,7 +281,7 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
 .cta h2 {
   margin: 0;
   font:
-    500 clamp(54px, 8vw, 112px)/0.93 "Noto Serif SC",
+    500 clamp(54px, 8vw, 112px)/0.93 'Noto Serif SC',
     Georgia,
     serif;
   letter-spacing: -0.075em;
@@ -276,7 +353,7 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
 .section-head h2 {
   margin: 0;
   font:
-    500 clamp(35px, 4.5vw, 57px)/1 "Noto Serif SC",
+    500 clamp(35px, 4.5vw, 57px)/1 'Noto Serif SC',
     Georgia,
     serif;
   letter-spacing: -0.055em;
@@ -314,6 +391,64 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
   grid-template-columns: repeat(3, 1fr);
   gap: 14px;
 }
+.project-rail-shell {
+  overflow: hidden;
+}
+.project-rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(380px, 44vw);
+  gap: 14px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 1px 1px 18px;
+  scroll-snap-type: x mandatory;
+  scrollbar-color: var(--line) transparent;
+  scrollbar-width: thin;
+}
+.project-rail > * {
+  min-width: 0;
+  scroll-snap-align: start;
+}
+.project-rail::-webkit-scrollbar {
+  height: 7px;
+}
+.project-rail::-webkit-scrollbar-track {
+  background: transparent;
+}
+.project-rail::-webkit-scrollbar-thumb {
+  background: var(--line);
+}
+.project-rail-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  color: var(--muted);
+  font: 700 10px monospace;
+  letter-spacing: 0.05em;
+}
+.project-rail-footer > div {
+  display: flex;
+  gap: 6px;
+}
+.project-rail-footer button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.project-rail-footer button:hover {
+  border-color: var(--ink);
+  color: var(--violet);
+}
 .project-card {
   min-height: 450px;
   padding: 18px;
@@ -322,6 +457,26 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
+}
+.project-link {
+  display: block;
+  min-width: 0;
+  color: inherit;
+}
+.project-link .project-card {
+  height: 100%;
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease;
+}
+.project-link:hover .project-card {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 26px rgb(0 0 0 / 0.16);
+}
+.project-link .project-status {
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 .project-card.ink {
   color: var(--card-ink-text);
@@ -352,7 +507,7 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
   bottom: -22px;
   right: -4px;
   font:
-    500 165px/0.8 "Noto Serif SC",
+    500 165px/0.8 'Noto Serif SC',
     Georgia,
     serif;
   letter-spacing: -0.12em;
@@ -382,7 +537,7 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
 .project-copy h3 {
   margin: 0 0 10px;
   font:
-    500 38px/1 "Noto Serif SC",
+    500 38px/1 'Noto Serif SC',
     Georgia,
     serif;
   letter-spacing: -0.05em;
@@ -476,7 +631,7 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
 .about-copy h2 {
   margin: 15px 0 34px;
   font:
-    500 clamp(33px, 4vw, 56px)/1.15 "Noto Serif SC",
+    500 clamp(33px, 4vw, 56px)/1.15 'Noto Serif SC',
     Georgia,
     serif;
   letter-spacing: -0.06em;
@@ -524,7 +679,7 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
 .skill-list h3 {
   margin: 0;
   font:
-    500 28px "Noto Serif SC",
+    500 28px 'Noto Serif SC',
     Georgia,
     serif;
   letter-spacing: -0.04em;
@@ -551,11 +706,19 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
 }
 .mail-button {
   min-width: 232px;
-  background: var(--ink) !important;
-  color: var(--paper) !important;
-  border-radius: 0 !important;
-  padding: 0 15px !important;
-  justify-content: space-between !important;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  height: 32px;
+  padding: 0 15px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 0;
 }
 .site-footer {
   display: flex;
@@ -582,6 +745,14 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
   .site-nav {
     height: 68px;
     padding: 0 20px;
+  }
+  .nav-buddy {
+    width: 48px;
+    height: 48px;
+  }
+  .nav-buddy-image {
+    width: 46px;
+    height: 46px;
   }
   .nav-links {
     display: none;
@@ -631,6 +802,22 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
   .project-grid {
     grid-template-columns: 1fr;
   }
+  .project-rail {
+    grid-auto-columns: minmax(82vw, 82vw);
+    gap: 12px;
+    padding-bottom: 13px;
+  }
+  .writing-rail {
+    grid-auto-columns: minmax(82vw, 82vw);
+    gap: 12px;
+    padding-bottom: 13px;
+  }
+  .project-rail-footer > span {
+    display: none;
+  }
+  .project-rail-footer {
+    justify-content: flex-end;
+  }
   .project-card {
     min-height: 390px;
   }
@@ -677,6 +864,24 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
   .site-footer > span:last-child {
     display: none;
   }
+  .project-case-shell {
+    padding: 20px;
+  }
+  .project-case {
+    padding: 74px 0 55px;
+  }
+  .project-case-hero {
+    padding-bottom: 40px;
+  }
+  .case-title-row h1 {
+    margin-top: 18px;
+  }
+  .case-intro,
+  .case-section {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 40px 0;
+  }
 }
 .writing-section {
   padding-top: 92px;
@@ -687,6 +892,37 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 14px;
+}
+.writing-rail-shell {
+  overflow: hidden;
+}
+.writing-rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(320px, 38vw);
+  gap: 14px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 1px 1px 18px;
+  scroll-snap-type: x mandatory;
+  scrollbar-color: var(--line) transparent;
+  scrollbar-width: thin;
+}
+.writing-rail > * {
+  min-width: 0;
+  scroll-snap-align: start;
+}
+.writing-rail::-webkit-scrollbar {
+  height: 7px;
+}
+.writing-rail::-webkit-scrollbar-track {
+  background: transparent;
+}
+.writing-rail::-webkit-scrollbar-thumb {
+  background: var(--line);
+}
+.writing-rail .writing-card {
+  height: 100%;
 }
 .writing-card {
   min-height: 290px;
@@ -719,7 +955,7 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
 .writing-card h3 {
   margin: 15px 0 10px;
   font:
-    500 26px/1.16 "Noto Serif SC",
+    500 26px/1.16 'Noto Serif SC',
     Georgia,
     serif;
   letter-spacing: -0.04em;
@@ -760,6 +996,30 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
   min-height: 100vh;
   background: var(--paper);
 }
+.reading-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 20;
+  display: block;
+  width: 100%;
+  height: 3px;
+  border: 0;
+  appearance: none;
+  color: var(--violet);
+  background: color-mix(in srgb, var(--line) 72%, transparent);
+  transform: translateZ(0);
+}
+.reading-progress::-webkit-progress-bar {
+  background: color-mix(in srgb, var(--line) 72%, transparent);
+}
+.reading-progress::-webkit-progress-value {
+  background: var(--violet);
+  transition: width 100ms linear;
+}
+.reading-progress::-moz-progress-bar {
+  background: var(--violet);
+  transition: width 100ms linear;
+}
 .article-shell {
   max-width: 930px;
   margin: auto;
@@ -779,7 +1039,7 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
 .article-index-head h1 {
   margin: 20px 0;
   font:
-    500 clamp(50px, 7vw, 86px)/0.98 "Noto Serif SC",
+    500 clamp(50px, 7vw, 86px)/0.98 'Noto Serif SC',
     Georgia,
     serif;
   letter-spacing: -0.07em;
@@ -812,7 +1072,7 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
 .article-row h2 {
   margin: 13px 0 9px;
   font:
-    500 32px/1.15 "Noto Serif SC",
+    500 32px/1.15 'Noto Serif SC',
     Georgia,
     serif;
   letter-spacing: -0.04em;
@@ -842,7 +1102,7 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
   max-width: 760px;
   margin: 22px 0;
   font:
-    500 clamp(44px, 6vw, 76px)/1.04 "Noto Serif SC",
+    500 clamp(44px, 6vw, 76px)/1.04 'Noto Serif SC',
     Georgia,
     serif;
   letter-spacing: -0.06em;
@@ -863,7 +1123,7 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
 .article-body h2 {
   margin: 0 0 16px;
   font:
-    500 28px "Noto Serif SC",
+    500 28px 'Noto Serif SC',
     Georgia,
     serif;
 }
@@ -881,6 +1141,141 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
   font-weight: 700;
   border-bottom: 1px solid var(--ink);
   padding-bottom: 4px;
+}
+.project-case-page {
+  min-height: 100vh;
+  background: var(--paper);
+}
+.project-case-shell {
+  max-width: 980px;
+  margin: auto;
+  padding: 34px;
+}
+.project-case {
+  padding: 90px 0 80px;
+}
+.project-case-hero {
+  padding-bottom: 56px;
+  border-bottom: 1px solid var(--ink);
+}
+.case-eyebrow {
+  color: var(--violet);
+  font: 700 11px monospace;
+  letter-spacing: 0.12em;
+}
+.case-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+}
+.case-title-row h1 {
+  margin: 24px 0 16px;
+  font:
+    500 clamp(58px, 10vw, 116px)/0.9 'Noto Serif SC',
+    Georgia,
+    serif;
+  letter-spacing: -0.08em;
+}
+.case-title-row > span {
+  color: var(--muted);
+  font: 700 11px monospace;
+}
+.project-case-hero > p {
+  max-width: 660px;
+  margin: 0;
+  color: var(--body-text);
+  font-size: clamp(19px, 2.2vw, 27px);
+  line-height: 1.55;
+}
+.case-meta,
+.case-deliverables {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.case-meta {
+  margin-top: 30px;
+}
+.case-meta span,
+.case-deliverables span {
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  color: var(--muted);
+  font: 10px monospace;
+}
+.case-intro,
+.case-section {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 34px;
+  padding: 56px 0;
+  border-bottom: 1px solid var(--line);
+}
+.case-intro > p,
+.case-section p {
+  max-width: 670px;
+  margin: 0;
+  color: var(--body-text);
+  font-size: 16px;
+  line-height: 1.9;
+}
+.case-section h2 {
+  max-width: 650px;
+  margin: 0 0 22px;
+  font:
+    500 clamp(32px, 4vw, 50px)/1.1 'Noto Serif SC',
+    Georgia,
+    serif;
+  letter-spacing: -0.06em;
+}
+.case-stages {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+.case-stages article {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  column-gap: 16px;
+  padding: 23px 0;
+  border-bottom: 1px solid var(--line);
+}
+.case-stages article > span {
+  color: var(--violet);
+  font: 700 11px monospace;
+}
+.case-stages h3 {
+  margin: 0 0 9px;
+  font:
+    500 26px 'Noto Serif SC',
+    Georgia,
+    serif;
+  letter-spacing: -0.04em;
+}
+.case-stages p {
+  grid-column: 2;
+}
+.case-principles {
+  display: grid;
+  gap: 13px;
+  padding: 0;
+  margin: 0 0 32px;
+  list-style: none;
+  color: var(--body-text);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.case-principles li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+.case-principles svg {
+  flex: 0 0 auto;
+  margin-top: 4px;
+  color: var(--violet);
 }
 
 /* ============ 动效组件 ============ */
@@ -959,6 +1354,19 @@ html[data-theme="dark"] .theme-toggle .theme-icon-moon {
 
 /* 用户偏好减弱动效时，关闭 CSS 装饰动画与光泽扫过 */
 @media (prefers-reduced-motion: reduce) {
+  .nav-buddy-image {
+    animation: none;
+  }
+  .reveal,
+  .reveal[data-reveal-ready='true']:not([data-reveal-visible='true']) {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .reading-progress::-webkit-progress-value,
+  .reading-progress::-moz-progress-bar {
+    transition: none;
+  }
   .project-symbol div {
     animation: none;
   }
