@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, ArrowUpRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { ReadingProgress } from '@/components/site/reading-progress';
-import { articles, getArticle } from '@/data/articles';
+import { articles, getAdjacent, getArticle, getRelated } from '@/data/articles';
 
 export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }));
@@ -49,6 +49,8 @@ export default async function ArticleDetailPage({
   const { slug } = await params;
   const article = getArticle(slug);
   if (!article) notFound();
+  const { newer, older } = getAdjacent(slug);
+  const related = getRelated(slug);
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
   const jsonLd = {
@@ -92,17 +94,58 @@ export default async function ArticleDetailPage({
               ))}
             </div>
           </header>
-          <div className="article-body">
-            {article.body.map((section) => (
-              <section key={section.heading}>
-                <h2>{section.heading}</h2>
-                {section.paragraphs.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
-              </section>
-            ))}
-          </div>
+          <div
+            className="article-body"
+            dangerouslySetInnerHTML={{ __html: article.html }}
+          />
         </article>
+        <nav className="article-nav" aria-label="文章导航">
+          {older ? (
+            <Link href={`/articles/${older.slug}`} className="article-nav-card">
+              <span className="article-nav-label">
+                <ArrowLeft size={14} /> 上一篇
+              </span>
+              <strong>{older.title}</strong>
+              <span className="article-nav-meta">
+                {older.published} · {older.readTime}
+              </span>
+            </Link>
+          ) : (
+            <span className="article-nav-card is-empty" aria-hidden="true" />
+          )}
+          {newer ? (
+            <Link href={`/articles/${newer.slug}`} className="article-nav-card is-next">
+              <span className="article-nav-label">
+                下一篇 <ArrowRight size={14} />
+              </span>
+              <strong>{newer.title}</strong>
+              <span className="article-nav-meta">
+                {newer.published} · {newer.readTime}
+              </span>
+            </Link>
+          ) : (
+            <span className="article-nav-card is-empty" aria-hidden="true" />
+          )}
+        </nav>
+        {related.length > 0 && (
+          <section className="article-related">
+            <span className="section-index">RELATED / 相关阅读</span>
+            <div className="article-related-grid">
+              {related.map((item) => (
+                <Link
+                  key={item.slug}
+                  href={`/articles/${item.slug}`}
+                  className="article-related-card"
+                >
+                  <strong>{item.title}</strong>
+                  <span className="article-nav-meta">
+                    {item.published} · {item.readTime}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
         <Link href="/#top" className="article-end-link">
           回到首页 <ArrowUpRight size={17} />
         </Link>

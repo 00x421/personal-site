@@ -2,7 +2,9 @@
  * 构建时生成文章 OG 分享图（1200x630）。
  *
  * 用 satori 渲染 SVG、@resvg/resvg-js 转 PNG，输出到 public/og/articles/{slug}.png。
- * 数据源是 data/articles.ts，源字体沿用 subset-fonts.py 的约定：
+ * 数据源是 content/articles/*.md（本脚本在纯 Node 下运行，直接 fs 读取，
+ * 与站点的 Vite glob 加载共享 lib/markdown.ts 的解析逻辑）。
+ * 源字体沿用 subset-fonts.py 的约定：
  *   1. python subset-fonts.py 的前置步骤会从
  *      https://github.com/notofonts/noto-cjk/tree/main/Serif/SubsetOTF/SC
  *      下载 NotoSerifSC-{Regular,Medium,Bold}.otf 到 %TEMP%/noto-src/
@@ -10,14 +12,28 @@
  *
  * 新增文章后重新运行即可（npm run og）。
  */
-import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { readdirSync, readFileSync } from 'node:fs';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createElement } from 'react';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
-import { articles } from '../data/articles.ts';
+import { buildArticle, type Article } from '../lib/markdown.ts';
 import { siteIdentity } from '../lib/site-content.ts';
+
+const CONTENT_DIR = path.resolve('content', 'articles');
+
+const articles: Article[] = readdirSync(CONTENT_DIR)
+  .filter((file) => file.endsWith('.md'))
+  .map((file) =>
+    buildArticle(
+      file.replace(/\.md$/, ''),
+      readFileSync(path.join(CONTENT_DIR, file), 'utf8'),
+    ),
+  )
+  .filter((article) => !article.draft)
+  .sort((a, b) => b.published.localeCompare(a.published));
 
 const WIDTH = 1200;
 const HEIGHT = 630;

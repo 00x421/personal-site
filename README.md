@@ -23,6 +23,7 @@ npm run start
 ## 技术要点
 
 - **App Router 服务端组件**：首页在服务端渲染，可交互部件（主题切换、滚动轨道、小狗吉祥物）以客户端组件（`'use client'`）注入。
+- **Markdown 内容管线**：`content/articles/*.md` + frontmatter；站点侧由 Vite `import.meta.glob` 构建期内联（Workers 运行时零文件系统依赖），`scripts/generate-og.ts` 在纯 Node 下 fs 直读，两侧共享 `lib/markdown.ts` 解析（marked 渲染 + 阅读时长估算）。
 - **字体子集化**：`subset-fonts.py` 将 Noto Serif SC 全量 OTF 按站内实际用字子集为 woff2（`public/fonts/`），控制中文字体体积。
 - **RSS**：`app/rss.xml/route.ts` 输出 RSS 2.0，已加入 `<link rel="alternate">` 自动发现。
 - **动态 OG 图**：`npm run og` 用 satori + @resvg/resvg-js 按文章数据生成 `public/og/articles/{slug}.png`，文章页 metadata 自动引用。
@@ -59,5 +60,31 @@ npm run start
 
 ## 内容维护
 
-- **新增文章**：在 `data/articles.ts` 追加条目（readTime 自动计算）→ 跑 `python subset-fonts.py`（先按文件头说明下载源字体）→ `npm run og` → `npm run build`。
+### 写一篇文章
+
+文章是 `content/articles/` 下的 Markdown 文件，**文件名即 URL slug**（如 `build-small-systems.md` → `/articles/build-small-systems`）。写作流程：
+
+1. 新建 `content/articles/<slug>.md`，开头是 frontmatter：
+
+   ```markdown
+   ---
+   title: 文章标题
+   description: 一句话摘要（列表页、SEO、OG 图、RSS 都用它）。
+   published: 2026-09-03
+   tags: [产品思考, 工程实践]
+   draft: true          # 可选，true 时不出现在线上任何地方
+   ---
+
+   ## 第一个小标题
+
+   正文用 Markdown 写：支持**加粗**、*斜体*、`行内代码`、[链接](https://example.com)、
+   列表、引用、代码块和图片。标题从 `##` 开始（`#` 留给页面的文章大标题）。
+   ```
+
+2. 发布：删掉 `draft: true`（或一开始就不写）。
+3. 生成 OG 分享图：`npm run og`（需按 `subset-fonts.py` 文件头说明先备好源字体）。
+4. 中文新字较多时跑 `python subset-fonts.py` 扩充字体子集，然后 `npm run build`。
+
+阅读时长按正文长度自动估算；上一篇 / 下一篇导航和「相关阅读」（按标签重叠推荐，无重叠时回退最新文章）全部自动生成。
+
 - **修改 /now 页文案**：`app/now/page.tsx` 顶部 `nowBlocks` 常量，阅读区块保留为真实在读书目。
