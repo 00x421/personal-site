@@ -1,6 +1,4 @@
 @import 'tailwindcss';
-@import 'tw-animate-css';
-@import 'shadcn/tailwind.css';
 /* 站点字符子集化的 Noto Serif SC（由 subset-fonts.py 生成，覆盖全站标题文案） */
 @font-face {
   font-family: 'Noto Serif SC';
