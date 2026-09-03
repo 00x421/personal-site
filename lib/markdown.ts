@@ -12,30 +12,90 @@ export type Article = {
   html: string;
 };
 
-type RawFrontmatter = Record<string, string>;
+export type Project = {
+  slug: string;
+  title: string;
+  type: string;
+  year: string;
+  summary: string;
+  tags: string[];
+  /** 卡片配色变体：ink / violet / lime */
+  tone: 'ink' | 'violet' | 'lime';
+  /** 卡片右下角装饰符号 */
+  mark: string;
+  /** 首页排序权重，小者在前 */
+  order: number;
+  status: string;
+  /** 案例页眉标 */
+  eyebrow: string;
+  /** 案例页 hero 下方徽章组 */
+  meta: string[];
+  /** 案例页尾部自动渲染的交付物徽章 */
+  deliverables: string[];
+  html: string;
+  /** 正文为空 → 仅首页卡片；写了正文即生成 /projects/{slug} 案例页 */
+  hasCase: boolean;
+};
+
+type RawFrontmatter = Record<string, string | string[]>;
 
 function splitFrontmatter(raw: string): { data: RawFrontmatter; body: string } {
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(raw);
   if (!match) return { data: {}, body: raw };
   const data: RawFrontmatter = {};
-  for (const line of match[1].split(/\r?\n/)) {
-    const idx = line.indexOf(':');
+  const lines = match[1].split(/\r?\n/);
+  for (let i = 0; i < lines.length; i += 1) {
+    const idx = lines[i].indexOf(':');
     if (idx === -1) continue;
-    const key = line.slice(0, idx).trim();
-    const value = line.slice(idx + 1).trim();
-    if (key) data[key] = value;
+    const key = lines[i].slice(0, idx).trim();
+    const value = lines[i].slice(idx + 1).trim();
+    if (!key) continue;
+    if (value) {
+      data[key] = value;
+    } else {
+      // 空值后跟随缩进的 “- 条目” 块列表
+      const items: string[] = [];
+      while (i + 1 < lines.length && /^\s*-\s+/.test(lines[i + 1])) {
+        i += 1;
+        items.push(lines[i].replace(/^\s*-\s+/, '').trim().replace(/^['"]|['"]$/g, ''));
+      }
+      if (items.length) data[key] = items;
+    }
   }
   return { data, body: raw.slice(match[0].length) };
 }
 
-function parseTags(value: string | undefined): string[] {
+function str(data: RawFrontmatter, key: string): string | undefined {
+  const value = data[key];
+  return typeof value === 'string' && value ? value : undefined;
+}
+
+function list(data: RawFrontmatter, key: string): string[] {
+  const value = data[key];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value !== 'string' || !value) return [];
+  return value
+    .replace(/^\[/, '')
+    .replace(/\]$/, '')
+    .split(',')
+    .map((item) => item.trim().replace(/^['"]|['"]$/g, ''))
+    .filter(Boolean);
+}
+
+function parseTags(value: string | string[] | undefined): string[] {
   if (!value) return [];
+  if (Array.isArray(value)) return value;
   return value
     .replace(/^\[/, '')
     .replace(/\]$/, '')
     .split(',')
     .map((tag) => tag.trim().replace(/^['"]|['"]$/g, ''))
     .filter(Boolean);
+}
+
+/** 去掉 HTML 注释后判断正文是否为空（注释不构成案例内容）。 */
+function stripComments(body: string): string {
+  return body.replace(/<!--[\s\S]*?-->/g, '');
 }
 
 /** 去掉 Markdown 语法噪音后按字符数估算阅读时长（中文约 400 字/分钟）。 */
@@ -50,12 +110,37 @@ export function buildArticle(slug: string, raw: string): Article {
   const { data, body } = splitFrontmatter(raw);
   return {
     slug,
-    title: data.title ?? slug,
-    description: data.description ?? '',
-    published: data.published ?? '',
+    title: str(data, 'title') ?? slug,
+    description: str(data, 'description') ?? '',
+    published: str(data, 'published') ?? '',
     readTime: calcReadTime(body),
     tags: parseTags(data.tags),
-    draft: data.draft === 'true',
+    draft: str(data, 'draft') === 'true',
     html: marked.parse(body, { async: false, gfm: true }),
+  };
+}
+
+export function buildProject(slug: string, raw: string): Project {
+  const { data, body } = splitFrontmatter(raw);
+  const content = stripComments(body).trim();
+  const hasCase = content.length > 0;
+  const type = str(data, 'type') ?? '';
+  const tone = str(data, 'tone');
+  return {
+    slug,
+    title: str(data, 'title') ?? slug,
+    type,
+    year: str(data, 'year') ?? '',
+    summary: str(data, 'summary') ?? '',
+    tags: parseTags(data.tags),
+    tone: tone === 'violet' || tone === 'lime' ? tone : 'ink',
+    mark: str(data, 'mark') ?? '00',
+    order: Number(str(data, 'order') ?? NaN) || 99,
+    status: str(data, 'status') ?? (hasCase ? '查看案例' : '案例整理中'),
+    eyebrow: str(data, 'eyebrow') ?? 'CASE STUDY',
+    meta: list(data, 'meta').length > 0 ? list(data, 'meta') : [type],
+    deliverables: list(data, 'deliverables'),
+    html: hasCase ? marked.parse(stripComments(body), { async: false, gfm: true }) : '',
+    hasCase,
   };
 }

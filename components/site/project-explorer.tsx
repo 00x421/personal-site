@@ -4,9 +4,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { Reveal } from '@/components/site/reveal';
-import { projects } from '@/lib/site-content';
-
-const filters = ['全部', '产品设计', '开发实践', '数据产品'] as const;
+import { projectFilters, projects } from '@/data/projects';
 
 /** 项目精选：筛选状态与横向滚动需要客户端，整块作为交互孤岛。 */
 export function ProjectExplorer() {
@@ -30,7 +28,7 @@ export function ProjectExplorer() {
     <>
       <Reveal delay={60}>
         <div className="filters" aria-label="项目筛选">
-          {filters.map((filter) => (
+          {projectFilters.map((filter) => (
             <button
               key={filter}
               onClick={() => setActive(filter)}
@@ -71,16 +69,16 @@ export function ProjectExplorer() {
                   </div>
                 </article>
               );
-              return project.slug ? (
+              return project.hasCase ? (
                 <Link
                   className="project-link"
                   href={`/projects/${project.slug}`}
-                  key={project.title}
+                  key={project.slug}
                 >
                   {card}
                 </Link>
               ) : (
-                <div key={project.title}>{card}</div>
+                <div key={project.slug}>{card}</div>
               );
             })}
           </div>

@@ -23,7 +23,7 @@ npm run start
 ## 技术要点
 
 - **App Router 服务端组件**：首页在服务端渲染，可交互部件（主题切换、滚动轨道、小狗吉祥物）以客户端组件（`'use client'`）注入。
-- **Markdown 内容管线**：`content/articles/*.md` + frontmatter；站点侧由 Vite `import.meta.glob` 构建期内联（Workers 运行时零文件系统依赖），`scripts/generate-og.ts` 在纯 Node 下 fs 直读，两侧共享 `lib/markdown.ts` 解析（marked 渲染 + 阅读时长估算）。
+- **Markdown 内容管线**：`content/articles/*.md` 与 `content/projects/*.md` + frontmatter；站点侧由 Vite `import.meta.glob` 构建期内联（Workers 运行时零文件系统依赖），`scripts/generate-og.ts` 在纯 Node 下 fs 直读，两侧共享 `lib/markdown.ts` 解析（marked 渲染 + 阅读时长估算）。项目案例页由 Markdown 正文驱动：`##` 分区 CSS 计数器自动编号，frontmatter `deliverables` 尾部自动成区。
 - **字体子集化**：`subset-fonts.py` 将 Noto Serif SC 全量 OTF 按站内实际用字子集为 woff2（`public/fonts/`），控制中文字体体积。
 - **RSS**：`app/rss.xml/route.ts` 输出 RSS 2.0，已加入 `<link rel="alternate">` 自动发现。
 - **动态 OG 图**：`npm run og` 用 satori + @resvg/resvg-js 按文章数据生成 `public/og/articles/{slug}.png`，文章页 metadata 自动引用。
@@ -86,5 +86,36 @@ npm run start
 4. 中文新字较多时跑 `python subset-fonts.py` 扩充字体子集，然后 `npm run build`。
 
 阅读时长按正文长度自动估算；上一篇 / 下一篇导航和「相关阅读」（按标签重叠推荐，无重叠时回退最新文章）全部自动生成。
+
+### 写一个项目
+
+项目是 `content/projects/` 下的 Markdown 文件，**文件名即 URL slug**。**只写 frontmatter = 仅首页卡片；补上正文 = 自动生成 `/projects/<slug>` 案例页**（HTML 注释不算正文）：
+
+```markdown
+---
+title: 项目名
+type: 产品设计          # 首页筛选维度，新类型会自动出现在筛选栏
+year: '2026'
+summary: 一句话卡片摘要。
+tags: [标签A, 标签B]
+tone: violet           # 卡片配色：ink / violet / lime
+mark: '01'             # 卡片装饰符号
+order: 1               # 首页排序，小者在前
+status: 查看案例        # 可选，默认按有无正文自动取「查看案例/案例整理中」
+eyebrow: CASE STUDY    # 案例页眉标
+meta: [开发实践, 已授权场景]   # 案例页 hero 徽章组，缺省为 [type]
+deliverables:          # 案例页尾部自动渲染的交付物徽章（紧跟正文分区自动编号）
+  - 交付物一
+  - 交付物二
+---
+
+## 背景
+
+正文即案例页：`## 分区标题` 自动编号成「01 / 背景」眉题，
+`### 大标题` 渲染为衬线宣言，`#### 小节` 用于方法步骤，
+列表项自动带紫色 ✓ 标记。
+```
+
+首页卡片、筛选栏（从项目 `type` 动态去重）、案例页、sitemap 全部由这一份文件驱动。
 
 - **修改 /now 页文案**：`app/now/page.tsx` 顶部 `nowBlocks` 常量，阅读区块保留为真实在读书目。

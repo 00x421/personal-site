@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, ArrowUpRight, Check } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
-import { getProjectCase, projectCases } from '@/lib/site-content';
+import { getProject, projects } from '@/data/projects';
 
 export function generateStaticParams() {
-  return Object.keys(projectCases).map((slug) => ({ slug }));
+  return projects
+    .filter((project) => project.hasCase)
+    .map((project) => ({ slug: project.slug }));
 }
 
 export async function generateMetadata({
@@ -14,8 +16,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const project = getProjectCase(slug);
-  if (!project) return { title: '项目不存在 — XWSX' };
+  const project = getProject(slug);
+  if (!project?.hasCase) return { title: '项目不存在 — XWSX' };
   return {
     title: `${project.title} — XWSX`,
     description: project.summary,
@@ -35,8 +37,11 @@ export default async function ProjectCasePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const project = getProjectCase(slug);
-  if (!project) notFound();
+  const project = getProject(slug);
+  if (!project?.hasCase) notFound();
+
+  // 交付物分区跟在正文 h2 分区之后自动编号
+  const sectionCount = (project.html.match(/<h2/g) ?? []).length;
 
   return (
     <main className="project-case-page">
@@ -53,51 +58,28 @@ export default async function ProjectCasePage({
             </div>
             <p>{project.summary}</p>
             <div className="case-meta">
-              <span>{project.type}</span>
-              <span>已授权场景</span>
-              <span>Python-first</span>
-            </div>
-          </header>
-          <section className="case-intro">
-            <span className="section-index">01 / 背景</span>
-            <p>{project.context}</p>
-          </section>
-          <section className="case-section">
-            <span className="section-index">02 / 问题</span>
-            <div>
-              <h2>不是“把页面点通”，而是让协议可复现。</h2>
-              <p>{project.challenge}</p>
-            </div>
-          </section>
-          <section className="case-section">
-            <span className="section-index">03 / 方法</span>
-            <div className="case-stages">
-              {project.stages.map(([title, description], index) => (
-                <article key={title}>
-                  <span>0{index + 1}</span>
-                  <h3>{title}</h3>
-                  <p>{description}</p>
-                </article>
+              {project.meta.map((item) => (
+                <span key={item}>{item}</span>
               ))}
             </div>
-          </section>
-          <section className="case-section case-two-column">
-            <span className="section-index">04 / 原则与产物</span>
-            <div>
-              <ul className="case-principles">
-                {project.principles.map((principle) => (
-                  <li key={principle}>
-                    <Check size={16} /> {principle}
-                  </li>
-                ))}
-              </ul>
+          </header>
+          {/* 正文 Markdown：h2 自动编号分区，h3 大标题，h4 小节标题 */}
+          <div
+            className="case-body"
+            dangerouslySetInnerHTML={{ __html: project.html }}
+          />
+          {project.deliverables.length > 0 && (
+            <section className="case-deliverables-section">
+              <span className="case-deliverables-index">
+                {String(sectionCount + 1).padStart(2, '0')} / 交付物
+              </span>
               <div className="case-deliverables">
                 {project.deliverables.map((item) => (
                   <span key={item}>{item}</span>
                 ))}
               </div>
-            </div>
-          </section>
+            </section>
+          )}
         </article>
         <Link href="/#work" className="article-end-link">
           回到项目 <ArrowUpRight size={17} />
