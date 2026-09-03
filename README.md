@@ -23,10 +23,11 @@ npm run start
 ## 技术要点
 
 - **App Router 服务端组件**：首页在服务端渲染，可交互部件（主题切换、滚动轨道、小狗吉祥物）以客户端组件（`'use client'`）注入。
-- **Markdown 内容管线**：`content/articles/*.md` 与 `content/projects/*.md` + frontmatter；站点侧由 Vite `import.meta.glob` 构建期内联（Workers 运行时零文件系统依赖），`scripts/generate-og.ts` 在纯 Node 下 fs 直读，两侧共享 `lib/markdown.ts` 解析（marked 渲染 + 阅读时长估算）。项目案例页由 Markdown 正文驱动：`##` 分区 CSS 计数器自动编号，frontmatter `deliverables` 尾部自动成区。
+- **Markdown 内容管线**：`content/articles/*.md`、`content/projects/*.md` 与 `content/books/*.md` + frontmatter；站点侧由 Vite `import.meta.glob` 构建期内联（Workers 运行时零文件系统依赖），`scripts/generate-og.ts` 在纯 Node 下 fs 直读，两侧共享 `lib/markdown.ts` 解析（marked 渲染 + 阅读时长估算）。项目案例页由 Markdown 正文驱动：`##` 分区 CSS 计数器自动编号，frontmatter `deliverables` 尾部自动成区。代码块由 Prism 在服务端高亮（token 色走 CSS 变量明暗双主题），复制按钮由客户端组件对已有 `<pre>` 渐进增强。
+- **标签聚合**：文章标签自动聚合成 `/articles` 标签云与 `/articles/tag/<标签>` 聚合页（中文标签即路径，构建时统一 URL 编解码）。
 - **字体子集化**：`subset-fonts.py` 将 Noto Serif SC 全量 OTF 按站内实际用字子集为 woff2（`public/fonts/`），控制中文字体体积。
 - **RSS**：`app/rss.xml/route.ts` 输出 RSS 2.0，已加入 `<link rel="alternate">` 自动发现。
-- **动态 OG 图**：`npm run og` 用 satori + @resvg/resvg-js 按文章数据生成 `public/og/articles/{slug}.png`，文章页 metadata 自动引用。
+- **动态 OG 图**：`npm run og` 用 satori + @resvg/resvg-js 生成 `public/og/articles/{slug}.png` 与 `public/og/projects/{slug}.png`，文章 / 案例页 metadata 自动引用。
 - **结构化数据**：布局注入 Person/WebSite JSON-LD，文章页注入 Article JSON-LD。
 - **无障碍**：Lighthouse 无障碍 100 / 最佳实践 100 / SEO 100。
 
@@ -117,5 +118,21 @@ deliverables:          # 案例页尾部自动渲染的交付物徽章（紧跟�
 ```
 
 首页卡片、筛选栏（从项目 `type` 动态去重）、案例页、sitemap 全部由这一份文件驱动。
+
+### 记录一本书
+
+书是 `content/books/` 下的 Markdown 文件，**文件名即 slug**，只认 frontmatter（正文暂不渲染）：
+
+```markdown
+---
+title: 认知觉醒
+author: 周岭
+status: 在读            # 在读 / 读完 / 想读，书架页按此分组
+started: 2026-08        # 开始阅读年月，组内按它倒序
+takeaway: 留在身上的一句话，会以引用样式展示。
+---
+```
+
+`/books` 书架页、`/now` 阅读区块（同目录数据）、页脚「书架」入口自动生效。
 
 - **修改 /now 页文案**：`app/now/page.tsx` 顶部 `nowBlocks` 常量，阅读区块保留为真实在读书目。

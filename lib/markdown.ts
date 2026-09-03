@@ -1,4 +1,16 @@
 import { marked } from 'marked';
+// .ts 扩展名让 scripts/generate-og.ts 在纯 Node ESM 下也能解析（Vite 同样支持）。
+import { highlightCode } from './highlight.ts';
+
+// 代码块 → 带 data-lang 的 pre；语言标签与复制按钮由客户端增强组件接管。
+marked.use({
+  renderer: {
+    code({ text, lang }: { text: string; lang?: string }) {
+      const language = (lang ?? '').trim().split(/\s+/)[0].toLowerCase() || 'text';
+      return `<pre data-lang="${language}"><code>${highlightCode(text, language === 'text' ? undefined : language)}</code></pre>`;
+    },
+  },
+});
 
 export type Article = {
   slug: string;

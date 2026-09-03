@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
-import { articles } from '@/data/articles';
+import { articles, getAllTags } from '@/data/articles';
 
 export const metadata: Metadata = {
   title: '技术文章 — XWSX',
@@ -24,6 +24,14 @@ export default function ArticlesPage() {
             <em>让思考可复用。</em>
           </h1>
           <p>这里记录我在产品、前端工程与 AI 应用中的实验、判断和复盘。</p>
+          <nav className="article-tag-cloud" aria-label="按标签浏览">
+            {getAllTags().map(({ tag, count }) => (
+              <Link href={`/articles/tag/${tag}`} key={tag}>
+                {tag}
+                <span>{count}</span>
+              </Link>
+            ))}
+          </nav>
         </header>
         <div className="article-list">
           {articles.map((article, index) => (

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
+import { CodeBlockEnhancer } from '@/components/site/code-block-enhancer';
 import { getProject, projects } from '@/data/projects';
 
 export function generateStaticParams() {
@@ -18,6 +19,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const project = getProject(slug);
   if (!project?.hasCase) return { title: '项目不存在 — XWSX' };
+  const ogImage = `/og/projects/${project.slug}.png`;
   return {
     title: `${project.title} — XWSX`,
     description: project.summary,
@@ -25,9 +27,9 @@ export async function generateMetadata({
     openGraph: {
       title: project.title,
       description: project.summary,
-      images: [],
+      images: [ogImage],
     },
-    twitter: { images: [] },
+    twitter: { images: [ogImage] },
   };
 }
 
@@ -68,6 +70,7 @@ export default async function ProjectCasePage({
             className="case-body"
             dangerouslySetInnerHTML={{ __html: project.html }}
           />
+          <CodeBlockEnhancer scope=".case-body" />
           {project.deliverables.length > 0 && (
             <section className="case-deliverables-section">
               <span className="case-deliverables-index">

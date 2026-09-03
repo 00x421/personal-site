@@ -201,6 +201,8 @@ export default function Home() {
           © 2026 {siteIdentity.brand} · {siteIdentity.motto}
         </span>
         <div>
+          <Link href="/now">现在</Link>
+          <Link href="/books">书架</Link>
           <a href={siteIdentity.github} target="_blank" rel="noreferrer">
             <Code2 size={16} /> GitHub · 00x421
           </a>

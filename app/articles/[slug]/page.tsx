@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
+import { CodeBlockEnhancer } from '@/components/site/code-block-enhancer';
+import { NavBuddy } from '@/components/site/nav-buddy';
 import { ReadingProgress } from '@/components/site/reading-progress';
 import { articles, getAdjacent, getArticle, getRelated } from '@/data/articles';
 
@@ -77,9 +79,13 @@ export default async function ArticleDetailPage({
     <main className="article-page">
       <ReadingProgress />
       <div className="article-shell article-detail">
-        <Link href="/articles" className="back-link">
-          <ArrowLeft size={15} /> 所有文章
-        </Link>
+        <div className="article-top-row">
+          <Link href="/articles" className="back-link">
+            <ArrowLeft size={15} /> 所有文章
+          </Link>
+          {/* 阅读陪伴：文章页停留 40s 无交互小狗会打盹 */}
+          <NavBuddy />
+        </div>
         <article>
           <header>
             <div className="article-meta">
@@ -90,7 +96,9 @@ export default async function ArticleDetailPage({
             <p className="article-lede">{article.description}</p>
             <div className="article-tags">
               {article.tags.map((tag) => (
-                <span key={tag}>{tag}</span>
+                <Link href={`/articles/tag/${tag}`} key={tag}>
+                  {tag}
+                </Link>
               ))}
             </div>
           </header>
@@ -99,6 +107,7 @@ export default async function ArticleDetailPage({
             dangerouslySetInnerHTML={{ __html: article.html }}
           />
         </article>
+        <CodeBlockEnhancer scope=".article-detail .article-body" />
         <nav className="article-nav" aria-label="文章导航">
           {older ? (
             <Link href={`/articles/${older.slug}`} className="article-nav-card">

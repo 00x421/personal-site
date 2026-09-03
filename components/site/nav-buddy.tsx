@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import { usePathname } from 'next/navigation';
 
 const airPupStates = [
   {
@@ -51,6 +52,18 @@ function subscribeToHour(onChange: () => void) {
 export function NavBuddy() {
   const [open, setOpen] = useState(false);
   const [moodIndex, setMoodIndex] = useState(0);
+  /** 阅读彩蛋：文章页 40s 无交互 → 小狗打盹；任意交互唤醒。 */
+  const [sleepy, setSleepy] = useState(false);
+  const [justWoken, setJustWoken] = useState(false);
+  const pathname = usePathname();
+  const isReading = pathname.startsWith('/articles/') && !pathname.includes('/tag/');
+  // 路由切换时在 render 阶段退出睡眠态（官方「渲染期间调整 state」模式，
+  // 避免 effect 里同步 setState 触发级联渲染）。
+  const [prevPath, setPrevPath] = useState(pathname);
+  if (prevPath !== pathname) {
+    setPrevPath(pathname);
+    setSleepy(false);
+  }
   // 服务端快照固定为 12 点，水合前渲染与客户端一致；水合后自动切换到本地时钟。
   const hour = useSyncExternalStore(
     subscribeToHour,
@@ -58,8 +71,26 @@ export function NavBuddy() {
     () => 12,
   );
   const moodPool = moodsForHour(hour);
-  const moodId = moodPool[moodIndex % moodPool.length] ?? 'idle';
+  const moodId = sleepy
+    ? 'sleeping'
+    : (moodPool[moodIndex % moodPool.length] ?? 'idle');
   const state = stateById[moodId] ?? airPupStates[0];
+
+  useEffect(() => {
+    if (!isReading) return;
+    let timer = window.setTimeout(() => setSleepy(true), 40_000);
+    const wake = () => {
+      setSleepy(false);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setSleepy(true), 40_000);
+    };
+    const events = ['pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll'] as const;
+    events.forEach((event) => window.addEventListener(event, wake, { passive: true }));
+    return () => {
+      window.clearTimeout(timer);
+      events.forEach((event) => window.removeEventListener(event, wake));
+    };
+  }, [isReading, pathname]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -70,11 +101,16 @@ export function NavBuddy() {
 
   useEffect(() => {
     if (!open) return;
-    const timer = window.setTimeout(() => setOpen(false), 3600);
+    const timer = window.setTimeout(() => {
+      setOpen(false);
+      setJustWoken(false);
+    }, 3600);
     return () => window.clearTimeout(timer);
   }, [open, moodIndex]);
 
   function greet() {
+    if (sleepy) setJustWoken(true);
+    setSleepy(false);
     setOpen(true);
     setMoodIndex((current) => current + 1);
   }
@@ -84,12 +120,25 @@ export function NavBuddy() {
       type="button"
       className="nav-buddy"
       onClick={greet}
-      aria-label={`和 XWSX 空气小狗打招呼，当前${state.label}`}
+      aria-label={
+        sleepy
+          ? 'XWSX 空气小狗读着读着睡着了，点一下叫醒它'
+          : `和 XWSX 空气小狗打招呼，当前${state.label}`
+      }
       aria-expanded={open}
     >
       {/* oxlint-disable-next-line next/no-img-element -- 原创导航吉祥物需保持透明材质，直接使用本地静态资源。 */}
       <img className="nav-buddy-image" key={state.id} src={state.src} alt="" />
-      {open && <output className="nav-buddy-tip">{state.message}</output>}
+      {sleepy && (
+        <span className="nav-buddy-z" aria-hidden>
+          z
+        </span>
+      )}
+      {open && (
+        <output className="nav-buddy-tip">
+          {justWoken ? '呜……被戳醒了。读得入迷了吧。' : state.message}
+        </output>
+      )}
     </button>
   );
 }

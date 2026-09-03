@@ -51,3 +51,20 @@ export function getRelated(slug: string, max = 2): Article[] {
     .slice(0, max)
     .map((entry) => entry.article);
 }
+
+export function getArticlesByTag(tag: string): Article[] {
+  return articles.filter((article) => article.tags.includes(tag));
+}
+
+/** 全站标签按文章数倒序，同级按名称稳定排序。 */
+export function getAllTags(): { tag: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const article of articles) {
+    for (const tag of article.tags) {
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+  }
+  return Array.from(counts.entries())
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+}
