@@ -345,6 +345,10 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   font-weight: 400;
   color: var(--violet);
 }
+/* CTA 横幅本身就是紫底，em 换用柠檬绿强调，避免紫字压紫底 */
+.cta h2 em {
+  color: var(--lime);
+}
 .hero-note {
   border-left: 1px solid var(--ink);
   padding-left: 18px;
