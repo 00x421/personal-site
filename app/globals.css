@@ -345,9 +345,9 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   font-weight: 400;
   color: var(--violet);
 }
-/* CTA 横幅本身就是紫底，em 用固定奶油白强调（--paper 暗色下翻转为墨色会失去区分度） */
+/* CTA 横幅统一黑字，em 仅以斜体/字重区分（紫底上黑白混排不协调） */
 .cta h2 em {
-  color: #f4f2ec;
+  color: inherit;
 }
 .hero-note {
   border-left: 1px solid var(--ink);
