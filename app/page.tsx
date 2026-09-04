@@ -6,6 +6,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
+import { Fragment } from 'react';
 import { MailLink } from '@/components/site/mail-link';
 import { NavBuddy } from '@/components/site/nav-buddy';
 import { PortraitCard } from '@/components/site/portrait-card';
@@ -15,6 +16,18 @@ import { Reveal } from '@/components/site/reveal';
 import { ThemeToggle } from '@/components/site/theme-toggle';
 import { articles } from '@/data/articles';
 import { siteIdentity, siteNavigation, skills } from '@/lib/site-content';
+
+/** hero 标签带关键词；渲染两份供移动端无缝滚动使用 */
+const heroTags = [
+  'PRODUCT THINKING',
+  'SYSTEMS THINKING',
+  'CREATIVE TECHNOLOGY',
+  'HUMAN-CENTERED',
+  'RPA',
+  'AI AGENT',
+  'AI WORKFLOW',
+  'AUTOMATION',
+];
 
 export default function Home() {
   return (
@@ -75,21 +88,18 @@ export default function Home() {
           </div>
         </div>
         <div className="hero-rail" aria-hidden="true">
-          <span>PRODUCT THINKING</span>
-          <i />
-          <span>SYSTEMS THINKING</span>
-          <i />
-          <span>CREATIVE TECHNOLOGY</span>
-          <i />
-          <span>HUMAN-CENTERED</span>
-          <i />
-          <span>RPA</span>
-          <i />
-          <span>AI AGENT</span>
-          <i />
-          <span>AI WORKFLOW</span>
-          <i />
-          <span>AUTOMATION</span>
+          <div className="hero-rail-track">
+            {[0, 1].map((copy) => (
+              <div className="hero-rail-group" key={copy}>
+                {heroTags.map((tag) => (
+                  <Fragment key={tag}>
+                    <span>{tag}</span>
+                    <i />
+                  </Fragment>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
       <section id="work" className="section-wrap work-section">
@@ -148,6 +158,7 @@ export default function Home() {
       <section id="about" className="about-section section-wrap">
         <Reveal className="about-copy">
           <span className="section-index">03 /</span>
+          <p className="eyebrow about-eyebrow">关于</p>
           <h2>
             我相信好的数字产品，
             <br />

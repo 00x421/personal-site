@@ -381,18 +381,36 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   border-bottom: 1px solid var(--ink);
   padding-bottom: 4px;
 }
+/* hero 标签带：全宽度一行无缝跑马灯，两份内容首尾相接循环滚动 */
 .hero-rail {
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   margin-top: 84px;
   padding: 14px 0;
+  overflow: hidden;
+  white-space: nowrap;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px 18px;
   font: 700 10px Arial;
   letter-spacing: 0.15em;
+}
+/* 跑马灯结构：track 持续平移，两份内容首尾相接实现无缝循环 */
+.hero-rail-track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  animation: hero-rail-scroll 28s linear infinite;
+}
+.hero-rail-group {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-right: 18px;
+}
+@keyframes hero-rail-scroll {
+  to {
+    transform: translateX(-50%);
+  }
 }
 .hero-rail i {
   display: inline-block;
@@ -417,6 +435,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   gap: 14px;
 }
 .section-index {
+  display: block;
   color: var(--violet-text);
   font: 700 11px monospace;
   letter-spacing: 0.06em;
@@ -695,6 +714,9 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 }
 .about-copy {
   padding-top: 44px;
+}
+.about-eyebrow {
+  margin: 12px 0 0;
 }
 .about-copy h2 {
   margin: 15px 0 34px;
@@ -2103,6 +2125,9 @@ main {
 /* 用户偏好减弱动效时，关闭 CSS 装饰动画与光泽扫过 */
 @media (prefers-reduced-motion: reduce) {
   .nav-buddy-image {
+    animation: none;
+  }
+  .hero-rail-track {
     animation: none;
   }
   .reveal,
