@@ -428,6 +428,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 }
 .work-section {
   padding-top: 105px;
+  padding-bottom: 115px;
 }
 .section-head {
   display: flex;
@@ -661,8 +662,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
   gap: 12vw;
-  padding-top: 150px;
-  padding-bottom: 150px;
+  padding-top: 115px;
+  padding-bottom: 115px;
 }
 /* 手绘肖像相框（PortraitCard） */
 .portrait-depth {
@@ -742,8 +743,13 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .about-copy .text-link {
   margin-top: 26px;
 }
+.writing-section {
+  padding-top: 115px;
+  padding-bottom: 115px;
+  border-top: 1px solid var(--line);
+}
 .stack-section {
-  padding-top: 86px;
+  padding-top: 115px;
   padding-bottom: 115px;
   border-top: 1px solid var(--line);
 }
@@ -904,6 +910,11 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   }
   .work-section {
     padding-top: 75px;
+    padding-bottom: 70px;
+  }
+  .writing-section {
+    padding-top: 70px;
+    padding-bottom: 70px;
   }
   .section-head {
     align-items: flex-start;
@@ -933,8 +944,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
     min-height: 390px;
   }
   .about-section {
-    padding-top: 85px;
-    padding-bottom: 85px;
+    padding-top: 70px;
+    padding-bottom: 70px;
   }
   .portrait-depth {
     min-height: 0;
@@ -950,7 +961,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
     padding-top: 0;
   }
   .stack-section {
-    padding-top: 65px;
+    padding-top: 70px;
     padding-bottom: 70px;
   }
   .skill-list article {
@@ -993,11 +1004,6 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   .case-deliverables-section {
     padding-top: 38px;
   }
-}
-.writing-section {
-  padding-top: 92px;
-  padding-bottom: 110px;
-  border-top: 1px solid var(--line);
 }
 .writing-rail-shell {
   overflow: hidden;
