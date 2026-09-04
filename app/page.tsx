@@ -67,9 +67,12 @@ export default function Home() {
         </div>
         <div className="hero-grid">
           <h1>
-            把复杂的<em>想法，</em>
-            <br />
-            <em>做得清晰。</em>
+            <span className="h1-line">
+              把复杂的<em>想法，</em>
+            </span>
+            <span className="h1-line">
+              <em>做得清晰。</em>
+            </span>
           </h1>
           <div className="hero-note">
             <p>
@@ -157,13 +160,17 @@ export default function Home() {
       </section>
       <section id="about" className="about-section section-wrap">
         <Reveal className="about-copy">
-          <span className="section-index">03 /</span>
-          <p className="eyebrow about-eyebrow">关于</p>
-          <h2>
+          <div className="section-head">
+            <div>
+              <span className="section-index">03 /</span>
+              <h2>关于</h2>
+            </div>
+          </div>
+          <p className="about-statement">
             我相信好的数字产品，
             <br />
             应该既<strong>聪明</strong>，也<strong>有人味</strong>。
-          </h2>
+          </p>
           <p>
             我喜欢拆解模糊的问题：先理解人在什么情境下行动，再用可靠的系统和克制的界面，让每一步都自然发生。
           </p>
