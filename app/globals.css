@@ -292,6 +292,19 @@ html[data-theme='dark'] .theme-toggle .theme-icon-sun {
 html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   display: none;
 }
+/* 触屏设备：导航区触控目标扩大到 ≥44px（WCAG 2.5.5 / Apple HIG） */
+@media (pointer: coarse) {
+  .theme-toggle {
+    width: 44px;
+    height: 44px;
+  }
+  .nav-contact {
+    padding: 12px 0;
+  }
+  .nav-actions {
+    gap: 14px;
+  }
+}
 .hero {
   position: relative;
   padding-top: 92px;
