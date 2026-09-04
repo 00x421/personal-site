@@ -377,6 +377,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   padding: 14px 0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 18px;
   font: 700 10px Arial;
   letter-spacing: 0.15em;
@@ -862,6 +863,10 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   }
   .hero-rail {
     margin-top: 60px;
+    /* 窄屏放不下三组词，改为换行展示避免截断 */
+    white-space: normal;
+    flex-wrap: wrap;
+    row-gap: 10px;
   }
   .work-section {
     padding-top: 75px;
