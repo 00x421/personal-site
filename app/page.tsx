@@ -192,7 +192,7 @@ export default function Home() {
               <span className="section-index">04 /</span>
               <h2>能力与技术</h2>
             </div>
-            <Code2 size={28} strokeWidth={1.5} />
+            <p>支撑项目从想法到落地的基本功。</p>
           </div>
         </Reveal>
         <Reveal delay={100}>
