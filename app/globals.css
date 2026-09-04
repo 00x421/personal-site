@@ -369,8 +369,6 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   padding-bottom: 4px;
 }
 .hero-rail {
-  overflow: hidden;
-  white-space: nowrap;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   margin-top: 84px;
@@ -378,7 +376,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  flex-wrap: wrap;
+  gap: 12px 18px;
   font: 700 10px Arial;
   letter-spacing: 0.15em;
 }
@@ -863,10 +862,6 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   }
   .hero-rail {
     margin-top: 60px;
-    /* 窄屏放不下三组词，改为换行展示避免截断 */
-    white-space: normal;
-    flex-wrap: wrap;
-    row-gap: 10px;
   }
   .work-section {
     padding-top: 75px;

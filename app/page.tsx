@@ -77,9 +77,19 @@ export default function Home() {
         <div className="hero-rail" aria-hidden="true">
           <span>PRODUCT THINKING</span>
           <i />
+          <span>SYSTEMS THINKING</span>
+          <i />
           <span>CREATIVE TECHNOLOGY</span>
           <i />
           <span>HUMAN-CENTERED</span>
+          <i />
+          <span>AI WORKFLOW</span>
+          <i />
+          <span>EDGE CLOUD</span>
+          <i />
+          <span>WRITE TO THINK</span>
+          <i />
+          <span>BUILD IN PUBLIC</span>
         </div>
       </section>
       <section id="work" className="section-wrap work-section">
