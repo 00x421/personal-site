@@ -6,6 +6,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
+import { MailLink } from '@/components/site/mail-link';
 import { NavBuddy } from '@/components/site/nav-buddy';
 import { PortraitCard } from '@/components/site/portrait-card';
 import { ProjectExplorer } from '@/components/site/project-explorer';
@@ -35,9 +36,9 @@ export default function Home() {
         </div>
         <div className="nav-actions">
           <ThemeToggle />
-          <a className="nav-contact" href={`mailto:${siteIdentity.email}`}>
+          <MailLink className="nav-contact" email={siteIdentity.email}>
             联系我 <ArrowUpRight size={15} />
-          </a>
+          </MailLink>
         </div>
       </nav>
       <nav className="mobile-section-nav section-wrap" aria-label="页面目录">
@@ -148,9 +149,9 @@ export default function Home() {
           <p>
             这里不仅收录最终产出，也记录问题、取舍与思考。因为真正有价值的工作，通常发生在“看起来简单”之前。
           </p>
-          <a href={`mailto:${siteIdentity.email}`} className="text-link">
+          <MailLink className="text-link" email={siteIdentity.email}>
             聊聊一个想法 <ArrowUpRight size={17} />
-          </a>
+          </MailLink>
         </Reveal>
         <Reveal className="portrait-reveal" delay={100}>
           <PortraitCard />
@@ -188,13 +189,14 @@ export default function Home() {
             <em>变成现实。</em>
           </h2>
         </div>
-        <a
+        <MailLink
           className="mail-button"
-          href={`mailto:${siteIdentity.email}`}
-          aria-label={`发送邮件到 ${siteIdentity.email}`}
+          email={siteIdentity.email}
+          copiedText="已复制 ✓"
+          aria-label={`发送邮件到 ${siteIdentity.email}，点击同时复制邮箱`}
         >
           <Mail size={17} /> {siteIdentity.email} <ArrowUpRight size={17} />
-        </a>
+        </MailLink>
       </section>
       <footer className="site-footer section-wrap">
         <span>
@@ -206,7 +208,9 @@ export default function Home() {
           <a href={siteIdentity.github} target="_blank" rel="noreferrer">
             <Code2 size={16} /> GitHub · 00x421
           </a>
-          <a href={`mailto:${siteIdentity.email}`}>Email</a>
+          <MailLink email={siteIdentity.email} copiedText="已复制 ✓">
+            Email
+          </MailLink>
         </div>
         <span>Designed with intent</span>
       </footer>

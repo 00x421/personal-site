@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
+import { MailLink } from '@/components/site/mail-link';
 import { siteIdentity } from '@/lib/site-content';
 
 export const metadata: Metadata = {
@@ -72,7 +73,9 @@ export default function NowPage() {
           <Link href="/rss.xml">
             订阅 RSS <ArrowUpRight size={14} className="now-icon" />
           </Link>
-          <a href={`mailto:${siteIdentity.email}`}>写信给我</a>
+          <MailLink email={siteIdentity.email} copiedText="邮箱已复制 ✓">
+            写信给我
+          </MailLink>
           <a
             href="https://nownownow.com/about"
             target="_blank"

@@ -775,6 +775,11 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   color: var(--paper);
   border-radius: 0;
 }
+/* 点击已复制邮箱：柠檬绿确认态（暗色下 --ink 偏浅，故文字用固定近黑） */
+.mail-button[data-copied='true'] {
+  background: var(--lime);
+  color: #17171b;
+}
 .site-footer {
   display: flex;
   justify-content: space-between;
