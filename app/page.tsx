@@ -83,13 +83,13 @@ export default function Home() {
           <i />
           <span>HUMAN-CENTERED</span>
           <i />
+          <span>RPA</span>
+          <i />
+          <span>AI AGENT</span>
+          <i />
           <span>AI WORKFLOW</span>
           <i />
-          <span>EDGE CLOUD</span>
-          <i />
-          <span>WRITE TO THINK</span>
-          <i />
-          <span>BUILD IN PUBLIC</span>
+          <span>AUTOMATION</span>
         </div>
       </section>
       <section id="work" className="section-wrap work-section">
