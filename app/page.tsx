@@ -192,7 +192,7 @@ export default function Home() {
         <MailLink
           className="mail-button"
           email={siteIdentity.email}
-          copiedText="已复制 ✓"
+          copiedText="已复制"
           aria-label={`发送邮件到 ${siteIdentity.email}，点击同时复制邮箱`}
         >
           <Mail size={17} /> {siteIdentity.email} <ArrowUpRight size={17} />
@@ -208,7 +208,7 @@ export default function Home() {
           <a href={siteIdentity.github} target="_blank" rel="noreferrer">
             <Code2 size={16} /> GitHub · 00x421
           </a>
-          <MailLink email={siteIdentity.email} copiedText="已复制 ✓">
+          <MailLink email={siteIdentity.email} copiedText="已复制">
             Email
           </MailLink>
         </div>

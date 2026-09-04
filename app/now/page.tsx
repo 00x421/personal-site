@@ -73,7 +73,7 @@ export default function NowPage() {
           <Link href="/rss.xml">
             订阅 RSS <ArrowUpRight size={14} className="now-icon" />
           </Link>
-          <MailLink email={siteIdentity.email} copiedText="邮箱已复制 ✓">
+          <MailLink email={siteIdentity.email} copiedText="邮箱已复制">
             写信给我
           </MailLink>
           <a

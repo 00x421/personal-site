@@ -33,7 +33,7 @@ async function copyText(text: string): Promise<boolean> {
  */
 export function MailLink({
   email,
-  copiedText = '邮箱已复制 ✓',
+  copiedText = '邮箱已复制',
   children,
   ...anchorProps
 }: {

@@ -27,7 +27,7 @@
   --line: #d8d6ce;
   --violet: #7867e8;
   --violet-text: #6355ce;
-  --lime: #d6ed56;
+  --lime: #b3c46e;
   --muted: #63625c;
   /* 语义色：面板/卡片/正文（供暗色主题覆盖） */
   --raised: #eceae2;
@@ -54,7 +54,7 @@
   --line: #2c2c31;
   --violet: #9186f0;
   --violet-text: var(--violet);
-  --lime: #d6ed56;
+  --lime: #a9bd66;
   --muted: #8f8f8a;
   --raised: #1d1d21;
   --card-ink: #232328;
@@ -345,9 +345,9 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   font-weight: 400;
   color: var(--violet);
 }
-/* CTA 横幅本身就是紫底，em 换用柠檬绿强调，避免紫字压紫底 */
+/* CTA 横幅本身就是紫底，em 用固定奶油白强调（--paper 暗色下翻转为墨色会失去区分度） */
 .cta h2 em {
-  color: var(--lime);
+  color: #f4f2ec;
 }
 .hero-note {
   border-left: 1px solid var(--ink);
@@ -775,9 +775,9 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   color: var(--paper);
   border-radius: 0;
 }
-/* 点击已复制邮箱：柠檬绿确认态（暗色下 --ink 偏浅，故文字用固定近黑） */
+/* 点击已复制邮箱：奶油白反转确认态（暗色下 --ink 偏浅，故文字用固定近黑） */
 .mail-button[data-copied='true'] {
-  background: var(--lime);
+  background: var(--paper);
   color: #17171b;
 }
 .site-footer {
