@@ -1,5 +1,7 @@
 # XWSX — 信我所行
 
+
+> ??????? [HANDOFF.md](./HANDOFF.md)????????????????????
 产品、设计与代码交汇处的个人作品集站点。基于 [vinext](https://github.com/cloudflare/vinext)（Next.js on Vite）+ React 19 RSC + Tailwind 4，部署目标是 Cloudflare Workers。
 
 ## 本地开发
@@ -26,7 +28,7 @@ npm run start
 - **Markdown 内容管线**：`content/articles/*.md`、`content/projects/*.md` 与 `content/books/*.md` + frontmatter；站点侧由 Vite `import.meta.glob` 构建期内联（Workers 运行时零文件系统依赖），`scripts/generate-og.ts` 在纯 Node 下 fs 直读，两侧共享 `lib/markdown.ts` 解析（marked 渲染 + 阅读时长估算）。项目案例页由 Markdown 正文驱动：`##` 分区 CSS 计数器自动编号，frontmatter `deliverables` 尾部自动成区。代码块由 Prism 在服务端高亮（token 色走 CSS 变量明暗双主题），复制按钮由客户端组件对已有 `<pre>` 渐进增强。
 - **标签聚合**：文章标签自动聚合成 `/articles` 标签云与 `/articles/tag/<标签>` 聚合页（中文标签即路径，构建时统一 URL 编解码）。
 - **数字花园微网络**：frontmatter `series` 生成系列眉标与底部阅读顺序导航；正文站内链接自动汇成对方页面的「链接到本文」反向链接（构建期 HTML 扫描，零运行时开销）。
-- **字体子集化**：`subset-fonts.py` 将 Noto Serif SC 全量 OTF 按站内实际用字子集为 woff2（`public/fonts/`），控制中文字体体积。
+- **??????**?`split-fonts.py` ? Noto Serif SC ????? unicode-range ?? 21 ??`public/fonts/slices/`??????????/??/CTA ??? + ASCII?? 45KB preload ??????????`fonts-src/` ???????????????? git?? `subset-fonts.py` ??? OTF ????
 - **RSS**：`app/rss.xml/route.ts` 输出 RSS 2.0，已加入 `<link rel="alternate">` 自动发现。
 - **站内搜索**：`app/search.json/route.ts` 聚合文章 / 项目 / 书架输出全文索引（缓存 1 小时），`components/site/site-search.tsx` 原生 `<dialog>` 命令面板（右下角入口 + Cmd/Ctrl+K），首次打开才懒加载索引，多关键词 AND 加权评分，标题 / 摘要命中片段实时高亮。
 - **动态 OG 图**：`npm run og` 用 satori + @resvg/resvg-js 生成 `public/og/articles/{slug}.png` 与 `public/og/projects/{slug}.png`，文章 / 案例页 metadata 自动引用。
@@ -87,7 +89,7 @@ npm run start
 
 2. 发布：删掉 `draft: true`（或一开始就不写）。
 3. 生成 OG 分享图：`npm run og`（需按 `subset-fonts.py` 文件头说明先备好源字体）。
-4. 中文新字较多时跑 `python subset-fonts.py` 扩充字体子集，然后 `npm run build`。
+4. ?????????????????? `split-fonts.py` ??????? `python split-fonts.py`????? CSS ??? `app/globals.css` ??? `@font-face` ????? `npm run build`?????? `subset-fonts.py` ??????? `fonts-src/` ????
 
 阅读时长按正文长度自动估算；上一篇 / 下一篇导航和「相关阅读」（按标签重叠推荐，无重叠时回退最新文章）全部自动生成。正文中链接到其他文章（`/articles/<slug>`）时，对方页面底部会自动出现「链接到本文」反向链接。
 

@@ -1,7 +1,9 @@
 """Split subsetted Noto Serif SC woff2 into unicode-range slices.
 
-Critical slice = first-screen chars (hero/nav/cta/stack) + ASCII/punct.
-Remaining chars split ~110/char-slice. Output CSS block printed to stdout;
+Input: fonts-src/noto-serif-sc-{400,500,700}.woff2 (site-char subsets,
+NOT in git - regenerate with subset-fonts.py or restore from git history
+before commit a67c50c). Critical slice = first-screen chars + ASCII/punct;
+remaining chars split ~110/char-slice. Output CSS block printed to stdout;
 font files land in public/fonts/slices/.
 
 Re-run when site copy changes:
@@ -63,7 +65,7 @@ def subset_to(src, chars, dest):
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # read full subset cmap from existing 500 weight
-probe = load_font("public/fonts/noto-serif-sc-500.woff2", Options())
+probe = load_font("fonts-src/noto-serif-sc-500.woff2", Options())
 all_chars = set(probe.getBestCmap().keys())
 probe.close()
 
@@ -74,7 +76,7 @@ slices = [sorted(ord(c) for c in CRITICAL)] + slices  # slice 0 = critical
 css = []
 total = {}
 for weight in WEIGHTS:
-    src = f"public/fonts/noto-serif-sc-{weight}.woff2"
+    src = f"fonts-src/noto-serif-sc-{weight}.woff2"
     for idx, chars in enumerate(slices):
         name = f"noto-serif-sc-{weight}-s{idx}.woff2"
         dest = os.path.join(OUT_DIR, name)
