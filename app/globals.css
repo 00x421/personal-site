@@ -512,8 +512,10 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   font-weight: 400;
   color: var(--violet);
 }
-/* CTA 横幅统一黑字，em 仅以斜体/字重区分（紫底上黑白混排不协调） */
+/* CTA 紫底横幅上两行标题完全同款：继承字重、取消合成斜体（斜切笔画发灰显色浅） */
 .cta h2 em {
+  font-weight: inherit;
+  font-style: normal;
   color: inherit;
 }
 .hero-note {
