@@ -8,7 +8,7 @@
 - **质量基线**：Lighthouse 无障碍 / 最佳实践 / SEO 全 100；性能（模拟 Fast 4G 口径）移动端 66 分、LCP 5.5s。
 - **尚未部署上线**：一直在本地 `wrangler dev :8787` 预览。部署步骤 README 已写全，首次上线照做即可。
 - **最新提交**：`a67c50c`（字体分片 + preload 清理 + hero 居中），已推送 `origin/main`（github.com/00x421/personal-site）。
-- **CI**：GitHub Actions 每次 push/PR 跑 oxlint + build（node 22），当前绿。
+- **CI**：GitHub Actions 每次 push/PR 跑 oxlint + build（node 24，与本地 npm 11 对齐）。注意：2026-09-07 前的 run 因 npm 10 lock 校验误报全红，`31b5539` 修复，以此为准看最新状态。
 
 ## 架构地图
 
