@@ -7,8 +7,8 @@
 - **站点功能完整**：首页、文章（含标签聚合/系列/反向链接）、项目案例、书架、/now、RSS、站内搜索、OG 图、JSON-LD，全部可用。
 - **质量基线**：Lighthouse 无障碍 / 最佳实践 / SEO 全 100；性能（模拟 Fast 4G 口径）移动端 66 分、LCP 5.5s。
 - **尚未部署上线**：一直在本地 `wrangler dev :8787` 预览。部署步骤 README 已写全，首次上线照做即可。
-- **最新提交**：`a67c50c`（字体分片 + preload 清理 + hero 居中），已推送 `origin/main`（github.com/00x421/personal-site）。
-- **CI**：GitHub Actions 每次 push/PR 跑 oxlint + build（node 24，与本地 npm 11 对齐）。注意：2026-09-07 前的 run 因 npm 10 lock 校验误报全红，`31b5539` 修复，以此为准看最新状态。
+- **最新提交**：`ee206b0`（CI 兜底修复），已推送 `origin/main`（github.com/00x421/personal-site）。
+- **CI**：GitHub Actions 每次 push/PR 跑 oxlint + build（node 24）。曾连续 5 次失败：rolldown 1.0.1 自身声明矛盾（deps 钉死 @emnapi/* 1.10.0 + 传递 peer ^1.7.1），Linux npm ci 严格校验误报 Missing 1.11.3，Windows 不装 wasm32 子树无法复现。`ee206b0` 改 `npm ci --legacy-peer-deps` + `npm install` 兜底后恢复绿；根治需升级 rolldown/vite。
 
 ## 架构地图
 
