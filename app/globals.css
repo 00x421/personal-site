@@ -901,68 +901,42 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   padding-bottom: 115px;
   border-top: 1px solid var(--line);
 }
-.skill-groups {
+.skill-list {
   border-top: 1px solid var(--ink);
 }
-.skill-badges {
-  margin: 0;
-  padding: 4px 0 0;
-  list-style: none;
-  color: var(--body-text);
-  font-size: 14px;
-  line-height: 2;
-}
-.skill-badges li {
-  display: inline;
-}
-.skill-badges li::after {
-  content: ' · ';
-  color: var(--muted);
-}
-.skill-badges li:last-child::after {
-  content: none;
-}
-.skill-group {
-  padding: 30px 0 30px 4px;
+.skill-list article {
+  min-height: 112px;
+  padding: 23px 4px;
   display: grid;
-  grid-template-columns: 230px 1fr;
-  gap: 20px 48px;
-  align-items: start;
+  align-items: center;
+  grid-template-columns: 90px 1fr 1fr 30px;
+  gap: 20px;
   border-bottom: 1px solid var(--line);
   transition:
     padding 0.2s,
     background 0.2s;
 }
-.skill-group:hover {
-  padding-left: 18px;
+.skill-list article:hover {
+  padding-left: 15px;
   background: var(--raised);
 }
-.skill-group:hover .skill-badges {
-  color: var(--ink);
-}
-.skill-group-head {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: baseline;
-  column-gap: 12px;
-}
-.skill-group-index {
+.skill-list span {
   color: var(--violet);
   font: 700 11px monospace;
 }
-.skill-group-head h3 {
+.skill-list h3 {
   margin: 0;
   font:
-    500 21px 'Noto Serif SC',
+    500 28px 'Noto Serif SC',
     Georgia,
     serif;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
 }
-.skill-group-head p {
-  grid-column: 1 / -1;
-  margin: 4px 0 0;
+.skill-list p {
+  margin: 0;
+  max-width: 350px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.6;
 }
 .cta {
@@ -1138,16 +1112,13 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
     padding-top: 70px;
     padding-bottom: 70px;
   }
-  .skill-group {
-    grid-template-columns: 1fr;
-    gap: 14px;
-    padding: 22px 0;
+  .skill-list article {
+    grid-template-columns: 42px 1fr 25px;
+    gap: 12px;
   }
-.skill-badges {
-  padding-top: 0;
-  font-size: 13px;
-  line-height: 1.9;
-}
+  .skill-list p {
+    grid-column: 2/4;
+  }
   .cta {
     margin-bottom: 20px;
     padding-top: 45px;

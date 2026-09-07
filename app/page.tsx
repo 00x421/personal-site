@@ -15,7 +15,7 @@ import { RailScroller } from '@/components/site/rail-scroller';
 import { Reveal } from '@/components/site/reveal';
 import { ThemeToggle } from '@/components/site/theme-toggle';
 import { articles } from '@/data/articles';
-import { skillGroups, siteIdentity, siteNavigation } from '@/lib/site-content';
+import { siteIdentity, siteNavigation, skills } from '@/lib/site-content';
 
 /** hero 标签带关键词；渲染两份供移动端无缝滚动使用 */
 const heroTags = [
@@ -196,21 +196,13 @@ export default function Home() {
           </div>
         </Reveal>
         <Reveal delay={100}>
-          <div className="skill-groups">
-            {skillGroups.map((group, index) => (
-              <article className="skill-group" key={group.name}>
-                <div className="skill-group-head">
-                  <span className="skill-group-index">
-                    0{index + 1}
-                  </span>
-                  <h3>{group.name}</h3>
-                  <p>{group.tagline}</p>
-                </div>
-                <ul className="skill-badges" aria-label={`${group.name}相关技能`}>
-                  {group.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
+          <div className="skill-list">
+            {skills.map(([name, description], index) => (
+              <article key={name}>
+                <span>0{index + 1}</span>
+                <h3>{name}</h3>
+                <p>{description}</p>
+                <ArrowUpRight size={20} />
               </article>
             ))}
           </div>
