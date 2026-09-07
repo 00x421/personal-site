@@ -512,11 +512,12 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   font-weight: 400;
   color: var(--violet);
 }
-/* CTA 紫底横幅上两行标题完全同款：继承字重、取消合成斜体（斜切笔画发灰显色浅） */
+/* CTA 两行双色：紫底横幅上「变成现实。」用奶油白跳出（呼应邮箱按钮），其余保持黑字；
+   奶油白用固定色而非 --paper，因暗色下 --paper 变近黑会失去对比 */
 .cta h2 em {
   font-weight: inherit;
   font-style: normal;
-  color: inherit;
+  color: #f4f2ec;
 }
 .hero-note {
   border-left: 1px solid var(--ink);
