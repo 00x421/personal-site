@@ -7,6 +7,8 @@ import type { NextConfig } from 'vinext';
  */
 const nextConfig: NextConfig = {
   reactMaxHeadersLength: 0,
+  // 额外产出 dist/standalone/ 自托管 Node bundle (node dist/standalone/server.js)
+  output: 'standalone',
 };
 
 export default nextConfig;

@@ -175,6 +175,7 @@
   --line: #d8d6ce;
   --violet: #7867e8;
   --violet-text: #6355ce;
+  --on-violet: #fff;
   --lime: #b3c46e;
   --muted: #63625c;
   /* 语义色：面板/卡片/正文（供暗色主题覆盖） */
@@ -202,6 +203,7 @@
   --line: #2c2c31;
   --violet: #9186f0;
   --violet-text: var(--violet);
+  --on-violet: #141416;
   --lime: #a9bd66;
   --muted: #8f8f8a;
   --raised: #1d1d21;
@@ -901,43 +903,69 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   padding-bottom: 115px;
   border-top: 1px solid var(--line);
 }
-.skill-list {
+.skill-groups {
   border-top: 1px solid var(--ink);
 }
-.skill-list article {
-  min-height: 112px;
-  padding: 23px 4px;
+.skill-group {
+  padding: 30px 0;
   display: grid;
-  align-items: center;
-  grid-template-columns: 90px 1fr 1fr 30px;
-  gap: 20px;
+  grid-template-columns: 230px 1fr;
+  gap: 20px 48px;
+  align-items: start;
   border-bottom: 1px solid var(--line);
-  transition:
-    padding 0.2s,
-    background 0.2s;
+  transition: background 0.2s;
 }
-.skill-list article:hover {
-  padding-left: 15px;
+.skill-group:hover {
   background: var(--raised);
 }
-.skill-list span {
+.skill-group-head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  column-gap: 12px;
+}
+.skill-group-index {
   color: var(--violet);
   font: 700 11px monospace;
 }
-.skill-list h3 {
+.skill-group-head h3 {
   margin: 0;
   font:
-    500 28px 'Noto Serif SC',
+    500 21px 'Noto Serif SC',
     Georgia,
     serif;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
 }
-.skill-list p {
-  margin: 0;
-  max-width: 350px;
+.skill-group-head p {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12.5px;
   line-height: 1.6;
+}
+.skill-badges {
+  margin: 0;
+  padding: 2px 0 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.skill-badges li {
+  padding: 7px 15px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--ink);
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
+}
+.skill-badges li:hover {
+  border-color: var(--violet);
+  background: var(--violet);
+  color: var(--on-violet);
 }
 .cta {
   margin-bottom: 34px;
@@ -1112,12 +1140,17 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
     padding-top: 70px;
     padding-bottom: 70px;
   }
-  .skill-list article {
-    grid-template-columns: 42px 1fr 25px;
-    gap: 12px;
+  .skill-group {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 22px 0;
   }
-  .skill-list p {
-    grid-column: 2/4;
+  .skill-badges {
+    gap: 7px;
+  }
+  .skill-badges li {
+    padding: 5px 12px;
+    font-size: 12.5px;
   }
   .cta {
     margin-bottom: 20px;
