@@ -72,6 +72,10 @@ export default function Home() {
             </span>
             <span className="h1-line">
               <em>做得清晰。</em>
+              <span className="hero-pup" aria-hidden="true">
+                {/* oxlint-disable-next-line next/no-img-element -- 原创吉祥物保持透明材质，直接使用本地静态资源。 */}
+                <img src="/xwsx-air-pup-happy-nav.png" alt="" />
+              </span>
             </span>
           </h1>
           <div className="hero-note">

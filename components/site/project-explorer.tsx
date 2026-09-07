@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Reveal } from '@/components/site/reveal';
 import { projectFilters, projects } from '@/data/projects';
@@ -10,10 +10,35 @@ import { projectFilters, projects } from '@/data/projects';
 export function ProjectExplorer() {
   const [active, setActive] = useState('全部');
   const railRef = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ start: true, end: true });
   const visibleProjects =
     active === '全部'
       ? projects
       : projects.filter((project) => project.type === active);
+
+  /** 按滚动位置记录两端状态，供 CSS 渐隐遮罩判断哪一侧还有内容。 */
+  const syncEdges = useCallback(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const max = rail.scrollWidth - rail.clientWidth;
+    setEdges({
+      start: rail.scrollLeft <= 4,
+      end: max <= 4 || rail.scrollLeft >= max - 4,
+    });
+  }, []);
+
+  // 筛选切换会改变轨道宽度，渲染完成后重新同步。
+  useEffect(() => {
+    syncEdges();
+    const rail = railRef.current;
+    if (!rail) return;
+    rail.addEventListener('scroll', syncEdges, { passive: true });
+    window.addEventListener('resize', syncEdges);
+    return () => {
+      rail.removeEventListener('scroll', syncEdges);
+      window.removeEventListener('resize', syncEdges);
+    };
+  }, [syncEdges, active]);
 
   function scroll(direction: -1 | 1) {
     const rail = railRef.current;
@@ -41,7 +66,11 @@ export function ProjectExplorer() {
         </div>
       </Reveal>
       <Reveal delay={120}>
-        <div className="project-rail-shell">
+        <div
+          className="project-rail-shell"
+          data-at-start={edges.start || undefined}
+          data-at-end={edges.end || undefined}
+        >
           <div className="project-rail" ref={railRef} aria-label="项目列表">
             {visibleProjects.map((project) => {
               const card = (

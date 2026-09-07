@@ -518,6 +518,27 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   font-weight: inherit;
   color: #f4f2ec;
 }
+/* hero 记忆点：小狗站在第二行标题的句号后，尺寸随标题字号（em）等比缩放。
+   定位用 bottom 而非 transform，避免与 buddy-arrive / buddy-float 的 transform 动画互相覆盖 */
+.hero-pup {
+  position: relative;
+  display: inline-block;
+  width: 0;
+  height: 0;
+}
+.hero-pup img {
+  position: absolute;
+  left: 0.1em;
+  bottom: 0.06em; /* 锚点在基线上：脚踩基线，与文字站在同一地面 */
+  width: 0.56em;
+  max-width: none; /* 全局 img 响应式重置以 0×0 锚点为基准算 100%，会把宽度钳成 0 */
+  height: auto;
+  filter: drop-shadow(0 4px 4px rgb(0 0 0 / 0.1));
+  pointer-events: none;
+  animation:
+    buddy-arrive 420ms ease-out both,
+    buddy-float 4.2s 420ms ease-in-out infinite;
+}
 .hero-note {
   border-left: 1px solid var(--ink);
   padding-left: 18px;
@@ -690,6 +711,42 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .project-rail-footer button:hover {
   border-color: var(--ink);
   color: var(--violet);
+}
+/* 横向轨道边缘渐隐：还有内容的一侧向纸色淡出，作为「可横向滚动」的视觉暗示。
+   由组件按滚动位置写入 data-at-start / data-at-end，到边即隐藏对应渐隐 */
+.project-rail-shell,
+.writing-rail-shell {
+  position: relative;
+}
+.project-rail-shell::before,
+.project-rail-shell::after,
+.writing-rail-shell::before,
+.writing-rail-shell::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 18px; /* 避开轨道自带的底部滚动条区域（padding-bottom 18px） */
+  width: 56px;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.project-rail-shell::before,
+.writing-rail-shell::before {
+  left: 0;
+  background: linear-gradient(to right, var(--paper) 30%, transparent);
+}
+.project-rail-shell::after,
+.writing-rail-shell::after {
+  right: 0;
+  background: linear-gradient(to left, var(--paper) 30%, transparent);
+}
+.project-rail-shell:not([data-at-start])::before,
+.writing-rail-shell:not([data-at-start])::before,
+.project-rail-shell:not([data-at-end])::after,
+.writing-rail-shell:not([data-at-end])::after {
+  opacity: 1;
 }
 .project-card {
   min-height: 450px;
@@ -1083,6 +1140,13 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
     grid-auto-columns: minmax(82vw, 82vw);
     gap: 12px;
     padding-bottom: 13px;
+  }
+  .project-rail-shell::before,
+  .project-rail-shell::after,
+  .writing-rail-shell::before,
+  .writing-rail-shell::after {
+    bottom: 13px;
+    width: 36px;
   }
   .project-rail-footer > span {
     display: none;
@@ -2285,6 +2349,9 @@ main {
 /* 用户偏好减弱动效时，关闭 CSS 装饰动画与光泽扫过 */
 @media (prefers-reduced-motion: reduce) {
   .nav-buddy-image {
+    animation: none;
+  }
+  .hero-pup img {
     animation: none;
   }
   .hero-rail-track {

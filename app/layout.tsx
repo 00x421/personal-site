@@ -64,13 +64,6 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
-        <link
-          rel="preload"
-          as="font"
-          type="font/woff2"
-          href="/fonts/slices/noto-serif-sc-500-s0.woff2"
-          crossOrigin="anonymous"
-        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
