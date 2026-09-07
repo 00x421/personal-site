@@ -198,18 +198,12 @@ export default function Home() {
         <Reveal delay={100}>
           <div className="skill-list">
             {skills.map(([name, description], index) => (
-              <a
-                key={name}
-                href={siteIdentity.github}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={`在 GitHub 查看${name}相关项目`}
-              >
+              <article key={name}>
                 <span>0{index + 1}</span>
                 <h3>{name}</h3>
                 <p>{description}</p>
                 <ArrowUpRight size={20} />
-              </a>
+              </article>
             ))}
           </div>
         </Reveal>

@@ -904,7 +904,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .skill-list {
   border-top: 1px solid var(--ink);
 }
-.skill-list a {
+.skill-list article {
   min-height: 112px;
   padding: 23px 4px;
   display: grid;
@@ -912,22 +912,13 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   grid-template-columns: 90px 1fr 1fr 30px;
   gap: 20px;
   border-bottom: 1px solid var(--line);
-  color: inherit;
-  text-decoration: none;
   transition:
     padding 0.2s,
     background 0.2s;
 }
-.skill-list a svg {
-  justify-self: end;
-  transition: transform 0.2s;
-}
-.skill-list a:hover {
+.skill-list article:hover {
   padding-left: 15px;
   background: var(--raised);
-}
-.skill-list a:hover svg {
-  transform: translate(2px, -2px);
 }
 .skill-list span {
   color: var(--violet);
@@ -1121,7 +1112,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
     padding-top: 70px;
     padding-bottom: 70px;
   }
-  .skill-list a {
+  .skill-list article {
     grid-template-columns: 42px 1fr 25px;
     gap: 12px;
   }
