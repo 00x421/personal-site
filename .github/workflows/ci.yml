@@ -15,7 +15,9 @@ jobs:
           node-version: 24
           cache: npm
       - name: Install dependencies
-        run: npm ci
+        # rolldown 1.0.1 lock 传递 peer (@napi-rs/wasm-runtime -> @emnapi/*)
+        # 在 Linux npm ci 严格校验下误报 Missing 1.11.3, install 兜底
+        run: npm ci --legacy-peer-deps || npm install --no-audit --no-fund
       - name: Lint
         run: npm run lint
       - name: Build
