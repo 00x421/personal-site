@@ -15,6 +15,7 @@ export const siteNavigation = [
 
 export const skills = [
   ['产品与体验', '从问题定义、用户研究到信息架构与交互原型。'],
-  ['前端开发', 'React / TypeScript / Next.js，关注细节，也在意长期可维护性。'],
+  ['全栈开发', 'React / TypeScript / Next.js，关注细节，也在意长期可维护性。'],
   ['AI 应用', '将 LLM 放进真实的工作流，提升创造力而不是制造噪音。'],
+  ['自动化', 'RPA / AI Agent / 工作流编排，把重复的事交给机器。'],
 ] as const;
