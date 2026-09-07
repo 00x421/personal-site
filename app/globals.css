@@ -516,7 +516,6 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
    奶油白用固定色而非 --paper，因暗色下 --paper 变近黑会失去对比 */
 .cta h2 em {
   font-weight: inherit;
-  font-style: normal;
   color: #f4f2ec;
 }
 .hero-note {
