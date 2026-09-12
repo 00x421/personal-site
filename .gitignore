@@ -40,3 +40,4 @@ next-env.d.ts
 
 # font build intermediates (regenerate with subset-fonts.py, see split-fonts.py)
 /fonts-src/
+.mimosa/

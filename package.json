@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "vinext dev",
     "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && vinext build",
+    "postbuild": "node scripts/fix-standalone.mjs",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
     "format": "oxfmt",

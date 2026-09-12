@@ -6,9 +6,18 @@
 
 - **站点功能完整**：首页、文章（含标签聚合/系列/反向链接）、项目案例、书架、/now、RSS、站内搜索、OG 图、JSON-LD，全部可用。
 - **质量基线**：Lighthouse 无障碍 / 最佳实践 / SEO 全 100；性能（模拟 Fast 4G 口径）移动端 66 分、LCP 5.5s。
-- **尚未部署上线**：一直在本地 `wrangler dev :8787` 预览。部署步骤 README 已写全，首次上线照做即可。
+- **已上线（2026-09-13）**：https://xwsx.top ，自托管 Node（vinext standalone 路径），未走 Cloudflare。部署架构见下节。
 - **最新提交**：`ee206b0`（CI 兜底修复），已推送 `origin/main`（github.com/00x421/personal-site）。
 - **CI**：GitHub Actions 每次 push/PR 跑 oxlint + build（node 24）。曾连续 5 次失败：rolldown 1.0.1 自身声明矛盾（deps 钉死 @emnapi/* 1.10.0 + 传递 peer ^1.7.1），Linux npm ci 严格校验误报 Missing 1.11.3，Windows 不装 wasm32 子树无法复现。`ee206b0` 改 `npm ci --legacy-peer-deps` + `npm install` 兜底后恢复绿；根治需升级 rolldown/vite。
+
+## 部署架构（2026-09-13 起）
+
+- **服务器**：腾讯云 Ubuntu 24.04（43.139.214.236），SSH 用户 `xwsx`（密钥登录，免密 sudo）。
+- **构建**：`NEXT_PUBLIC_SITE_URL=https://xwsx.top npm run build` → postbuild 钩子（`scripts/fix-standalone.mjs`）自动补 react 系依赖 → `tar -czf` 打包 `dist/standalone`（约 9MB）。
+- **运行**：上传解包到 `/home/xwsx/xwsx-site/standalone`，systemd 服务 `xwsx.service` 以 xwsx 用户跑 `node server.js`（绑定 127.0.0.1:3000，`Restart=on-failure`，开机自启）。
+- **入口**：nginx `/etc/nginx/sites-available/xwsx.top` 反代 127.0.0.1:3000，80 强跳 443，改动前有 `.bak.20260913` 备份。
+- **证书**：Let's Encrypt（`certbot --nginx` 签发，`certbot.timer` 自动续期已验证 dry-run 通过；原 TrustAsia 证书 2026-08-05 过期，已替换）。
+- **重新部署**：本地 build + 打包 scp 后，服务器执行 `sudo systemctl stop xwsx && rm -rf ~/xwsx-site/standalone && tar -xzf ~/xwsx-standalone.tar.gz -C ~/xwsx-site && sudo systemctl start xwsx`。
 
 ## 架构地图
 
@@ -75,6 +84,8 @@ public/fonts/slices/    21 个分片 woff2（进 git，站点实际加载的字�
 
 ### vinext / 框架
 - **vinext 字体 preload 只走 HTTP Link 头**（dev-server.js 源码确认），`reactMaxHeadersLength: 0` 会把它一起禁掉——所以 layout.tsx 里有手动 `<link rel="preload">`（HTML 渠道）兜底，两者配套。
+- **standalone 包缺 react 系依赖**（beta.9）：打包器把 react/react-dom 捆进 server bundle，但原样拷贝的 vinext/dist 运行时仍以 peer 方式 import react，启动即 `ERR_MODULE_NOT_FOUND: Cannot find package 'react'`。`scripts/fix-standalone.mjs`（npm postbuild 钩子）自动补齐 react/react-dom/react-server-dom-webpack/scheduler/marked/prismjs。
+- **Windows 构建怪癖**：`dist/standalone` 已存在时重建，Node `rmSync` 会静默删不掉 `.assetsignore`（报 errno 0 的假错误），standalone 产出步骤 unlink 失败。构建前先 `rm -rf dist`（Git Bash 下）。
 - 构建产物预览必须用 `npm run start`（wrangler dev 跑 `dist/server/wrangler.json`），改代码后要重新 build。
 - wrangler dev 偶发缓存旧资产：停进程 → 删 `.wrangler/state/v3/cache` → 重启。
 
