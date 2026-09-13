@@ -1,13 +1,28 @@
-// vinext beta.9 的 standalone 打包器把 react 系列捆进了 server bundle，
-// 但它原样拷贝的 vinext/dist 运行时文件仍以 peer 依赖方式 import react/react-dom，
-// standalone/node_modules 缺这些包时服务启动即 ERR_MODULE_NOT_FOUND。
-// 构建后从本地 node_modules 补齐运行时所需的外部包。
-import { cpSync, existsSync } from 'node:fs';
+// vinext beta.9 standalone quirk: the packager bundles react INTO the server
+// chunk, but the verbatim-copied vinext/dist runtime still imports
+// react/react-dom as peer deps -> ERR_MODULE_NOT_FOUND on boot.
+// Postbuild: copy the runtime-external packages into dist/standalone.
+// Note: fs.cpSync hard-crashes node on this Windows setup (silent exit 127),
+// so copies go file-by-file via copyFileSync instead.
+import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+
+function copyDir(src, dest) {
+  mkdirSync(dest, { recursive: true });
+  for (const entry of readdirSync(src)) {
+    const s = join(src, entry);
+    const d = join(dest, entry);
+    if (statSync(s).isDirectory()) {
+      copyDir(s, d);
+    } else {
+      copyFileSync(s, d);
+    }
+  }
+}
 
 const target = join('dist', 'standalone', 'node_modules');
 if (!existsSync(target)) {
-  console.log('fix-standalone: dist/standalone 不存在，跳过');
+  console.log('fix-standalone: dist/standalone missing, skip');
   process.exit(0);
 }
 
@@ -20,13 +35,15 @@ const packages = [
   'prismjs',
 ];
 
+let copied = 0;
 for (const pkg of packages) {
   const from = join('node_modules', pkg);
   const to = join(target, pkg);
   if (!existsSync(from)) {
-    console.warn(`fix-standalone: ${pkg} 不在本地 node_modules，跳过`);
+    console.warn(`fix-standalone: ${pkg} not in local node_modules, skip`);
     continue;
   }
-  cpSync(from, to, { recursive: true });
+  copyDir(from, to);
+  copied += 1;
 }
-console.log(`fix-standalone: 已补齐 ${packages.length} 个运行时依赖到 dist/standalone`);
+console.log(`fix-standalone: patched ${copied}/${packages.length} runtime deps into dist/standalone`);

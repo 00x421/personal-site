@@ -203,13 +203,13 @@
   --violet: #9186f0;
   --violet-text: var(--violet);
   --lime: #a9bd66;
-  --muted: #8f8f8a;
+  --muted: #97968f;
   --raised: #1d1d21;
   --card-ink: #232328;
   --card-ink-text: #f0ede5;
   --portrait-bg: #1d1d21;
   --portrait-ink: #8f8f8a;
-  --body-text: #b5b3ad;
+  --body-text: #bebcb4;
   --cta-text: #000;
   --grid-line: rgba(236, 233, 225, 0.05);
   --noise-opacity: 0.07;
@@ -1014,10 +1014,18 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .site-footer {
   display: flex;
   justify-content: space-between;
-  padding-top: 8px;
-  padding-bottom: 36px;
+  align-items: baseline;
+  margin-top: 72px;
+  padding-top: 28px;
+  padding-bottom: 40px;
+  border-top: 1px solid var(--line);
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
+}
+/* 品牌行用衬线呼应全站编辑风，作为整页的「刊尾」 */
+.site-footer > span:first-child {
+  font-family: 'Noto Serif SC', Georgia, serif;
+  letter-spacing: 0.05em;
 }
 .site-footer div {
   display: flex;
@@ -1065,12 +1073,12 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   }
   .mobile-section-nav {
     display: flex;
-    gap: 18px;
+    gap: 24px;
     overflow-x: auto;
     border-bottom: 1px solid var(--line);
     color: var(--muted);
-    font: 700 11px/1 monospace;
-    letter-spacing: 0.06em;
+    font: 700 12px/1 monospace;
+    letter-spacing: 0.08em;
     scrollbar-width: none;
   }
   .mobile-section-nav::-webkit-scrollbar {
@@ -1078,7 +1086,11 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   }
   .mobile-section-nav a {
     flex: 0 0 auto;
-    padding: 13px 0;
+    /* 12px 字号 + 32px 垂直内边距 = 44px 触控目标（WCAG 2.5.5） */
+    padding: 16px 2px;
+  }
+  .mobile-section-nav a:active {
+    color: var(--violet-text);
   }
   .hero {
     padding-top: 65px;
