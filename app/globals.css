@@ -705,7 +705,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   position: absolute;
   top: 0;
   bottom: 18px; /* 避开轨道自带的底部滚动条区域（padding-bottom 18px） */
-  width: 56px;
+  width: 44px;
   z-index: 2;
   pointer-events: none;
   opacity: 0;
@@ -714,12 +714,12 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .project-rail-shell::before,
 .writing-rail-shell::before {
   left: 0;
-  background: linear-gradient(to right, var(--paper) 30%, transparent);
+  background: linear-gradient(to right, var(--paper), transparent);
 }
 .project-rail-shell::after,
 .writing-rail-shell::after {
   right: 0;
-  background: linear-gradient(to left, var(--paper) 30%, transparent);
+  background: linear-gradient(to left, var(--paper), transparent);
 }
 .project-rail-shell:not([data-at-start])::before,
 .writing-rail-shell:not([data-at-start])::before,
