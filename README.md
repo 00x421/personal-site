@@ -1,8 +1,8 @@
 # XWSX — 信我所行
 
 
-> ??????? [HANDOFF.md](./HANDOFF.md)????????????????????
-产品、设计与代码交汇处的个人作品集站点。基于 [vinext](https://github.com/cloudflare/vinext)（Next.js on Vite）+ React 19 RSC + Tailwind 4，部署目标是 Cloudflare Workers。
+> 面向接手人：[HANDOFF.md](./HANDOFF.md) 记录现状、设计决策与踩坑记录；迭代计划与待办见 [ROADMAP.md](./ROADMAP.md)。
+产品、设计与代码交汇处的个人作品集站点。基于 [vinext](https://github.com/cloudflare/vinext)（Next.js on Vite）+ React 19 RSC + Tailwind 4，线上以 vinext standalone 产物自托管在腾讯云（见「部署」一节）。
 
 ## 本地开发
 
@@ -13,6 +13,7 @@ npm run build      # 生产构建 -> dist/
 npm run start      # 本地运行构建产物（wrangler dev，端口 8787）
 npm run lint       # oxlint
 npm run og         # 为全部文章重新生成 1200x630 OG 分享图
+npm run deploy     # 构建并部署到线上服务器（见「部署」一节）
 ```
 
 预览生产构建的完整命令：
@@ -25,10 +26,11 @@ npm run start
 ## 技术要点
 
 - **App Router 服务端组件**：首页在服务端渲染，可交互部件（主题切换、滚动轨道、小狗吉祥物）以客户端组件（`'use client'`）注入。
-- **Markdown 内容管线**：`content/articles/*.md`、`content/projects/*.md` 与 `content/books/*.md` + frontmatter；站点侧由 Vite `import.meta.glob` 构建期内联（Workers 运行时零文件系统依赖），`scripts/generate-og.ts` 在纯 Node 下 fs 直读，两侧共享 `lib/markdown.ts` 解析（marked 渲染 + 阅读时长估算）。项目案例页由 Markdown 正文驱动：`##` 分区 CSS 计数器自动编号，frontmatter `deliverables` 尾部自动成区。代码块由 Prism 在服务端高亮（token 色走 CSS 变量明暗双主题），复制按钮由客户端组件对已有 `<pre>` 渐进增强。
+- **Markdown 内容管线**：`content/articles/*.md`、`content/projects/*.md` 与 `content/books/*.md` + frontmatter；站点侧由 Vite `import.meta.glob` 构建期内联（运行时零文件系统依赖），`scripts/generate-og.ts` 在纯 Node 下 fs 直读，两侧共享 `lib/markdown.ts` 解析（marked 渲染 + 阅读时长估算）。项目案例页由 Markdown 正文驱动：`##` 分区 CSS 计数器自动编号，frontmatter `deliverables` 尾部自动成区。代码块由 Prism 在服务端高亮（token 色走 CSS 变量明暗双主题），复制按钮由客户端组件对已有 `<pre>` 渐进增强。
+- **草稿状态**：文章与项目都支持 frontmatter `draft: true`，为真时该条从页面、RSS、搜索索引、sitemap、标签云**全部消失**（因为共用同一份聚合结果）。
 - **标签聚合**：文章标签自动聚合成 `/articles` 标签云与 `/articles/tag/<标签>` 聚合页（中文标签即路径，构建时统一 URL 编解码）。
 - **数字花园微网络**：frontmatter `series` 生成系列眉标与底部阅读顺序导航；正文站内链接自动汇成对方页面的「链接到本文」反向链接（构建期 HTML 扫描，零运行时开销）。
-- **??????**?`split-fonts.py` ? Noto Serif SC ????? unicode-range ?? 21 ??`public/fonts/slices/`??????????/??/CTA ??? + ASCII?? 45KB preload ??????????`fonts-src/` ???????????????? git?? `subset-fonts.py` ??? OTF ????
+- **字体分片**：`split-fonts.py` 把 Noto Serif SC 拆成 unicode-range 分片，共 21 片，输出到 `public/fonts/slices/`。首屏用字（标题 / 正文 / CTA 用字 + ASCII）单独成片并 45KB preload，保证标题不闪；`fonts-src/` 是 split 工具的输入（本地中间产物，不进 git），`subset-fonts.py` 负责从 OTF 生成整包。
 - **RSS**：`app/rss.xml/route.ts` 输出 RSS 2.0，已加入 `<link rel="alternate">` 自动发现。
 - **站内搜索**：`app/search.json/route.ts` 聚合文章 / 项目 / 书架输出全文索引（缓存 1 小时），`components/site/site-search.tsx` 原生 `<dialog>` 命令面板（右下角入口 + Cmd/Ctrl+K），首次打开才懒加载索引，多关键词 AND 加权评分，标题 / 摘要命中片段实时高亮。
 - **动态 OG 图**：`npm run og` 用 satori + @resvg/resvg-js 生成 `public/og/articles/{slug}.png` 与 `public/og/projects/{slug}.png`，文章 / 案例页 metadata 自动引用。
@@ -42,24 +44,38 @@ npm run start
 | `NEXT_PUBLIC_SITE_URL` | 站点正式 URL（构建时内联，用于 canonical / RSS / OG / JSON-LD）。未设置时回退 `http://localhost:3000`。 |
 | `NOTO_SRC_DIR` | 可选。OG 脚本读取源字体的目录，默认 `%TEMP%/noto-src`。 |
 
-## 部署到 Cloudflare Workers
+## 部署（自托管 Node）
 
-首次部署前需要：
+线上地址 **https://xwsx.top**：腾讯云 Ubuntu 自托管，跑 vinext 的 standalone 产物（systemd + nginx 反代 + Let's Encrypt），未走 Cloudflare。完整架构见 [HANDOFF.md](./HANDOFF.md)「部署架构」一节。
 
-1. 安装 [wrangler](https://developers.cloudflare.com/workers/wrangler/) 并登录：
+### 一键部署
+
+```bash
+npm run deploy
+```
+
+`scripts/deploy.mjs` 依次完成：清理 `dist` → 构建（内联 `NEXT_PUBLIC_SITE_URL`）→ postbuild 补 react 系运行时依赖 → 打包 `dist/standalone` → `scp` 上传 → 远端备份旧产物、解包、重启 systemd → 健康检查（失败自动回滚）。部署期间线上会有几秒不可用。
+
+默认值可用环境变量覆盖：`DEPLOY_HOST`、`DEPLOY_USER`、`DEPLOY_KEY`、`NEXT_PUBLIC_SITE_URL`、`DEPLOY_REMOTE_DIR`、`DEPLOY_SERVICE`。
+
+- **回滚**：部署前上一版会留在服务器 `~/xwsx-site/standalone.bak`，执行
+  ```bash
+  sudo systemctl stop xwsx && rm -rf ~/xwsx-site/standalone && mv ~/xwsx-site/standalone.bak ~/xwsx-site/standalone && sudo systemctl start xwsx
+  ```
+- **前提**：本地 `~/.ssh/id_ed25519` 已加入服务器 `xwsx` 用户的 `authorized_keys`（免密 sudo 已配置）。
+- **手动等价命令**：`tar -czf` 打包 `dist/standalone` → `scp` 上传 → 服务器解包到 `~/xwsx-site` → `sudo systemctl restart xwsx`。
+
+### 备选：Cloudflare Workers（当前未使用）
+
+如需改回边缘部署：
+
+1. `npx wrangler login`（CI 用 `CLOUDFLARE_API_TOKEN`，Cloudflare 后台创建 **Edit Cloudflare Workers** 模板 token）。
+2. `npx wrangler whoami` 获取账户 ID，或从 `dash.cloudflare.com/<account-id>` 得到。
+3. 设置 `CLOUDFLARE_ACCOUNT_ID`、`CLOUDFLARE_API_TOKEN`、`NEXT_PUBLIC_SITE_URL` 后执行
    ```bash
-   npx wrangler login
-   ```
-   CI 场景改用 `CLOUDFLARE_API_TOKEN`（Cloudflare 后台创建 **Edit Cloudflare Workers** 模板 token）。
-2. 获取账户 ID：`npx wrangler whoami`，或从 `dash.cloudflare.com/<account-id>` 得到。
-3. 执行部署（命令前设置环境变量，避免把凭据写进仓库）：
-   ```bash
-   set CLOUDFLARE_ACCOUNT_ID=<account-id>
-   set CLOUDFLARE_API_TOKEN=<token>   # 或用 wrangler login 登录后省略
-   set NEXT_PUBLIC_SITE_URL=https://你的域名
    npx @vinext/cloudflare deploy --name xwsx
    ```
-   `--name` 指定线上 Worker 名称；`--preview` 可部署到预览环境。如需绑定自有域名，部署后在 Cloudflare 控制台的 Workers > 域名 中添加。
+   `--preview` 可部署到预览环境；绑定自有域名在 Cloudflare 控制台的 Workers > 域名 中添加。
 
 > 仓库里的 `.openai/hosting.json` 是早期 OpenAI Sites 托管的遗留配置（`legacy-origin` 远程对应），当前不使用，可忽略。
 
@@ -89,7 +105,7 @@ npm run start
 
 2. 发布：删掉 `draft: true`（或一开始就不写）。
 3. 生成 OG 分享图：`npm run og`（需按 `subset-fonts.py` 文件头说明先备好源字体）。
-4. ?????????????????? `split-fonts.py` ??????? `python split-fonts.py`????? CSS ??? `app/globals.css` ??? `@font-face` ????? `npm run build`?????? `subset-fonts.py` ??????? `fonts-src/` ????
+4. 站点用字有变化时（新增长文、新栏目）：先按 `split-fonts.py` 文件头的说明更新首屏字符集，执行 `python split-fonts.py`，把输出的 CSS 块替换 `app/globals.css` 里的 `@font-face` 规则，再 `npm run build`。上游整包子集由 `subset-fonts.py` 生成，输入放在 `fonts-src/`。
 
 阅读时长按正文长度自动估算；上一篇 / 下一篇导航和「相关阅读」（按标签重叠推荐，无重叠时回退最新文章）全部自动生成。正文中链接到其他文章（`/articles/<slug>`）时，对方页面底部会自动出现「链接到本文」反向链接。
 
@@ -113,6 +129,7 @@ meta: [开发实践, 已授权场景]   # 案例页 hero 徽章组，缺省为 [
 deliverables:          # 案例页尾部自动渲染的交付物徽章（紧跟正文分区自动编号）
   - 交付物一
   - 交付物二
+draft: true            # 可选，true 时首页卡片与案例页都不出现
 ---
 
 ## 背景
@@ -122,7 +139,9 @@ deliverables:          # 案例页尾部自动渲染的交付物徽章（紧跟�
 列表项自动带紫色 ✓ 标记。
 ```
 
-首页卡片、筛选栏（从项目 `type` 动态去重）、案例页、sitemap 全部由这一份文件驱动。
+首页卡片、筛选栏（从项目 `type` 动态去重）、案例页、sitemap 全部由这一份文件驱动。只有一种 `type` 时筛选栏会自动隐藏（此时「全部」与它结果相同）。
+
+> **内容真实性**：这个站点展示的是真实经历与真实数据。写没做过的事、或把没测过的数字写进去，比留空更伤可信度——访客里会有工程师，他们会去 DevTools 里核对。
 
 ### 记录一本书
 

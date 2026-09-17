@@ -17,14 +17,20 @@
 - **运行**：上传解包到 `/home/xwsx/xwsx-site/standalone`，systemd 服务 `xwsx.service` 以 xwsx 用户跑 `node server.js`（绑定 127.0.0.1:3000，`Restart=on-failure`，开机自启）。
 - **入口**：nginx `/etc/nginx/sites-available/xwsx.top` 反代 127.0.0.1:3000，80 强跳 443，改动前有 `.bak.20260913` 备份。
 - **证书**：Let's Encrypt（`certbot --nginx` 签发，`certbot.timer` 自动续期已验证 dry-run 通过；原 TrustAsia 证书 2026-08-05 过期，已替换）。
-- **重新部署**：本地 build + 打包 scp 后，服务器执行 `sudo systemctl stop xwsx && rm -rf ~/xwsx-site/standalone && tar -xzf ~/xwsx-standalone.tar.gz -C ~/xwsx-site && sudo systemctl start xwsx`。
+- **重新部署**：本地执行 `npm run deploy`（= `scripts/deploy.mjs`：清 dist → 构建 → postbuild 补依赖 → 打包 scp → 远端备份旧产物、解包、`systemctl restart` → 健康检查失败自动回滚）。服务器上的手工等价命令：
+  ```bash
+  sudo systemctl stop xwsx && rm -rf ~/xwsx-site/standalone && tar -xzf ~/xwsx-standalone.tar.gz -C ~/xwsx-site && sudo systemctl start xwsx
+  ```
+- **回滚**：`deploy.mjs` 每次部署前把旧产物留在 `~/xwsx-site/standalone.bak`（保留上一版），出问题执行：
+  `sudo systemctl stop xwsx && rm -rf ~/xwsx-site/standalone && mv ~/xwsx-site/standalone.bak ~/xwsx-site/standalone && sudo systemctl start xwsx`
+- **SSH**：`ssh -i ~/.ssh/id_ed25519 xwsx@43.139.214.236`（免密 sudo 已验证可用；若连不上多半是服务器侧 IP 封禁）。
 
 ## 架构地图
 
 ```
 app/                    路由（RSC 服务端组件为主）
   layout.tsx            全局布局：字体 preload、主题脚本、JSON-LD
-  page.tsx              首页（hero / 精选 / 文章 / 能力 / CTA 五区）
+  page.tsx              首页（hero / 精选 / 文章 / 关于 / 怎么做事 / CTA）
   articles|projects|books|now/   内容页
   rss.xml|search.json|robots.ts|sitemap.ts   机器接口
 components/site/        客户端组件（'use client'，渐进增强）
@@ -41,13 +47,15 @@ fonts-src/              字体中间产物（gitignore，本地保留）
 public/fonts/slices/    21 个分片 woff2（进 git，站点实际加载的字体）
 ```
 
-**数据流**：`content/*.md` → 构建期 `import.meta.glob` 内联进 JS（Workers 运行时零文件系统依赖）→ `lib/site-content.ts` 聚合 → 各页面 RSC 渲染。搜索索引 `/search.json` 与 RSS 同源聚合。
+**数据流**：`content/*.md` → 构建期 `import.meta.glob` 内联进 JS（运行时零文件系统依赖）→ `lib/*` 聚合 → 各页面 RSC 渲染。搜索索引 `/search.json` 与 RSS 同源聚合。`draft: true` 的文章与项目在这一层就被过滤，因此页面、RSS、搜索索引、sitemap、标签云的表现自动一致。
 
 ## 关键设计决策（为什么这样做）
 
-1. **vinext（Next.js on Vite）+ React 19 RSC**：要 App Router 心智 + Vite 构建速度 + Cloudflare Workers 部署。代价是框架 JS 较大（见性能一节），换来的是服务端渲染的内容页（SEO 友好）+ 最小客户端水合。
-2. **Markdown 构建期内联**：Workers 无文件系统，内容必须在构建期进 bundle。副作用：改内容必须重新 `npm run build`（dev 模式有 HMR 不受影响）。
-3. **字体 unicode-range 分片**（替代整包/全量子集）：中文 webfont 的体积问题靠「按需加载」解决——浏览器只下载页面实际用到的 unicode-range 片。首屏关键片 45KB preload 保证标题不闪。**注意**：`public/fonts/` 下的整包已删，`fonts-src/` 是 split 工具的输入（本地中间产物，不进 git）。
+1. **vinext（Next.js on Vite）+ React 19 RSC**：要 App Router 心智 + Vite 构建速度 + 服务端渲染的内容页（SEO 友好）+ 最小客户端水合。代价是框架 JS 较大（见性能一节）。
+2. **Markdown 构建期内联**：内容必须在构建期进 bundle，运行时不需要文件系统。副作用：改内容必须重新 `npm run build`（dev 模式有 HMR 不受影响）。
+3. **字体 unicode-range 分片**：中文 webfont 的体积问题靠「按需加载」解决——浏览器只下载页面实际用到的 unicode-range 片。**注意**：`public/fonts/` 下的整包已删，`fonts-src/` 是 split 工具的输入（本地中间产物，不进 git）。
+   > ✅ **2026-09-17 已修复。** 真正的根因是 `split-fonts.py` 里一处类型错误：`getBestCmap()` 返回的是**整数码位**，而 `CRITICAL` 是**字符串集合**，`all_chars - CRITICAL` 是「int 集合减 str 集合」的恒空操作——减法写了，一个元素也没减掉。于是每个普通片都重复包含关键片的字符，而 CSS 对重叠的 `unicode-range` 取**最后声明**的那条，`s0` 被全面遮蔽、从不被浏览器取用（清缓存加载首页实测：13 个切片 / 383KB，`s0` 未下载）。
+   > 修复：先把 `CRITICAL` 转成码位再相减，并加了一段自检——任何两片码位相交就 `SystemExit`。重新生成后每个字重 9 片、三份合计 365KB（此前因重复包含关键片字符而更大）。子集也一并扩充了（字形 575 → 1516，覆盖新文章用字）。复盘见 `/articles/chinese-font-slicing-failed`。
 4. **`next.config.ts` 里 `reactMaxHeadersLength: 0`**：禁用 React 经 HTTP Link 头发的资源提示。三重效果：图片 preload 从 HTTP 头转 HTML 标签（首屏真用了，无警告）、vinext 字体 preload 的 Link 头被禁（app router 字体 preload 只走 HTTP 头渠道）、console 零警告。**别删这个配置**，删了 preload 警告会回来。
 5. **吉祥物/主题切换等交互全部渐进增强**：服务端渲染基础态，客户端组件只做增强，JS 失败页面仍完整可读。
 
@@ -62,7 +70,7 @@ public/fonts/slices/    21 个分片 woff2（进 git，站点实际加载的字�
 | FCP | 4.6s | 优化前 4.9s |
 | 总传输 | ~1.2MB | 字体 384KB（按需 13 片）+ JS 535KB + 图片 |
 
-- **剩余瓶颈是 535KB 框架 JS**（React 186KB + vinext 130KB + 业务 112KB + runtime），vinext beta 固有成本，动不了。真实部署走 Cloudflare CDN + HTTP/3 + 缓存头，体验会明显好于模拟值。
+- **剩余瓶颈是 535KB 框架 JS**（React 186KB + vinext 130KB + 业务 112KB + runtime），vinext beta 固有成本，动不了。真实部署下静态资源有长缓存（CSS 一年 immutable），体验优于模拟值。
 - **可选优化**（收益递减，按需做）：
   - `public/personal-portrait-scribble.webp` 151KB → Pillow 重压缩（768x1152 RGB，可到 ~80KB）
   - `public/xwsx-air-pup-nav.png` 40KB → 转 webp（RGBA）
@@ -85,7 +93,7 @@ public/fonts/slices/    21 个分片 woff2（进 git，站点实际加载的字�
 ### vinext / 框架
 - **vinext 字体 preload 只走 HTTP Link 头**（dev-server.js 源码确认），`reactMaxHeadersLength: 0` 会把它一起禁掉——所以 layout.tsx 里有手动 `<link rel="preload">`（HTML 渠道）兜底，两者配套。
 - **standalone 包缺 react 系依赖**（beta.9）：打包器把 react/react-dom 捆进 server bundle，但原样拷贝的 vinext/dist 运行时仍以 peer 方式 import react，启动即 `ERR_MODULE_NOT_FOUND: Cannot find package 'react'`。`scripts/fix-standalone.mjs`（npm postbuild 钩子）自动补齐 react/react-dom/react-server-dom-webpack/scheduler/marked/prismjs。
-- **Windows 构建怪癖**：`dist/standalone` 已存在时重建，Node `rmSync` 会静默删不掉 `.assetsignore`（报 errno 0 的假错误），standalone 产出步骤 unlink 失败。构建前先 `rm -rf dist`（Git Bash 下）。
+- **Windows 构建怪癖（2026-09-17 查明根因）**：本机路径含非 ASCII（`…\牛马工作区\site`）时，Node 的 `fs.rmSync(dir, {recursive:true, force:true})` 会**整体静默失效** —— 报 `errno 0`「操作成功完成」却一个文件都不删（`force:true` 又吞掉异常）。后果：旧 `dist/standalone/dist/client/.assetsignore` 残留，vinext 的 standalone 产出阶段用 `cpSync` 覆盖旧文件时 unlink 报错，构建中断；`maxRetries` 无效，加 `\\?\` 前缀是 Node 内部行为（手动 `readdir` + `unlink`/`rmdir` 走另一分支，实测 4000+ 文件零失败）。**已由 `scripts/clean-dist.mjs` 取代**（`npm run build` 第一步就调用它），别再改回 `rmSync`。
 - 构建产物预览必须用 `npm run start`（wrangler dev 跑 `dist/server/wrangler.json`），改代码后要重新 build。
 - wrangler dev 偶发缓存旧资产：停进程 → 删 `.wrangler/state/v3/cache` → 重启。
 
@@ -101,11 +109,14 @@ npm run start       # wrangler dev :8787 预览构建产物
 
 ## 待办与建议路线
 
-1. **首次部署上线**（README「部署到 Cloudflare Workers」一节，需要 wrangler login + 账户 ID + `NEXT_PUBLIC_SITE_URL`）。
-2. 上线后把 `NEXT_PUBLIC_SITE_URL` 设为正式域名重新 build（canonical/RSS/OG/JSON-LD 都依赖它）。
-3. 可选：图片压缩（见性能一节）。
-4. 可选：vinext 升级观察（beta.9 → 稳定版时框架 JS 可能下降）。
-5. 内容维护节奏：新文章 → `npm run og` → 字体片按需更新（README「写一篇文章」第 4 步）。
+迭代计划与详细待办见 [ROADMAP.md](./ROADMAP.md)。要点：
+
+1. **字体分片修复**：当前首屏 383KB 且关键片从未生效（见「关键设计决策」第 3 条）。修法有二：让 `split-fonts.py` 直接改写样式表（而不是人工贴回），并在生成时校验各片 `unicode-range` 交集为空。
+2. **缓存与传输**：字体文件名加内容哈希 → 可升到长缓存；nginx 直服 `/_next/static/` 与 `/fonts/` 减轻 Node 负担；HTML 补显式 `Cache-Control`。
+3. **补测试**：内容解析与聚合都是纯函数，抽出后可用 `node --test` 覆盖（零新依赖）。
+4. 可选：图片压缩（见性能一节）；vinext 升级观察（beta → 稳定版时框架 JS 可能下降）。
+5. 内容维护节奏：新文章 → `npm run og` → 用字有变化时跑字体分片（README「写一篇文章」第 4 步）。
+6. 新内容尽量基于真实经历。此前有一批占位内容已撤下（见「内容状态」），**编造的细节比空着更伤可信度**。
 
 ## 近期变更里程碑（git log 摘要）
 
