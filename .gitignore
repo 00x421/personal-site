@@ -37,6 +37,8 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+# deploy.mjs 打好的上传包
+/xwsx-standalone.tar.gz
 
 # font build intermediates (regenerate with subset-fonts.py, see split-fonts.py)
 /fonts-src/

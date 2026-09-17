@@ -7,12 +7,13 @@
   },
   "scripts": {
     "dev": "vinext dev",
-    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && vinext build",
+    "build": "node scripts/clean-dist.mjs && vinext build",
     "postbuild": "node scripts/fix-standalone.mjs",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
     "format": "oxfmt",
-    "og": "node --experimental-strip-types scripts/generate-og.ts"
+    "og": "node --experimental-strip-types scripts/generate-og.ts",
+    "deploy": "node scripts/deploy.mjs"
   },
   "dependencies": {
     "lucide-react": "1.31.0",
