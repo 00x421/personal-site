@@ -6,9 +6,10 @@ const modules = import.meta.glob('/content/projects/*.md', {
   eager: true,
 }) as Record<string, string>;
 
-/** order 升序，未标注 order 的排最后，同级再按年份倒序。 */
+/** order 升序，未标注 order 的排最后，同级再按年份倒序。draft 的项目整体不出现。 */
 export const projects: Project[] = Object.entries(modules)
   .map(([path, raw]) => buildProject(path.split('/').pop()!.replace(/\.md$/, ''), raw))
+  .filter((project) => !project.draft)
   .sort((a, b) => a.order - b.order || Number(b.year) - Number(a.year));
 
 export function getProject(slug: string): Project | undefined {

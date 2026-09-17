@@ -49,9 +49,17 @@ export type Project = {
   html: string;
   /** 正文为空 → 仅首页卡片；写了正文即生成 /projects/{slug} 案例页 */
   hasCase: boolean;
+  /** 预留位置：true 时首页、案例页、sitemap 全部不出现 */
+  draft: boolean;
 };
 
 type RawFrontmatter = Record<string, string | string[]>;
+
+/** 去掉 YAML 风格的包裹引号：`year: '2026'` 与 `year: 2026` 应等价。
+    只处理首尾成对的引号，`it's` 这类内含引号的值不受影响。 */
+function unquote(value: string): string {
+  return /^(['"]).*\1$/.test(value) ? value.slice(1, -1) : value;
+}
 
 function splitFrontmatter(raw: string): { data: RawFrontmatter; body: string } {
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(raw);
@@ -65,13 +73,13 @@ function splitFrontmatter(raw: string): { data: RawFrontmatter; body: string } {
     const value = lines[i].slice(idx + 1).trim();
     if (!key) continue;
     if (value) {
-      data[key] = value;
+      data[key] = unquote(value);
     } else {
       // 空值后跟随缩进的 “- 条目” 块列表
       const items: string[] = [];
       while (i + 1 < lines.length && /^\s*-\s+/.test(lines[i + 1])) {
         i += 1;
-        items.push(lines[i].replace(/^\s*-\s+/, '').trim().replace(/^['"]|['"]$/g, ''));
+        items.push(unquote(lines[i].replace(/^\s*-\s+/, '').trim()));
       }
       if (items.length) data[key] = items;
     }
@@ -92,7 +100,7 @@ function list(data: RawFrontmatter, key: string): string[] {
     .replace(/^\[/, '')
     .replace(/\]$/, '')
     .split(',')
-    .map((item) => item.trim().replace(/^['"]|['"]$/g, ''))
+    .map((item) => unquote(item.trim()))
     .filter(Boolean);
 }
 
@@ -103,7 +111,7 @@ function parseTags(value: string | string[] | undefined): string[] {
     .replace(/^\[/, '')
     .replace(/\]$/, '')
     .split(',')
-    .map((tag) => tag.trim().replace(/^['"]|['"]$/g, ''))
+    .map((tag) => unquote(tag.trim()))
     .filter(Boolean);
 }
 
@@ -157,5 +165,6 @@ export function buildProject(slug: string, raw: string): Project {
     deliverables: list(data, 'deliverables'),
     html: hasCase ? marked.parse(stripComments(body), { async: false, gfm: true }) : '',
     hasCase,
+    draft: str(data, 'draft') === 'true',
   };
 }

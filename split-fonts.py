@@ -1,21 +1,33 @@
 """Split subsetted Noto Serif SC woff2 into unicode-range slices.
 
 Input: fonts-src/noto-serif-sc-{400,500,700}.woff2 (site-char subsets,
-NOT in git - regenerate with subset-fonts.py or restore from git history
-before commit a67c50c). Critical slice = first-screen chars + ASCII/punct;
-remaining chars split ~110/char-slice. Output CSS block printed to stdout;
-font files land in public/fonts/slices/.
+NOT in git - regenerate with subset-fonts.py).
+Critical slice = first-screen chars + ASCII/punct; remaining chars split
+~110/char-slice. Output CSS block printed to stdout; font files land in
+public/fonts/slices/.
 
 Re-run when site copy changes:
-  1. Update FIRST_SCREEN chars below (or re-capture from rendered page)
-  2. python split-fonts.py
-  3. Paste CSS block into app/globals.css replacing old @font-face rules
+  1. Refresh CRITICAL_B64 below. Easiest reliable way: fetch the live
+     homepage, strip tags, take the first ~400 chars, base64 them:
+       node -e "fetch('https://xwsx.top/').then(r=>r.text()).then(h=>{
+         const t=h.replace(/<script[\s\S]*?<\/script>/gi,' ')
+           .replace(/<[^>]+>/g,' ').replace(/&[a-z]+;/gi,' ')
+           .replace(/\s+/g,'').slice(0,400);
+         console.log(Buffer.from(t,'utf8').toString('base64'))})"
+  2. python split-fonts.py   (it self-checks that no two slices overlap)
+  3. Paste the printed CSS block into app/globals.css, replacing ALL old
+     @font-face rules.
+
+Note: the self-check below exists because a type bug (int set minus str set)
+let every non-critical slice re-include the critical slice's chars, so the
+critical slice was fully shadowed and never fetched. See the article
+"chinese-font-slicing-failed" in content/articles/.
 """
 import base64
 import os
 from fontTools.subset import Subsetter, Options, load_font
 
-CRITICAL_B64 = "WFdTwrfpobnnm67lhbPkuo7mioDmnK/mlofnq6DogZTns7vmiJHmiorlpI3mnYLnmoTmg7Pms5XvvIzlgZrlvpfmuIXmmbDjgILova/ku7blt6XnqIvluIjkuqflk4HmnoTlu7rogIUyMDbkvaDlpb3mmK9MaW5sZ1HorrDlvZXjgIHku6PnoIHkuI7mgJ3ogIPkuKrkurrnqbrpl7TvvJvlnKjorr7orqFBSeS6pOeVjOWkhOS9nGNvc3RtPSLkv6HmiYDooYw755yL5LuA5LmI5LiA6LW35a6D5Y+Y5oiQ546w5a6e5pyJ5YC86Kej5Yaz6Zeu6aKY77yf"
+CRITICAL_B64 = "WFdTWOKAlOS/oeaIkeaJgOihjFhXU1jCt+mhueebruWFs+S6juiDveWKm+aWh+eroOiBlOezu+aIkemhueebruWFs+S6juiDveWKm+aWh+eroOi9r+S7tuW3peeoi+W4iMK35Lqn5ZOB5p6E5bu66ICFwrcyMDI25oqK5aSN5p2C55qE5oOz5rOV77yM5YGa5b6X5riF5pmw44CC5L2g5aW977yM5oiR5pivTGlubGluZ1Fp44CCWFdTWOaYr+aIkeiusOW9leS6p+WTgeOAgeS7o+eggeS4juaAneiAg+eahOS4quS6uuepuumXtO+8m+aIkeWcqOiuvuiuoeOAgeS7o+eggeS4jkFJ55qE5Lqk55WM5aSE5bel5L2c44CCY29uc3Rtb3R0bz3kv6HmiJHmiYDooYw755yL55yL5oiR5Zyo5YGa5LuA5LmIUFJPRFVDVFRISU5LSU5HU1lTVEVNU1RISU5LSU5HQ1JFQVRJVkVURUNITk9MT0dZSFVNQU4tQ0VOVEVSRURSUEFBSUFHRU5UQUlXT1JLRkxPV0FVVE9NQVRJT05QUk9EVUNUVEhJTktJTkdTWVNURU1TVEhJTktJTkdDUkVBVElWRVRFQ0hOT0xPR1lIVU1BTi1DRU5URVJFRFJQQUFJQUdFTlRBSVdPUktGTE9XQVVUT01BVElPTjAxL+eyvumAiemhueebruS4gOS6m+aKiua0nuWvn+OAgeiuvuiuoeS4juaKgOacr+i/nuaOpei1t+adpeeahOWwneivleOAguW8gOWPkeWunui3tTIwMjZTcGlkZXJLaW5n5oqK572R6aG16YeM5L6d6LWW5rWP6KeI5Zmo55qE5aSN5p2C6K+35rGC77yM5oGi5aSN5oiQ5Y+v54us56uL6L+Q6KGM44CB5Y+v6aqM6K+B55qEUHl0aG9u"
 
 CRITICAL = set(base64.b64decode(CRITICAL_B64).decode("utf-8"))
 CRITICAL |= set("当前待机思考中和空气小狗打招呼很高兴见聊聊天")
@@ -66,12 +78,29 @@ os.makedirs(OUT_DIR, exist_ok=True)
 
 # read full subset cmap from existing 500 weight
 probe = load_font("fonts-src/noto-serif-sc-500.woff2", Options())
-all_chars = set(probe.getBestCmap().keys())
+all_codes = set(probe.getBestCmap().keys())  # cmap 的键是整数码位
 probe.close()
 
-rest = sorted(all_chars - CRITICAL)
+# CRITICAL 是字符集合，必须先转成码位再相减。
+# 注意：直接写 all_codes - CRITICAL 是「整数集合减字符串集合」，
+# 恒为空操作（int != str），结果是每个普通片都包含关键片的字符，
+# 而 CSS 对重叠的 unicode-range 取最后声明的那条 —— 关键片会被完全遮蔽，
+# 永远不会被浏览器取用。这个 bug 曾让切片方案静默失效。
+critical_codes = {ord(c) for c in CRITICAL}
+rest = sorted(all_codes - critical_codes)
 slices = [rest[i : i + SLICE_SIZE] for i in range(0, len(rest), SLICE_SIZE)]
-slices = [sorted(ord(c) for c in CRITICAL)] + slices  # slice 0 = critical
+slices = [sorted(critical_codes & all_codes)] + slices  # slice 0 = critical
+
+# 自检：各片的码位必须互不相交，否则关键片会被遮蔽
+seen: set[int] = set()
+for idx, codes in enumerate(slices):
+    overlap = seen & set(codes)
+    if overlap:
+        raise SystemExit(
+            f"切片 {idx} 与前面的片重叠 {len(overlap)} 个码位，"
+            "会导致先声明的片被遮蔽，请检查 CRITICAL 与 all_codes 的计算。"
+        )
+    seen |= set(codes)
 
 css = []
 total = {}

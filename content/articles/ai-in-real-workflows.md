@@ -3,6 +3,7 @@ title: AI 应该藏在工作流里，而不是站在聚光灯下
 description: 从一次真实的产品实验出发，记录我对 AI 功能边界、提示词和信任感的思考。
 published: 2026-07-04
 tags: [AI 应用, 产品设计]
+draft: true
 ---
 
 ## 先理解人如何工作

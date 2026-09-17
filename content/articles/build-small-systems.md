@@ -4,6 +4,7 @@ description: 关于我如何拆解复杂需求，用一个可以被验证的小�
 published: 2026-08-18
 tags: [产品思考, 工程实践]
 series: 工程手记
+draft: true
 ---
 
 ## 复杂不是功能多

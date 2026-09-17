@@ -32,11 +32,15 @@ export function getAdjacent(slug: string): {
   };
 }
 
-/** 标签重叠最多的文章；无重叠时回退为最新的其他文章，避免区块永远为空。 */
+/** 标签重叠最多的文章；无重叠时回退为最新的其他文章，避免区块永远为空。
+    已在「链接到本文」区块出现过的文章会被排除，防止同一页重复推荐同一篇。 */
 export function getRelated(slug: string, max = 2): Article[] {
   const self = getArticle(slug);
   if (!self) return [];
-  const others = articles.filter((article) => article.slug !== slug);
+  const linkedFrom = `href="/articles/${slug}"`;
+  const others = articles.filter(
+    (article) => article.slug !== slug && !article.html.includes(linkedFrom),
+  );
   const scored = others
     .map((article) => ({
       article,

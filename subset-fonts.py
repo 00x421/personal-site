@@ -1,19 +1,25 @@
 """Subset full Noto Serif SC OTFs to site chars -> one woff2 per weight.
 
+Output goes to fonts-src/ (the input dir of split-fonts.py), NOT public/:
+the full subset must never ship - only the slices under public/fonts/slices/ do.
+
 Re-run when site copy changes (new articles add new hanzi):
-  1. Collect chars from all rendered pages into %TEMP%/site-chars.txt
-     (unique chars, one per line or raw string)
+  1. Collect chars from all site sources into %TEMP%/site-chars.txt
+     (unique chars; scanning content/ + app/ + components/ + lib/ + data/
+     is sufficient - everything shown on pages comes from there)
   2. Download full OTFs to %TEMP%/noto-src/ from
      https://github.com/notofonts/noto-cjk/tree/main/Serif/SubsetOTF/SC
      (NotoSerifSC-Regular/Medium/Bold.otf)
   3. python subset-fonts.py
-  4. Rebuild; glyphs missing from the subset fall back to system serif.
+  4. python split-fonts.py  -> regenerate slices + paste the printed CSS block
+     into app/globals.css (replacing the old @font-face rules)
+  5. Rebuild; glyphs missing from the subset fall back to system serif.
 """
 import os
 from fontTools.subset import Subsetter, Options, load_font
 
 SRC = os.path.expandvars(r"%TEMP%\noto-src")
-OUT_DIR = r"public\fonts"
+OUT_DIR = r"fonts-src"
 FILES = {"400": "NotoSerifSC-Regular.otf", "500": "NotoSerifSC-Medium.otf", "700": "NotoSerifSC-Bold.otf"}
 
 EXTRA = (

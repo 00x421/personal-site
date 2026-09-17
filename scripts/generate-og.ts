@@ -12,7 +12,7 @@
  *
  * 新增文章后重新运行即可（npm run og）。
  */
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, unlinkSync, existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -36,7 +36,7 @@ const articles: Article[] = readdirSync(ARTICLE_DIR)
   .filter((article) => !article.draft)
   .sort((a, b) => b.published.localeCompare(a.published));
 
-/** 只有写了正文（案例页真实存在）的项目才生成分享图。 */
+/** 只有写了正文（案例页真实存在）且未标记 draft 的项目才生成分享图。 */
 const projects: Project[] = readdirSync(PROJECT_DIR)
   .filter((file) => file.endsWith('.md'))
   .map((file) =>
@@ -45,7 +45,7 @@ const projects: Project[] = readdirSync(PROJECT_DIR)
       readFileSync(path.join(PROJECT_DIR, file), 'utf8'),
     ),
   )
-  .filter((project) => project.hasCase)
+  .filter((project) => project.hasCase && !project.draft)
   .sort((a, b) => a.order - b.order);
 
 const WIDTH = 1200;
@@ -334,15 +334,32 @@ async function loadFonts() {
   );
 }
 
+/**
+ * 删掉本次没有生成的 PNG。内容撤下（draft）或改名后，
+ * 旧图会变成永远不会被访问的废弃资产，而 public/ 是直接拷贝进产物的。
+ */
+function removeOrphans(dir: string, keep: string[], label: string) {
+  if (!existsSync(dir)) return;
+  const expected = new Set(keep);
+  for (const file of readdirSync(dir)) {
+    if (!file.endsWith('.png') || expected.has(file)) continue;
+    unlinkSync(path.join(dir, file));
+    console.log(`og: removed stale ${label}/${file}`);
+  }
+}
+
 async function main() {
   let fonts;
   try {
     fonts = await loadFonts();
   } catch {
     console.error(
-      `缺少源字体（${FONT_DIR}）。请先按 subset-fonts.py 顶部说明下载 ` +
-        'NotoSerifSC-{Regular,Medium,Bold}.otf 到该目录，' +
-        '或设置环境变量 NOTO_SRC_DIR 指向字体目录。',
+      `缺少源字体（${FONT_DIR}）。两种准备方式：\n` +
+        '  1. 按 subset-fonts.py 顶部说明下载 ' +
+        'NotoSerifSC-{Regular,Medium,Bold}.otf 到该目录；\n' +
+        '  2. 用 fontTools 把 fonts-src/*.woff2（站点用字子集）转成 OTF——' +
+        'OG 图只渲染站内文字，子集已够用，且不必下载完整源字体。\n' +
+        '也可用环境变量 NOTO_SRC_DIR 指向其他字体目录。',
     );
     process.exit(1);
   }
@@ -382,6 +399,10 @@ async function main() {
     await writeFile(out, png);
     console.log(`og: projects/${project.slug}.png`);
   }
+
+  removeOrphans(OUT_DIR, articles.map((a) => `${a.slug}.png`), 'articles');
+  removeOrphans(projectDir, projects.map((p) => `${p.slug}.png`), 'projects');
+
   console.log(
     `\nDone: ${articles.length} articles + ${projects.length} projects`,
   );

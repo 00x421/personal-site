@@ -13,6 +13,11 @@ export type Book = {
 
 type RawFrontmatter = Record<string, string>;
 
+/** 与 lib/markdown.ts 的 unquote 保持一致：去掉 YAML 风格的包裹引号。 */
+function unquote(value: string): string {
+  return /^(['"]).*\1$/.test(value) ? value.slice(1, -1) : value;
+}
+
 function parseFrontmatter(raw: string): RawFrontmatter {
   const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(raw);
   if (!match) return {};
@@ -20,7 +25,7 @@ function parseFrontmatter(raw: string): RawFrontmatter {
   for (const line of match[1].split(/\r?\n/)) {
     const idx = line.indexOf(':');
     if (idx === -1) continue;
-    data[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
+    data[line.slice(0, idx).trim()] = unquote(line.slice(idx + 1).trim());
   }
   return data;
 }

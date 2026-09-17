@@ -6,7 +6,7 @@ summary: 把网页里依赖浏览器的复杂请求，恢复成可独立运行�
 tags: [Python-first, 协议恢复]
 tone: violet
 mark: SK
-order: 2
+order: 1
 status: 查看案例
 eyebrow: PROTOCOL-FIRST ENGINEERING SKILL
 meta: [开发实践, 已授权场景, Python-first]
