@@ -51,20 +51,23 @@ export function ProjectExplorer() {
 
   return (
     <>
-      <Reveal delay={60}>
-        <div className="filters" aria-label="项目筛选">
-          {projectFilters.map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setActive(filter)}
-              className={active === filter ? 'active' : ''}
-              aria-pressed={active === filter}
-            >
-              {filter}
-            </button>
-          ))}
-        </div>
-      </Reveal>
+      {/* 只有一种类型时「全部」与它结果完全相同，整行隐藏 */}
+      {projectFilters.length > 2 && (
+        <Reveal delay={60}>
+          <div className="filters" aria-label="项目筛选">
+            {projectFilters.map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setActive(filter)}
+                className={active === filter ? 'active' : ''}
+                aria-pressed={active === filter}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
+        </Reveal>
+      )}
       <Reveal delay={120}>
         <div
           className="project-rail-shell"

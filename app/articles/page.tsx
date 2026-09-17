@@ -5,7 +5,7 @@ import { articles, getAllTags } from '@/data/articles';
 
 export const metadata: Metadata = {
   title: '技术文章 — XWSX',
-  description: '关于产品思考、前端工程、AI 应用与可访问性的技术文章。',
+  description: '关于前端工程、中文排版、性能与调试的实践记录。',
   alternates: { canonical: '/articles' },
 };
 
@@ -23,7 +23,7 @@ export default function ArticlesPage() {
             <br />
             <em>让思考可复用。</em>
           </h1>
-          <p>这里记录我在产品、前端工程与 AI 应用中的实验、判断和复盘。</p>
+          <p>这里记录我在前端工程、中文排版与产品设计里的实践、测量和复盘。</p>
           <nav className="article-tag-cloud" aria-label="按标签浏览">
             {getAllTags().map(({ tag, count }) => (
               <Link href={`/articles/tag/${tag}`} key={tag}>

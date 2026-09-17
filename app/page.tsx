@@ -15,7 +15,7 @@ import { RailScroller } from '@/components/site/rail-scroller';
 import { Reveal } from '@/components/site/reveal';
 import { ThemeToggle } from '@/components/site/theme-toggle';
 import { articles } from '@/data/articles';
-import { siteIdentity, siteNavigation, skills } from '@/lib/site-content';
+import { capabilities, siteIdentity, siteNavigation, toolbox } from '@/lib/site-content';
 
 /** hero 标签带关键词；渲染两份供移动端无缝滚动使用 */
 const heroTags = [
@@ -190,20 +190,38 @@ export default function Home() {
           <div className="section-head">
             <div>
               <span className="section-index">04 /</span>
-              <h2>能力与技术</h2>
+              <h2>能做什么</h2>
             </div>
-            <p>支撑项目从想法到落地的基本功。</p>
+            <p>四条能力范围，前两条是主攻方向。</p>
           </div>
         </Reveal>
         <Reveal delay={100}>
-          <div className="skill-list">
-            {skills.map(([name, description], index) => (
-              <article key={name}>
-                <span>0{index + 1}</span>
-                <h3>{name}</h3>
-                <p>{description}</p>
-                <ArrowUpRight size={20} />
+          <div className="capability-list">
+            {capabilities.map((item, index) => (
+              <article key={item.name} className={item.focus ? 'is-focus' : undefined}>
+                <span className="capability-index">0{index + 1}</span>
+                <div>
+                  <h3>
+                    {item.name}
+                    {item.focus && <span className="capability-focus">主攻</span>}
+                  </h3>
+                  <p>{item.detail}</p>
+                </div>
               </article>
+            ))}
+          </div>
+        </Reveal>
+        <Reveal delay={160}>
+          <div className="toolbox">
+            {toolbox.map(([label, items]) => (
+              <div className="toolbox-row" key={label}>
+                <span className="toolbox-label">{label}</span>
+                <div className="toolbox-items">
+                  {items.map((item) => (
+                    <span key={item}>{item}</span>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </Reveal>

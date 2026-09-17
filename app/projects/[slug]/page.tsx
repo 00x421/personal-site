@@ -53,11 +53,11 @@ export default async function ProjectCasePage({
         </Link>
         <article className="project-case">
           <header className="project-case-hero">
-            <span className="case-eyebrow">{project.eyebrow}</span>
-            <div className="case-title-row">
-              <h1>{project.title}</h1>
-              <span>{project.year}</span>
+            <div className="case-hero-top">
+              <span className="case-eyebrow">{project.eyebrow}</span>
+              <span className="case-year">{project.year}</span>
             </div>
+            <h1>{project.title}</h1>
             <p>{project.summary}</p>
             <div className="case-meta">
               {project.meta.map((item) => (
