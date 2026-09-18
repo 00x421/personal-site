@@ -3,25 +3,28 @@
 Input: fonts-src/noto-serif-sc-{400,500,700}.woff2 (site-char subsets,
 NOT in git - regenerate with subset-fonts.py).
 Critical slice = first-screen chars + ASCII/punct; remaining chars split
-~110/char-slice. Output CSS block printed to stdout; font files land in
-public/fonts/slices/.
+~110/char-slice. Font files land in public/fonts/slices/; the @font-face
+rules are written **directly** into app/globals.css between the
+`@font-faces:start` / `@font-faces:end` markers.
 
 Re-run when site copy changes:
-  1. Refresh CRITICAL_B64 below. Easiest reliable way: fetch the live
-     homepage, strip tags, take the first ~400 chars, base64 them:
-       node -e "fetch('https://xwsx.top/').then(r=>r.text()).then(h=>{
-         const t=h.replace(/<script[\s\S]*?<\/script>/gi,' ')
-           .replace(/<[^>]+>/g,' ').replace(/&[a-z]+;/gi,' ')
-           .replace(/\s+/g,'').slice(0,400);
-         console.log(Buffer.from(t,'utf8').toString('base64'))})"
-  2. python split-fonts.py   (it self-checks that no two slices overlap)
-  3. Paste the printed CSS block into app/globals.css, replacing ALL old
-     @font-face rules.
+  1. Refresh CRITICAL_B64 below. Easiest reliable way: base64 the first
+     ~400 visible chars of the live homepage (one-liner in the article).
+  2. python split-fonts.py
+        - rewrites the font slices
+        - rewrites app/globals.css between the markers
+        - self-checks: no two slices may overlap, and no trailing script
+          output may leak into the stylesheet
+  3. Rebuild.
 
-Note: the self-check below exists because a type bug (int set minus str set)
-let every non-critical slice re-include the critical slice's chars, so the
-critical slice was fully shadowed and never fetched. See the article
-"chinese-font-slicing-failed" in content/articles/.
+Note: two guards here exist because both failure modes actually happened.
+  a) A type bug (int set minus str set) let every non-critical slice
+     re-include the critical slice's chars, so the critical slice was fully
+     shadowed and never fetched.
+  b) Parsing this script's stdout once leaked the trailing line into the
+     stylesheet, which merged with `:root` into a selector matching nothing
+     and silently killed every CSS variable (live outage).
+Both are written up in content/articles/chinese-font-slicing-failed.md.
 """
 import base64
 import os
@@ -126,5 +129,37 @@ for weight in WEIGHTS:
     w_total = sum(v for k, v in total.items() if f"-{weight}-" in k)
     print(f"weight {weight}: {len(slices)} slices, {w_total/1024:.0f} KB total")
 print(f"critical slice: {total[f'noto-serif-sc-500-s0.woff2']/1024:.1f} KB (w500)")
-print("\n".join(css))
-print("DONE")
+
+# 直接改写 app/globals.css 里两个标记之间的内容。
+#
+# 以前是把 CSS 打到 stdout 再由人工/脚本粘贴，结果踩过两次坑：
+#   1. 脚本按 "\n" 切分 stdout 找结尾标记，而 Windows 下 Python 输出是 CRLF，
+#      匹配失败，把收尾那行文本一并当成 CSS 写进了文件；
+#   2. 压缩后那段文本与 :root 拼成一个匹配不到元素的选择器，
+#      整个 :root 规则被丢弃，全站 CSS 变量失效（线上故障）。
+# 改成脚本直接落盘后，不再有「解析 stdout」这一步。
+CSS_FILE = os.path.join("app", "globals.css")
+START_MARK = "/* @font-faces:start */"
+END_MARK = "/* @font-faces:end */"
+
+block = START_MARK + "\n" + "\n".join(css) + "\n" + END_MARK
+
+with open(CSS_FILE, encoding="utf-8", newline="") as f:
+    source = f.read()
+
+start = source.find(START_MARK)
+end = source.find(END_MARK)
+if start == -1 or end == -1 or end < start:
+    raise SystemExit(f"{CSS_FILE} 里找不到 {START_MARK} / {END_MARK} 标记，未做修改。")
+
+updated = source[:start] + block + source[end + len(END_MARK):]
+with open(CSS_FILE, "w", encoding="utf-8", newline="") as f:
+    f.write(updated)
+
+print(f"已写入 {CSS_FILE}：{len(css)} 条 @font-face 规则")
+
+# 自检：替换后文件里不应出现任何收尾标记类的裸词
+for stray in ("DONE", "Traceback"):
+    if stray in updated:
+        raise SystemExit(f"写入后 {CSS_FILE} 里出现了意外的 {stray}，请检查。")
+
