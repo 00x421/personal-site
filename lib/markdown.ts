@@ -3,11 +3,16 @@ import { marked } from 'marked';
 import { highlightCode } from './highlight.ts';
 
 // 代码块 → 带 data-lang 的 pre；语言标签与复制按钮由客户端增强组件接管。
+// 表格 → 包一层可横向滚动容器（宽表在窄屏会撑破正文栏；服务端处理，无需 JS）。
 marked.use({
   renderer: {
     code({ text, lang }: { text: string; lang?: string }) {
       const language = (lang ?? '').trim().split(/\s+/)[0].toLowerCase() || 'text';
       return `<pre data-lang="${language}"><code>${highlightCode(text, language === 'text' ? undefined : language)}</code></pre>`;
+    },
+    table(token: { header: unknown[]; rows: unknown[][] }) {
+      const rendered = marked.Renderer.prototype.table.call(this, token as never);
+      return `<div class="table-scroll">${rendered}</div>`;
     },
   },
 });

@@ -2088,6 +2088,45 @@ main {
 .article-body blockquote p {
   margin: 0;
 }
+/* 表格：跟着编辑风走——只用横线，不画网格。
+   marked 的 gfm 表格会输出 <table><thead><tr><th>…，此前没有对应样式，
+   宽表在窄容器里会挤成一团（列无间隔、文字频繁折行）。
+   外层包一个可横向滚动的容器，代码块同理。 */
+.article-body .table-scroll {
+  margin: 26px 0;
+  overflow-x: auto;
+}
+.article-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.article-body th,
+.article-body td {
+  padding: 11px 14px 11px 0;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+.article-body th {
+  border-bottom-color: var(--ink);
+  color: var(--ink);
+  font-weight: 700;
+  white-space: nowrap;
+}
+/* 首列是「项目名」，不折行；后续列允许换行但给个下限，避免一列一个字 */
+.article-body th:first-child,
+.article-body td:first-child {
+  padding-left: 0;
+  white-space: nowrap;
+}
+.article-body td:nth-child(n + 2) {
+  min-width: 120px;
+}
+.article-body td code {
+  white-space: nowrap;
+}
 .article-body code {
   padding: 2px 7px;
   border: 1px solid var(--line);
@@ -2191,6 +2230,41 @@ main {
   background: none;
   font-size: 14px;
   line-height: 1.75;
+}
+/* 案例正文表格（与文章正文同规格，见 .article-body 一节） */
+.case-body .table-scroll {
+  margin: 26px 0;
+  overflow-x: auto;
+}
+.case-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.case-body th,
+.case-body td {
+  padding: 11px 14px 11px 0;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+.case-body th {
+  border-bottom-color: var(--ink);
+  color: var(--ink);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.case-body th:first-child,
+.case-body td:first-child {
+  padding-left: 0;
+  white-space: nowrap;
+}
+.case-body td:nth-child(n + 2) {
+  min-width: 120px;
+}
+.case-body td code {
+  white-space: nowrap;
 }
 /* 案例正文行内代码与代码块（与文章正文同规格） */
 .case-body code {
