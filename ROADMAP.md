@@ -209,13 +209,66 @@ nginx 侧：
 
 ---
 
+## 迭代 4 批 · 测试与结构（已完成并上线）
+
+这一批不加功能，只做两件事：**把不可测的代码变成可测的，然后把测试写出来**。
+
+### 为什么之前一行测试都没有
+
+不是没想到，而是**结构上测不了**。查询逻辑（相关阅读、上下篇、反向链接、标签统计）全部长在 `data/articles.ts` 里，而那个文件用 `import.meta.glob` 在构建期内联 Markdown 原文——只有 Vite 环境能跑，Node 测试进程碰不了。想测就得先拆。
+
+### 拆法：把「文章从哪来」和「怎么查」分开
+
+| 模块 | 职责 | 依赖 |
+| --- | --- | --- |
+| `lib/content-parse.ts` | frontmatter 解析、阅读时长、XML 转义 | **零依赖** |
+| `lib/article-queries.ts` | 所有集合查询，签名统一为 `(articles, ...)` | 运行时零 import |
+| `data/articles.ts` | 只负责 `import.meta.glob` 加载 + 排序，然后转发 | Vite |
+| `data/books.ts` | 只负责加载，解析复用 `content-parse` | Vite |
+
+`lib/article-queries.ts` 里的 `Article` 用 `import type` 引入，编译期即被擦除，所以这个模块运行时**一个 import 都没有**——测试加载它不需要 marked、不需要 prismjs、不需要 Vite。
+
+顺带清掉三处重复实现：
+- `data/books.ts` 自己写的 frontmatter 解析器（与 `lib/markdown.ts` 会静默漂移，上次修引号 bug 就是两处一起改的）
+- `data/articles.ts` 里的 `list()` 与 `parseTags()` 逻辑几乎完全相同，统一为 `parseList()`
+- `app/rss.xml/route.ts` 里的一份 `escapeXml()`
+
+### 测试
+
+`npm test` → `node --experimental-strip-types --test "tests/*.test.ts"`，**零新依赖**，76 个用例。
+
+`tests/content-parse.test.ts`（34 个）：引号剥离、CRLF、无 frontmatter、只有 frontmatter、块列表、冒号切分、注释剥离、阅读时长边界、XML 转义顺序。
+
+`tests/article-queries.test.ts`（42 个）：排序、上下篇边界、相关阅读打分与回退、标签筛选与计数、反向链接、系列正序，以及对每个函数的**入参不可变性**检查。
+
+### 写测试时发现的三件事实
+
+测试的价值不只在回归，还在于**把口头约定变成可执行的断言**。这三个都是写断言时才发现原来不是我以为的那样：
+
+1. **`findRelated` 的 `max` 是上限，不是目标。** 只要存在标签重叠，就只返回重叠的那些，**不拿无关文章补齐**。所以「相关阅读」在只有一篇相关文章时只显示一张卡。这是刻意的「宁缺毋滥」，但现在它是一条测试，不是一段注释。
+2. **`estimateReadTime` 把换行和空格也算作字数。** 只有 Markdown 语法字符（`# > * ` ~ _ [ ] ( ) ! | -`）被剔除，空白没有。所以空行多、小标题多的文章会被轻微高估。
+3. **`collectTags` 对同一篇文章里的重复标签会重复计数。** `tags: [前端, 前端]` 会计为 2。当前内容里没有这种情况，暂不修。
+
+后两条都**保持现状、只锁行为**——重构不该顺手改用户可见的结果（阅读时长、标签计数都是页面上看得见的数字）。已列入下方待办。
+
+同理，`sortByNewest` **刻意不加 slug 兜底**：本站有三篇同日发布的文章，原来的顺序依赖输入顺序（`sort` 稳定所以可复现），加第二排序键会改变「上一篇 / 下一篇」的走向。
+
+### 验证
+
+- `npm test` 76/76 通过
+- `npx tsc --noEmit` 零错误
+- `npx oxlint` 0 warnings 0 errors（`tests/**` 关掉了 `no-floating-promises`，因为 `node:test` 的 `describe`/`it` 返回 Promise 是设计如此）
+- 线上实测：文章列表顺序、阅读时长、标签计数、上下篇、RSS 4 条、search.json 8 条、书籍页、案例页交付物——**均与重构前一致**，控制台零错误
+
+---
+
 ## 待办
 
-### 迭代 6 · 测试与结构（未开工，需先决策）
+### 小修正（行为变更，需单独确认）
 
-- **零测试**。`splitFrontmatter` / `calcReadTime` / `parseTags` / `escapeXml` 都是纯函数，用 Node 内置 `node --test`（项目已有 `--experimental-strip-types` 先例，**零新依赖**）覆盖成本极低
-- `getRelated` / `getBacklinks` / `getAllTags` / `getAdjacent` / `getSeries` 在 `data/articles.ts` 里依赖 `import.meta.glob`，**无法在 Node 下测试**。抽出 `lib/article-queries.ts`（接受 `Article[]` 的纯函数）即可解锁
-- `data/books.ts` 重复实现了一份 frontmatter 解析，存在行为漂移风险（本次引号修复已手动同步两处，属于信号）
+- **`estimateReadTime` 把空白算进字数**：剔除空白后重算会普遍降 1 分钟（长文尤甚）。值不值得动，取决于你更在意「估得准」还是「数字稳定」
+- **`collectTags` 重复标签重复计数**：`new Set(article.tags)` 一行可修，当前内容没有触发
+- **同日文章的排序**：给 `sortByNewest` 加 slug 第二排序键可让顺序不再依赖文件枚举顺序，代价是「上一篇 / 下一篇」的走向会变一次
 
 ### 已知但暂不处理
 
@@ -232,6 +285,7 @@ nginx 侧：
 改完代码后按 HANDOFF 的「本地验证工作流」执行，并确认：
 
 - [ ] `npm run lint` 零告警（`components/ui` 的 shadcn 模板既有告警除外）
+- [ ] `npm test` 全绿
 - [ ] `npm run build` 通过（CI 同款）
 - [ ] 浏览器 console 零警告，明暗两主题正常
 - [ ] **看一眼页面截图**（见下）

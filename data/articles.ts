@@ -1,7 +1,19 @@
 import { buildArticle, type Article } from '@/lib/markdown';
+import {
+  collectTags,
+  filterByTag,
+  findAdjacent,
+  findBacklinks,
+  findRelated,
+  findSeries,
+  sortByNewest,
+} from '@/lib/article-queries';
 
 export type { Article };
 
+// 本文件只负责「文章从哪来」：构建期内联 Markdown 原文，然后按发布顺序排好。
+// 所有查询逻辑都在 lib/article-queries.ts（纯函数，可在 Node 下测试）。
+//
 // Vite 在构建期把 content/articles/*.md 原文内联进产物，Workers 运行时无需文件系统。
 // （scripts/generate-og.ts 在纯 Node 下运行，走 lib/markdown.ts + fs 自行加载。）
 const files = import.meta.glob('/content/articles/*.md', {
@@ -10,84 +22,36 @@ const files = import.meta.glob('/content/articles/*.md', {
   eager: true,
 });
 
-export const articles: Article[] = Object.entries(files)
-  .map(([path, raw]) => buildArticle(path.split('/').pop()!.replace(/\.md$/, ''), raw))
-  .filter((article) => !article.draft)
-  .sort((a, b) => b.published.localeCompare(a.published));
+export const articles: Article[] = sortByNewest(
+  Object.entries(files)
+    .map(([path, raw]) => buildArticle(path.split('/').pop()!.replace(/\.md$/, ''), raw))
+    .filter((article) => !article.draft),
+);
 
 export function getArticle(slug: string) {
   return articles.find((article) => article.slug === slug);
 }
 
-/** 列表按发布日期倒序：newer 为索引更小的一篇，older 为更早的一篇。 */
-export function getAdjacent(slug: string): {
-  newer: Article | null;
-  older: Article | null;
-} {
-  const index = articles.findIndex((article) => article.slug === slug);
-  if (index === -1) return { newer: null, older: null };
-  return {
-    newer: index > 0 ? articles[index - 1] : null,
-    older: index < articles.length - 1 ? articles[index + 1] : null,
-  };
+export function getAdjacent(slug: string) {
+  return findAdjacent(articles, slug);
 }
 
-/** 标签重叠最多的文章；无重叠时回退为最新的其他文章，避免区块永远为空。
-    已在「链接到本文」区块出现过的文章会被排除，防止同一页重复推荐同一篇。 */
-export function getRelated(slug: string, max = 2): Article[] {
-  const self = getArticle(slug);
-  if (!self) return [];
-  const linkedFrom = `href="/articles/${slug}"`;
-  const others = articles.filter(
-    (article) => article.slug !== slug && !article.html.includes(linkedFrom),
-  );
-  const scored = others
-    .map((article) => ({
-      article,
-      score: article.tags.filter((tag) => self.tags.includes(tag)).length,
-    }))
-    .sort(
-      (a, b) =>
-        b.score - a.score || b.article.published.localeCompare(a.article.published),
-    );
-  const tagged = scored.filter((entry) => entry.score > 0);
-  return (tagged.length > 0 ? tagged : scored)
-    .slice(0, max)
-    .map((entry) => entry.article);
+export function getRelated(slug: string, max = 2) {
+  return findRelated(articles, slug, max);
 }
 
-export function getArticlesByTag(tag: string): Article[] {
-  return articles.filter((article) => article.tags.includes(tag));
+export function getArticlesByTag(tag: string) {
+  return filterByTag(articles, tag);
 }
 
-/** 全站标签按文章数倒序，同级按名称稳定排序。 */
-export function getAllTags(): { tag: string; count: number }[] {
-  const counts = new Map<string, number>();
-  for (const article of articles) {
-    for (const tag of article.tags) {
-      counts.set(tag, (counts.get(tag) ?? 0) + 1);
-    }
-  }
-  return Array.from(counts.entries())
-    .map(([tag, count]) => ({ tag, count }))
-    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+export function getAllTags() {
+  return collectTags(articles);
 }
 
-/** 反向链接：正文里链接到本文的其他文章，按发布时间倒序。 */
-export function getBacklinks(slug: string): Article[] {
-  return articles
-    .filter(
-      (article) =>
-        article.slug !== slug &&
-        article.html.includes(`href="/articles/${slug}"`),
-    )
-    .sort((a, b) => b.published.localeCompare(a.published));
+export function getBacklinks(slug: string) {
+  return findBacklinks(articles, slug);
 }
 
-/** 同系列文章按发布正序（阅读顺序）；series 不存在时返回空数组。 */
-export function getSeries(series: string | undefined): Article[] {
-  if (!series) return [];
-  return articles
-    .filter((article) => article.series === series)
-    .sort((a, b) => a.published.localeCompare(b.published));
+export function getSeries(series: string | undefined) {
+  return findSeries(articles, series);
 }

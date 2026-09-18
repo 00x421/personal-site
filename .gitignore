@@ -19,6 +19,10 @@
 # misc
 .DS_Store
 *.pem
+# tsc --noEmit 在 incremental 模式下会留下这个文件
+tsconfig.tsbuildinfo
+# 本地临时截图（验证页面时用）
+.tmp-*.png
 
 # debug
 npm-debug.log*

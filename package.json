@@ -12,6 +12,7 @@
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
     "format": "oxfmt",
+    "test": "node --experimental-strip-types --test \"tests/*.test.ts\"",
     "og": "node --experimental-strip-types scripts/generate-og.ts",
     "fonts": "python split-fonts.py",
     "images": "python scripts/optimize-pup-images.py",

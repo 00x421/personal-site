@@ -20,5 +20,7 @@ jobs:
         run: npm ci --legacy-peer-deps || npm install --no-audit --no-fund
       - name: Lint
         run: npm run lint
+      - name: Test
+        run: npm test
       - name: Build
         run: npm run build

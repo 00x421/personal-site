@@ -1,17 +1,9 @@
 import { articles } from '@/data/articles';
+import { escapeXml } from '@/lib/content-parse';
 
 const SITE_TITLE = 'XWSX — 信我所行';
 const SITE_DESCRIPTION =
   'XWSX（信我所行）— 产品、设计与代码交汇处的个人作品集。';
-
-function escapeXml(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&apos;');
-}
 
 export function GET() {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';

@@ -8,7 +8,7 @@
 - **质量基线**：Lighthouse 无障碍 / 最佳实践 / SEO 全 100；性能（模拟 Fast 4G 口径）移动端 66 分、LCP 5.5s。
 - **首屏传输**（2026-09-18 实测，禁缓存）：**476 KB**（字体 97 + JS 178 + 图片 158 + RSC 26 + CSS 17）。优化前是 1,038 KB，明细与做法见 [ROADMAP.md](./ROADMAP.md)「第 3 批」。
 - **已上线（2026-09-13）**：https://xwsx.top ，自托管 Node（vinext standalone 路径），未走 Cloudflare。部署架构见下节。
-- **待办**：测试与结构（见 ROADMAP「迭代 6」）——目前**零测试**，是最大的工程缺口。
+- **测试**：`npm test` 76 个用例（`node --test`，零新依赖）覆盖内容解析与所有集合查询。为此把查询逻辑从 `data/articles.ts` 抽到了 `lib/article-queries.ts`，见下「三层结构」。
 - **CI**：GitHub Actions 每次 push/PR 跑 oxlint + build（node 24）。曾连续 5 次失败：rolldown 1.0.1 自身声明矛盾（deps 钉死 @emnapi/* 1.10.0 + 传递 peer ^1.7.1），Linux npm ci 严格校验误报 Missing 1.11.3，Windows 不装 wasm32 子树无法复现。改 `npm ci --legacy-peer-deps` + `npm install` 兜底后恢复绿；根治需升级 rolldown/vite。
 
 ## 部署架构（2026-09-13 起，静态资源直服 2026-09-18 加入）
@@ -44,10 +44,15 @@ components/site/        客户端组件（'use client'，渐进增强）
   project-explorer.tsx  项目筛选与横滚（**卡片数据由服务端传入**，别 import data/*）
   site-search.tsx       Cmd/Ctrl+K 命令面板（原生 <dialog>）
   theme-toggle / rail-scroller / reveal / reading-progress / ...
-lib/                    markdown 解析、Prism 高亮、内容聚合（构建期+运行时共享）
+lib/                    解析与聚合（构建期+运行时共享）
+  content-parse.ts      frontmatter 解析 / 阅读时长 / XML 转义（**零依赖，可直接测**）
+  article-queries.ts    集合查询纯函数（收 Article[]；运行时零 import，可直接测）
+  markdown.ts           marked 配置 + buildArticle / buildProject
+  highlight.ts          Prism 高亮
   font-slices.generated.ts  关键片清单（split-fonts.py 生成，勿手改）
-data/                   文章/项目/书架的 TS 数据层（import.meta.glob 内联）
+data/                   文章/项目/书架的 TS 数据层（import.meta.glob 内联，并转发到 article-queries）
 content/                Markdown 内容源（articles/projects/books + frontmatter）
+tests/                  node --test 套件（npm test）
 scripts/generate-og.ts  satori 生成 OG 分享图（纯 Node，npm run og）
 scripts/deploy.mjs      一键部署（npm run deploy，含健康检查与回滚）
 scripts/clean-dist.mjs  跨平台清 dist（替代会静默失效的 fs.rmSync）
@@ -59,6 +64,17 @@ public/fonts/slices/    29 个分片 woff2（进 git，文件名带内容哈希�
 ```
 
 **客户端包的边界（重要）**：`'use client'` 组件**不能** import `@/data/*`。那些模块用 eager 的 `import.meta.glob('?raw')` 把全部 Markdown 原文内联，客户端一旦引用就会连带打进 marked、prismjs 与所有案例全文（实测 `project-explorer` 因此膨胀到 84 KB）。数据在服务端取好，以 props 传入。
+
+**三层结构（待测代码的分层依据）**：
+
+| 层 | 文件 | 依赖 | 可测 |
+| --- | --- | --- | --- |
+| 解析 | `lib/content-parse.ts` | 无 | ✅ 直接 `node --test` |
+| 查询 | `lib/article-queries.ts` | 仅 `import type`（编译期擦除）| ✅ 同上 |
+| 加载 | `data/*.ts` | `import.meta.glob`（仅 Vite）| ❌ 靠上面两层间接覆盖 |
+
+`data/*.ts` 因此只剩「加载 + 排序 + 转发」三件事。**新写查询逻辑请加到 `lib/article-queries.ts` 并带上测试**，不要往 `data/*.ts` 里塞。
+`Article` 类型从 `lib/markdown.ts` 用 `import type` 引入即可——只取类型不会把 marked / prismjs 拖进测试进程。
 
 **数据流**：`content/*.md` → 构建期 `import.meta.glob` 内联进 JS（运行时零文件系统依赖）→ `lib/*` 聚合 → 各页面 RSC 渲染。搜索索引 `/search.json` 与 RSS 同源聚合。`draft: true` 的文章与项目在这一层就被过滤，因此页面、RSS、搜索索引、sitemap、标签云的表现自动一致。
 
@@ -134,6 +150,7 @@ TTFB 61ms，load 754ms（本机宽带下）。缓存策略见「部署架构」�
 
 ```bash
 npm run lint        # oxlint
+npm test            # node --test（内容解析与集合查询）
 npm run build       # 必须过，CI 同款
 npm run start       # wrangler dev :8787 预览构建产物
 ```
@@ -146,12 +163,11 @@ npm run start       # wrangler dev :8787 预览构建产物
 
 迭代计划与详细待办见 [ROADMAP.md](./ROADMAP.md)。要点：
 
-1. **字体分片修复**：当前首屏 383KB 且关键片从未生效（见「关键设计决策」第 3 条）。修法有二：让 `split-fonts.py` 直接改写样式表（而不是人工贴回），并在生成时校验各片 `unicode-range` 交集为空。
-2. **缓存与传输**：字体文件名加内容哈希 → 可升到长缓存；nginx 直服 `/_next/static/` 与 `/fonts/` 减轻 Node 负担；HTML 补显式 `Cache-Control`。
-3. **补测试**：内容解析与聚合都是纯函数，抽出后可用 `node --test` 覆盖（零新依赖）。
-4. 可选：图片压缩（见性能一节）；vinext 升级观察（beta → 稳定版时框架 JS 可能下降）。
-5. 内容维护节奏：新文章 → `npm run og` → 用字有变化时跑字体分片（README「写一篇文章」第 4 步）。
-6. 新内容尽量基于真实经历。此前有一批占位内容已撤下（见「内容状态」），**编造的细节比空着更伤可信度**。
+1. **内容维护节奏**：新文章 → `npm run og` → 用字有变化时跑字体分片（README「写一篇文章」第 4 步）。
+2. **新内容尽量基于真实经历**。此前有一批占位内容已撤下（见「内容状态」），**编造的细节比空着更伤可信度**。
+3. **已交付**：中文排版字距、可读性与触控目标、版面构图、错误页面、内容治理、04 区能力范围、CTA 渐变、首屏传输优化（1038 → 476 KB）、测试与结构（76 个用例）。逐条记录与实测数字在 ROADMAP。
+4. **待确认的小修正**（行为变更，需你点头）：阅读时长把换行算作字数、标签重复计数、同日文章排序不稳。三条都在 ROADMAP「待办 · 小修正」。
+5. **公安备案**：备案号下来后补到页脚（链接 `beian.mps.gov.cn`，图标放 `public/`）。
 
 ## 近期变更里程碑（git log 摘要）
 

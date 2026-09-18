@@ -1,6 +1,14 @@
 import { marked } from 'marked';
 // .ts 扩展名让 scripts/generate-og.ts 在纯 Node ESM 下也能解析（Vite 同样支持）。
 import { highlightCode } from './highlight.ts';
+import {
+  estimateReadTime,
+  parseList,
+  readList,
+  readString,
+  splitFrontmatter,
+  stripComments,
+} from './content-parse.ts';
 
 // 代码块 → 带 data-lang 的 pre；语言标签与复制按钮由客户端增强组件接管。
 // 表格 → 包一层可横向滚动容器（宽表在窄屏会撑破正文栏；服务端处理，无需 JS）。
@@ -58,118 +66,44 @@ export type Project = {
   draft: boolean;
 };
 
-type RawFrontmatter = Record<string, string | string[]>;
-
-/** 去掉 YAML 风格的包裹引号：`year: '2026'` 与 `year: 2026` 应等价。
-    只处理首尾成对的引号，`it's` 这类内含引号的值不受影响。 */
-function unquote(value: string): string {
-  return /^(['"]).*\1$/.test(value) ? value.slice(1, -1) : value;
-}
-
-function splitFrontmatter(raw: string): { data: RawFrontmatter; body: string } {
-  const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(raw);
-  if (!match) return { data: {}, body: raw };
-  const data: RawFrontmatter = {};
-  const lines = match[1].split(/\r?\n/);
-  for (let i = 0; i < lines.length; i += 1) {
-    const idx = lines[i].indexOf(':');
-    if (idx === -1) continue;
-    const key = lines[i].slice(0, idx).trim();
-    const value = lines[i].slice(idx + 1).trim();
-    if (!key) continue;
-    if (value) {
-      data[key] = unquote(value);
-    } else {
-      // 空值后跟随缩进的 “- 条目” 块列表
-      const items: string[] = [];
-      while (i + 1 < lines.length && /^\s*-\s+/.test(lines[i + 1])) {
-        i += 1;
-        items.push(unquote(lines[i].replace(/^\s*-\s+/, '').trim()));
-      }
-      if (items.length) data[key] = items;
-    }
-  }
-  return { data, body: raw.slice(match[0].length) };
-}
-
-function str(data: RawFrontmatter, key: string): string | undefined {
-  const value = data[key];
-  return typeof value === 'string' && value ? value : undefined;
-}
-
-function list(data: RawFrontmatter, key: string): string[] {
-  const value = data[key];
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (typeof value !== 'string' || !value) return [];
-  return value
-    .replace(/^\[/, '')
-    .replace(/\]$/, '')
-    .split(',')
-    .map((item) => unquote(item.trim()))
-    .filter(Boolean);
-}
-
-function parseTags(value: string | string[] | undefined): string[] {
-  if (!value) return [];
-  if (Array.isArray(value)) return value;
-  return value
-    .replace(/^\[/, '')
-    .replace(/\]$/, '')
-    .split(',')
-    .map((tag) => unquote(tag.trim()))
-    .filter(Boolean);
-}
-
-/** 去掉 HTML 注释后判断正文是否为空（注释不构成案例内容）。 */
-function stripComments(body: string): string {
-  return body.replace(/<!--[\s\S]*?-->/g, '');
-}
-
-/** 去掉 Markdown 语法噪音后按字符数估算阅读时长（中文约 400 字/分钟）。 */
-function calcReadTime(body: string): string {
-  const text = body
-    .replace(/```[\s\S]*?```/g, (block) => block.replace(/[^\S\n]+/g, ''))
-    .replace(/[#>*`~_[\]()!|-]/g, '');
-  return `${Math.max(1, Math.ceil(text.length / 400))} min read`;
-}
-
 export function buildArticle(slug: string, raw: string): Article {
   const { data, body } = splitFrontmatter(raw);
   return {
     slug,
-    title: str(data, 'title') ?? slug,
-    description: str(data, 'description') ?? '',
-    published: str(data, 'published') ?? '',
-    readTime: calcReadTime(body),
-    tags: parseTags(data.tags),
-    series: str(data, 'series'),
-    draft: str(data, 'draft') === 'true',
+    title: readString(data, 'title') ?? slug,
+    description: readString(data, 'description') ?? '',
+    published: readString(data, 'published') ?? '',
+    readTime: estimateReadTime(body),
+    tags: parseList(data.tags),
+    series: readString(data, 'series'),
+    draft: readString(data, 'draft') === 'true',
     html: marked.parse(body, { async: false, gfm: true }),
   };
 }
 
 export function buildProject(slug: string, raw: string): Project {
   const { data, body } = splitFrontmatter(raw);
+  // 注释不构成案例内容：先去注释再看还有没有正文。
   const content = stripComments(body).trim();
   const hasCase = content.length > 0;
-  const type = str(data, 'type') ?? '';
-  const tone = str(data, 'tone');
+  const type = readString(data, 'type') ?? '';
+  const tone = readString(data, 'tone');
   return {
     slug,
-    title: str(data, 'title') ?? slug,
+    title: readString(data, 'title') ?? slug,
     type,
-    year: str(data, 'year') ?? '',
-    summary: str(data, 'summary') ?? '',
-    tags: parseTags(data.tags),
+    year: readString(data, 'year') ?? '',
+    summary: readString(data, 'summary') ?? '',
+    tags: parseList(data.tags),
     tone: tone === 'violet' || tone === 'lime' ? tone : 'ink',
-    mark: str(data, 'mark') ?? '00',
-    order: Number(str(data, 'order') ?? NaN) || 99,
-    status: str(data, 'status') ?? (hasCase ? '查看案例' : '案例整理中'),
-    eyebrow: str(data, 'eyebrow') ?? 'CASE STUDY',
-    meta: list(data, 'meta').length > 0 ? list(data, 'meta') : [type],
-    deliverables: list(data, 'deliverables'),
+    mark: readString(data, 'mark') ?? '00',
+    order: Number(readString(data, 'order') ?? NaN) || 99,
+    status: readString(data, 'status') ?? (hasCase ? '查看案例' : '案例整理中'),
+    eyebrow: readString(data, 'eyebrow') ?? 'CASE STUDY',
+    meta: readList(data, 'meta').length > 0 ? readList(data, 'meta') : [type],
+    deliverables: readList(data, 'deliverables'),
     html: hasCase ? marked.parse(stripComments(body), { async: false, gfm: true }) : '',
     hasCase,
-    draft: str(data, 'draft') === 'true',
+    draft: readString(data, 'draft') === 'true',
   };
 }

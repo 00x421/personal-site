@@ -1,3 +1,5 @@
+import { readString, splitFrontmatter } from '@/lib/content-parse';
+
 export type BookStatus = '在读' | '读完' | '想读';
 
 export type Book = {
@@ -11,35 +13,19 @@ export type Book = {
   takeaway: string;
 };
 
-type RawFrontmatter = Record<string, string>;
-
-/** 与 lib/markdown.ts 的 unquote 保持一致：去掉 YAML 风格的包裹引号。 */
-function unquote(value: string): string {
-  return /^(['"]).*\1$/.test(value) ? value.slice(1, -1) : value;
-}
-
-function parseFrontmatter(raw: string): RawFrontmatter {
-  const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(raw);
-  if (!match) return {};
-  const data: RawFrontmatter = {};
-  for (const line of match[1].split(/\r?\n/)) {
-    const idx = line.indexOf(':');
-    if (idx === -1) continue;
-    data[line.slice(0, idx).trim()] = unquote(line.slice(idx + 1).trim());
-  }
-  return data;
-}
-
+/** 书籍的 frontmatter 解析复用 lib/content-parse.ts。
+    这里曾经自己写了一份，与 lib/markdown.ts 的行为会静默漂移
+    （引号处理就是这样两处一起修的），现在统一。 */
 function toBook(path: string, raw: string): Book {
-  const data = parseFrontmatter(raw);
-  const status = data.status;
+  const { data } = splitFrontmatter(raw);
+  const status = readString(data, 'status');
   return {
     slug: path.split('/').pop()!.replace(/\.md$/, ''),
-    title: data.title ?? '未命名',
-    author: data.author ?? '',
+    title: readString(data, 'title') ?? '未命名',
+    author: readString(data, 'author') ?? '',
     status: status === '读完' || status === '想读' ? status : '在读',
-    started: data.started ?? '',
-    takeaway: data.takeaway ?? '',
+    started: readString(data, 'started') ?? '',
+    takeaway: readString(data, 'takeaway') ?? '',
   };
 }
 

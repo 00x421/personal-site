@@ -12,6 +12,7 @@ npm run dev        # 开发服务器（HMR）
 npm run build      # 生产构建 -> dist/
 npm run start      # 本地运行构建产物（wrangler dev，端口 8787）
 npm run lint       # oxlint
+npm test           # node --test（内容解析 + 集合查询，零新依赖）
 npm run og         # 为全部文章重新生成 1200x630 OG 分享图
 npm run fonts      # 重建字体分片（新增文章用字后跑；会直接改写 globals.css）
 npm run images     # 吉祥物图 PNG → WebP（换图后跑）
@@ -29,6 +30,7 @@ npm run start
 
 - **App Router 服务端组件**：首页在服务端渲染，可交互部件（主题切换、滚动轨道、小狗吉祥物）以客户端组件（`'use client'`）注入。
 - **Markdown 内容管线**：`content/articles/*.md`、`content/projects/*.md` 与 `content/books/*.md` + frontmatter；站点侧由 Vite `import.meta.glob` 构建期内联（运行时零文件系统依赖），`scripts/generate-og.ts` 在纯 Node 下 fs 直读，两侧共享 `lib/markdown.ts` 解析（marked 渲染 + 阅读时长估算）。项目案例页由 Markdown 正文驱动：`##` 分区 CSS 计数器自动编号，frontmatter `deliverables` 尾部自动成区。代码块由 Prism 在服务端高亮（token 色走 CSS 变量明暗双主题），复制按钮由客户端组件对已有 `<pre>` 渐进增强。
+- **三层内容结构**：解析（`lib/content-parse.ts`，零依赖）→ 查询（`lib/article-queries.ts`，纯函数收 `Article[]`）→ 加载（`data/*.ts`，只做 `import.meta.glob` 与转发）。前两层能在纯 Node 下跑，所以有测试；第三层只有 Vite 能跑，靠前两层间接覆盖。**新查询逻辑加到 `article-queries.ts` 并带测试。**
 - **草稿状态**：文章与项目都支持 frontmatter `draft: true`，为真时该条从页面、RSS、搜索索引、sitemap、标签云**全部消失**（因为共用同一份聚合结果）。
 - **标签聚合**：文章标签自动聚合成 `/articles` 标签云与 `/articles/tag/<标签>` 聚合页（中文标签即路径，构建时统一 URL 编解码）。
 - **数字花园微网络**：frontmatter `series` 生成系列眉标与底部阅读顺序导航；正文站内链接自动汇成对方页面的「链接到本文」反向链接（构建期 HTML 扫描，零运行时开销）。
