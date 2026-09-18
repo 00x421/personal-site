@@ -1,7 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Reveal } from '@/components/site/reveal';
 
@@ -32,46 +31,15 @@ type Props = {
   filters: string[];
 };
 
-/** 项目精选：筛选状态与横向滚动需要客户端，整块作为交互孤岛。 */
+/** 项目精选：筛选状态需要客户端，整块作为交互孤岛。
+ *
+ * 曾经这里还有一套横向轨道（scrollBy + 两端渐隐）——项目只有 2 个时
+ * scrollWidth 等于容器宽，滚动按钮从不生效，底下的「横向浏览更多项目」
+ * 是个空承诺。改成纵向列表后那整套逻辑连同 ref / 事件监听一起删了。 */
 export function ProjectExplorer({ cards, filters }: Props) {
   const [active, setActive] = useState('全部');
-  const railRef = useRef<HTMLDivElement>(null);
-  const [edges, setEdges] = useState({ start: true, end: true });
   const visibleProjects =
     active === '全部' ? cards : cards.filter((project) => project.type === active);
-
-  /** 按滚动位置记录两端状态，供 CSS 渐隐遮罩判断哪一侧还有内容。 */
-  const syncEdges = useCallback(() => {
-    const rail = railRef.current;
-    if (!rail) return;
-    const max = rail.scrollWidth - rail.clientWidth;
-    setEdges({
-      start: rail.scrollLeft <= 4,
-      end: max <= 4 || rail.scrollLeft >= max - 4,
-    });
-  }, []);
-
-  // 筛选切换会改变轨道宽度，渲染完成后重新同步。
-  useEffect(() => {
-    syncEdges();
-    const rail = railRef.current;
-    if (!rail) return;
-    rail.addEventListener('scroll', syncEdges, { passive: true });
-    window.addEventListener('resize', syncEdges);
-    return () => {
-      rail.removeEventListener('scroll', syncEdges);
-      window.removeEventListener('resize', syncEdges);
-    };
-  }, [syncEdges, active]);
-
-  function scroll(direction: -1 | 1) {
-    const rail = railRef.current;
-    if (!rail) return;
-    rail.scrollBy({
-      left: direction * Math.min(rail.clientWidth * 0.82, 580),
-      behavior: 'smooth',
-    });
-  }
 
   return (
     <>
@@ -93,71 +61,42 @@ export function ProjectExplorer({ cards, filters }: Props) {
         </Reveal>
       )}
       <Reveal delay={120}>
-        <div
-          className="project-rail-shell"
-          data-at-start={edges.start || undefined}
-          data-at-end={edges.end || undefined}
-        >
-          <div className="project-rail" ref={railRef} aria-label="项目列表">
-            {visibleProjects.map((project) => {
-              const card = (
-                <article className={`project-card ${project.tone}`}>
-                  <div className="project-top">
-                    <span>{project.type}</span>
-                    <span>{project.year}</span>
+        <ul className="project-rail">
+          {visibleProjects.map((project) => {
+            const card = (
+              <article className={`project-card ${project.tone}`}>
+                <div className="project-top">
+                  <span>{project.type}</span>
+                  <span>{project.year}</span>
+                </div>
+                <div className="project-symbol" aria-hidden="true" data-mark={project.mark} />
+                <div className="project-copy">
+                  <h3>{project.title}</h3>
+                  <p>{project.summary}</p>
+                </div>
+                <div className="project-foot">
+                  <div>
+                    {project.tags.map((tag) => (
+                      <span key={tag}>{tag}</span>
+                    ))}
                   </div>
-                  <div className="project-symbol" aria-hidden="true" data-mark={project.mark}>
-                    <div />
-                    <div />
-                    <div />
-                  </div>
-                  <div className="project-copy">
-                    <h3>{project.title}</h3>
-                    <p>{project.summary}</p>
-                  </div>
-                  <div className="project-foot">
-                    <div>
-                      {project.tags.map((tag) => (
-                        <span key={tag}>{tag}</span>
-                      ))}
-                    </div>
-                    <span className="project-status">{project.status}</span>
-                  </div>
-                </article>
-              );
-              return project.hasCase ? (
-                <Link
-                  className="project-link"
-                  href={`/projects/${project.slug}`}
-                  key={project.slug}
-                >
-                  {card}
-                </Link>
-              ) : (
-                <div key={project.slug}>{card}</div>
-              );
-            })}
-          </div>
-          <div className="project-rail-footer">
-            <span>横向浏览更多项目</span>
-            <div>
-              <button
-                type="button"
-                onClick={() => scroll(-1)}
-                aria-label="查看前面的项目"
-              >
-                <ChevronLeft size={18} />
-              </button>
-              <button
-                type="button"
-                onClick={() => scroll(1)}
-                aria-label="查看后面的项目"
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          </div>
-        </div>
+                  <span className="project-status">{project.status}</span>
+                </div>
+              </article>
+            );
+            return (
+              <li key={project.slug}>
+                {project.hasCase ? (
+                  <Link className="project-link" href={`/projects/${project.slug}`}>
+                    {card}
+                  </Link>
+                ) : (
+                  card
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </Reveal>
     </>
   );

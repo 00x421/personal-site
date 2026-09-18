@@ -95,7 +95,7 @@ export function RailScroller({ label, hint, itemNoun, children }: RailScrollerPr
       <div className="writing-rail" ref={railRef} aria-label={label}>
         {children}
       </div>
-      <div className="project-rail-footer">
+      <div className="rail-footer">
         <span>{hint}</span>
         <div>
           <button

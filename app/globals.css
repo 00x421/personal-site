@@ -247,7 +247,16 @@
   /* CTA 的面色。亮色是「纸白 → 紫」的渐变——紫色从纸面漫出来，向右逐渐加重。
      暗色改纯色，理由见暗色主题里的说明。 */
   --cta-bg: linear-gradient(90deg, var(--paper) 0%, var(--violet) 100%);
+  /* 项目卡的大面积色块。与 --violet / --lime 同族，但它们是**点缀色**
+     （图标 / 描边 / 小圆点），而这里是铺满 1212×174 的一片，
+     两者对亮度的需求相反：点要够亮才看得见，面要够沉才不刺眼。
+     成对定义——背景和压在上面的文字必须一起给出，
+     只写一半就会在某个主题下变成看不清的组合。 */
   --lime: #b3c46e;
+  --tone-violet: var(--violet);
+  --tone-violet-ink: #000;
+  --tone-lime: var(--lime);
+  --tone-lime-ink: var(--ink);
   --muted: #63625c;
   /* 语义色：面板/卡片/正文（供暗色主题覆盖） */
   --raised: #eceae2;
@@ -291,7 +300,18 @@
      深紫 #4d3fa6 的 L 是 0.079：对底色 2.26:1（区块身份成立），
      对 --ink 文字 6.7:1（远超 3:1 门槛）。 */
   --cta-bg: #4d3fa6;
+  /* 同一套道理（见亮色主题）：暗色下 --violet 被调亮到 #9186f0，
+     那是为了当点缀色；铺满一整张卡时它就成了全页最亮的表面
+     （L 0.294，是页面底色的 41.5 倍，和当初 CTA 犯的是同一个错）。
+     深紫 #4d3fa6：对页面 2.26:1、对 ink 卡 1.92:1（三种色块仍可区分），
+     上面压浅字 6.97:1。
+     lime 同理——它原本没设文字色，暗色下继承了浅色的 --ink，
+     浅字压在亮黄绿上只有 1.70:1，等于隐形。 */
   --lime: #a9bd66;
+  --tone-violet: #4d3fa6;
+  --tone-violet-ink: #f0ede5;
+  --tone-lime: #4a5530;
+  --tone-lime-ink: #f0ede5;
   --muted: #97968f;
   --raised: #1d1d21;
   --card-ink: #232328;
@@ -754,35 +774,26 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   color: var(--paper);
   border-color: var(--ink);
 }
-.project-rail-shell {
-  overflow: hidden;
-}
+/* 项目列表：纵向排列的横向条目。
+   改前是 minmax(380px, 44vw) 的横向轨道——项目只有 2 个时 scrollWidth
+   等于容器宽，根本不可滚动，底下却写着「横向浏览更多项目」，是个空承诺。
+   精选项目本来就该一眼看全，不需要横向滑动。 */
 .project-rail {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(380px, 44vw);
-  gap: 14px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  padding: 1px 1px 18px;
-  scroll-snap-type: x mandatory;
-  scrollbar-color: var(--line) transparent;
-  scrollbar-width: thin;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .project-rail > * {
   min-width: 0;
-  scroll-snap-align: start;
 }
-.project-rail::-webkit-scrollbar {
-  height: 7px;
-}
-.project-rail::-webkit-scrollbar-track {
-  background: transparent;
-}
-.project-rail::-webkit-scrollbar-thumb {
-  background: var(--line);
-}
-.project-rail-footer {
+/* 横向轨道的底部控制条：提示文字 + 前后翻页按钮。
+   项目区与文章区共用（两边都由 rail-scroller / 曾经的 project-explorer 渲染）。
+   类名曾是 .project-rail-footer，但文章区也在用它——名字误导，
+   删项目区样式时连文章区一起打掉了，故改为中性名。 */
+.rail-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -791,11 +802,11 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   font: 700 10px monospace;
   letter-spacing: 0.05em;
 }
-.project-rail-footer > div {
+.rail-footer > div {
   display: flex;
   gap: 6px;
 }
-.project-rail-footer button {
+.rail-footer button {
   width: 34px;
   height: 34px;
   display: grid;
@@ -808,18 +819,16 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   cursor: pointer;
   transition: 0.2s;
 }
-.project-rail-footer button:hover {
+.rail-footer button:hover {
   border-color: var(--ink);
   color: var(--violet);
 }
 /* 横向轨道边缘渐隐：还有内容的一侧向纸色淡出，作为「可横向滚动」的视觉暗示。
-   由组件按滚动位置写入 data-at-start / data-at-end，到边即隐藏对应渐隐 */
-.project-rail-shell,
+   由组件按滚动位置写入 data-at-start / data-at-end，到边即隐藏对应渐隐。
+   （现只剩文章区在用；项目区已改成纵向列表） */
 .writing-rail-shell {
   position: relative;
 }
-.project-rail-shell::before,
-.project-rail-shell::after,
 .writing-rail-shell::before,
 .writing-rail-shell::after {
   content: '';
@@ -832,29 +841,36 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   opacity: 0;
   transition: opacity 0.25s;
 }
-.project-rail-shell::before,
 .writing-rail-shell::before {
   left: 0;
   background: linear-gradient(to right, var(--paper), transparent);
 }
-.project-rail-shell::after,
 .writing-rail-shell::after {
   right: 0;
   background: linear-gradient(to left, var(--paper), transparent);
 }
-.project-rail-shell:not([data-at-start])::before,
 .writing-rail-shell:not([data-at-start])::before,
-.project-rail-shell:not([data-at-end])::after,
 .writing-rail-shell:not([data-at-end])::after {
   opacity: 1;
 }
+/* 横向条目：左侧一列排「类型/年份 → 标题 → 简介 → 标签」，右侧留给水印。
+   改前是 450px 高的纵向卡，其中 130px 几何图形 + 165px 巨型水印
+   占掉约 60% 面积却不承载任何信息，水印还因 overflow:hidden 被裁掉。
+   现在卡片 450→174px、项目区 812→669px，水印也从「被裁切的填充物」
+   变成完整可见的版式元素。 */
 .project-card {
-  min-height: 450px;
-  padding: 18px;
+  position: relative;
+  min-height: 0;
+  padding: 22px 30px;
   border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'top'
+    'copy'
+    'foot';
+  align-items: start;
+  gap: 13px;
   overflow: hidden;
 }
 .project-link {
@@ -882,11 +898,12 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   background: var(--card-ink);
 }
 .project-card.violet {
-  background: var(--violet);
-  color: #000;
+  background: var(--tone-violet);
+  color: var(--tone-violet-ink);
 }
 .project-card.lime {
-  background: var(--lime);
+  background: var(--tone-lime);
+  color: var(--tone-lime-ink);
 }
 .project-top,
 .project-foot {
@@ -896,58 +913,70 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   font: 700 11px monospace;
   letter-spacing: 0.06em;
 }
-.project-symbol {
+/* 水印层退到最后：整卡当画布，标记单在右下，不再挤压内容 */
+.project-top,
+.project-copy,
+.project-foot {
   position: relative;
-  width: 100%;
-  height: 130px;
-  margin: 12px 0;
+  z-index: 1;
+  min-width: 0;
 }
+.project-top {
+  grid-area: top;
+}
+.project-copy {
+  grid-area: copy;
+}
+/* 标签与状态同行靠左。不用 space-between：那样状态会被推到卡片右端、
+   正好叠在水印上（水印是卡片级的背景层，躲不开） */
+.project-foot {
+  grid-area: foot;
+  justify-content: flex-start;
+  gap: 20px;
+}
+.project-symbol {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+/* 几何图形是为 450px 纵向卡准备的填充物，横向卡里没有它们的位置 */
+.project-symbol div {
+  display: none;
+}
+/* 水印竖直居中、完整可见。126px 是在 174px 卡高下不裁切的上限附近，
+   字号再大就会顶到上下边缘，显得像渲染事故而不是装饰 */
 .project-symbol::after {
   content: attr(data-mark);
   position: absolute;
-  bottom: -22px;
-  right: -4px;
+  top: 50%;
+  right: 34px;
+  translate: 0 -50%;
   font:
-    500 165px/0.8 'Noto Serif SC',
+    500 112px/0.8 'Noto Serif SC',
     Georgia,
     serif;
-  letter-spacing: -0.12em;
-  opacity: 0.22;
-}
-.project-symbol div {
-  position: absolute;
-  width: 72px;
-  height: 72px;
-  border: 1px solid currentColor;
-}
-.project-symbol div:nth-child(2) {
-  top: 15px;
-  left: 14%;
-  border-radius: 50%;
-}
-.project-symbol div:nth-child(3) {
-  top: 45px;
-  left: 42%;
-  transform: rotate(45deg);
-}
-.project-symbol div:nth-child(4) {
-  top: 8px;
-  left: 67%;
-  border-radius: 50% 50% 0 50%;
+  letter-spacing: -0.02em;
+  opacity: 0.15;
 }
 .project-copy h3 {
-  margin: 0 0 10px;
+  margin: 0 0 9px;
   font:
-    500 38px/1 'Noto Serif SC',
+    500 34px/1.05 'Noto Serif SC',
     Georgia,
     serif;
-  letter-spacing: -0.05em;
+  letter-spacing: var(--tracking-cjk-display);
 }
+/* 不限制行宽：`ch` 单位在中文衬线字体下只约 0.5em，68ch 反而把
+   一句话的简介拆成两行，白白多出一行高度 */
 .project-copy p {
-  max-width: 290px;
   margin: 0;
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: 13.5px;
+  line-height: 1.62;
 }
 .project-foot > div {
   display: flex;
@@ -1328,31 +1357,42 @@ html[data-theme='dark'] .cta::before {
   .section-head p {
     width: auto;
   }
-  .project-rail {
-    grid-auto-columns: minmax(82vw, 82vw);
-    gap: 12px;
-    padding-bottom: 13px;
-  }
   .writing-rail {
     grid-auto-columns: minmax(82vw, 82vw);
     gap: 12px;
     padding-bottom: 13px;
   }
-  .project-rail-shell::before,
-  .project-rail-shell::after,
   .writing-rail-shell::before,
   .writing-rail-shell::after {
     bottom: 13px;
     width: 36px;
   }
-  .project-rail-footer > span {
+  .rail-footer > span {
     display: none;
   }
-  .project-rail-footer {
+  .rail-footer {
     justify-content: flex-end;
   }
+  /* 窄屏：内容与布局不变，只收间距、缩字号 */
   .project-card {
-    min-height: 390px;
+    gap: 11px;
+    padding: 18px 20px;
+  }
+  .project-foot {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .project-copy h3 {
+    font-size: 27px;
+  }
+  .project-copy p {
+    font-size: 13px;
+  }
+  /* 水印在窄屏直接去掉。卡片只有 335px 宽，内容几乎占满，
+     水印无处可去——实测「查看案例」右缘 278px 会压到字形左缘 240px。
+     装饰让位给内容：色块本身已经承担了识别作用。 */
+  .project-symbol::after {
+    display: none;
   }
   .about-section {
     padding-top: 70px;
@@ -2617,15 +2657,6 @@ main {
 /* ============ 动效组件 ============ */
 
 /* 项目卡装饰图形的缓慢浮动（translate 属性，与 transform 互不冲突） */
-.project-symbol div {
-  animation: symbol-float 6s ease-in-out infinite;
-}
-.project-symbol div:nth-child(3) {
-  animation-delay: -2s;
-}
-.project-symbol div:nth-child(4) {
-  animation-delay: -4s;
-}
 @keyframes symbol-float {
   0%,
   100% {
@@ -2653,9 +2684,6 @@ main {
   .reading-progress::-webkit-progress-value,
   .reading-progress::-moz-progress-bar {
     transition: none;
-  }
-  .project-symbol div {
-    animation: none;
   }
   .portrait-frame,
   .portrait-media,

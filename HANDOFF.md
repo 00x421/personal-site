@@ -90,9 +90,15 @@ public/fonts/slices/    29 个分片 woff2（进 git，文件名带内容哈希�
    - ⚠️ **历史教训**：分片方案曾因 `all_chars - CRITICAL`（int 集合减 str 集合）恒为空操作而整体失效近两周（关键片被后续片遮蔽、从不被浏览器取用）；修复后又因 stdout 解析把脚本收尾文本写进样式表，压缩成选择器 `DONE :root` 导致全站 CSS 变量失效。两件事都写在 `content/articles/chinese-font-slicing-failed.md`。**改这个脚本时请保留自检**。
 4. **`next.config.ts` 里 `reactMaxHeadersLength: 0`**：禁用 React 经 HTTP Link 头发的资源提示。三重效果：图片 preload 从 HTTP 头转 HTML 标签（首屏真用了，无警告）、vinext 字体 preload 的 Link 头被禁（app router 字体 preload 只走 HTTP 头渠道）、console 零警告。**别删这个配置**，删了 preload 警告会回来。
 5. **吉祥物/主题切换等交互全部渐进增强**：服务端渲染基础态，客户端组件只做增强，JS 失败页面仍完整可读。
-6. **明暗主题的配色一律走变量配对，绝不只写一半**：`--ink` / `--paper`、`--card-ink` / `--card-ink-text`、`--body-text` 这类都是**成对定义**的，在明暗两套主题下各自成立。把其中一半写成固定色值，它就会在某个主题下崩掉——`.mail-button[data-copied]` 曾在暗色下变成黑底黑字（对比度 1.03:1），点击后文字整块消失。新增颜色前先问一句：**它在明暗两个主题下都成立吗？** 批量排查用 `grep -E '(color|background):\s*#[0-9a-fA-F]{3,6}' app/globals.css`（详见 ROADMAP）。
-   - 仅有的例外是 `.project-card.violet { color: #000 }`（紫色在两端都够亮）与 `app/global-error.tsx`（它会替换 `html`/`body`，不能依赖站点 CSS），两者都不要改。
-7. **改动样式后要验交互状态**：静态截图看不到 `:hover` / `:focus` / `[data-*]`，而这类状态正是最容易配色出错的地方。改一个区块时，顺手把该区块内所有带状态的元素逐个验一遍。
+6. **明暗主题的配色一律走变量配对，绝不只写一半**：`--ink` / `--paper`、`--card-ink` / `--card-ink-text`、`--tone-violet` / `--tone-violet-ink` 这类都是**成对定义**的。把其中一半写成固定色值，它就会在某个主题下崩掉：
+   - `.mail-button[data-copied]` 曾在暗色下变成黑底黑字（对比度 1.03:1），点击后文字整块消失
+   - `.project-card.lime` 从来没设过文字色，暗色下继承浅色 `--ink` → 浅字压亮黄绿 **1.70:1**，等于隐形（当时还没有 lime 项目，是潜在 bug）
+   - 另一个变体是**面积与亮度成反比**：`--violet` / `--lime` 是点缀色（图标、描边、小圆点），深底上要够亮才看得见；但铺满一整块（CTA、项目卡）时同一个值就成了全页最亮的表面。大面积铺色请用 `--cta-bg` / `--tone-*`
+   - 批量排查：`grep -E '(color|background):\s*#[0-9a-fA-F]{3,6}' app/globals.css`
+   - 仅有的例外是 `app/global-error.tsx`（它会替换 `html`/`body`，不能依赖站点 CSS），不要改
+7. **改动样式后要验交互状态与共用的类名**：
+   - 静态截图看不到 `:hover` / `:focus` / `[data-*]` 状态，而这类状态正是最容易配色出错的地方
+   - 删样式前先 `grep` 类名：`project-rail-footer` 曾是**项目区与文章区共用**的（名字带着 `project-` 却跨区域），删项目区时把文章区的分页脚一起打掉了。现名为 `.rail-footer`
 
 ## 性能现状与瓶颈
 
@@ -152,15 +158,20 @@ TTFB 61ms，load 754ms（本机宽带下）。缓存策略见「部署架构」�
 ## 本地验证工作流（改完代码后）
 
 ```bash
+npm run dev         # 本地开发服务器 :3000，HMR
 npm run lint        # oxlint
 npm test            # node --test（内容解析与集合查询）
 npm run build       # 必须过，CI 同款
 npm run start       # wrangler dev :8787 预览构建产物
 ```
 
-浏览器验证清单：console 零警告、明暗两主题、移动视口（DevTools 390px）布局、小狗吉祥物气泡、搜索面板。Lighthouse 复测用固定命令（见上文口径提醒）。
+**工作流：先本地、后部署。** 改完在 `npm run dev` 的本地站上验好（含明暗主题、窄屏、交互状态），确认没问题再 `npm run deploy` 一次上去。不要每改一点就部署——线上是给人看的，不是调试台。
+
+浏览器验证清单：console 零警告、明暗两主题、移动视口（390px）布局、小狗吉祥物气泡、搜索面板。Lighthouse 复测用固定命令（见上文口径提醒）。
 
 **改样式表、构建脚本或任何会改写源文件的工具之后，务必看一眼页面截图。** 2026-09-18 出过一次事故：脚本的收尾文本混进样式表，压缩后与 `:root` 拼成匹配不到元素的选择器，全站 CSS 变量失效（满屏颗粒、背景透明）。当时验证了字体请求、字形渲染、OG 图片——**每一项都是「我改的东西」，没有一项是「页面整体」**。详见 ROADMAP 的「为什么『看一眼截图』是单独一条」。
+
+**看宽屏布局用同源 iframe，别用 CDP 改视口。** 内嵌浏览器的可见表面通常只有 ~500px 宽，`Emulation.setDeviceMetricsOverride` 也扩大不了它（而且状态会中途失效，同一批操作里能从 1280 弹回 504）。可靠做法：在本地站的页面里插一个 `width:1440px` 的 iframe（`src="/"`，同源所以能读 `contentDocument`），先在主页面执行过一次脚本注入 `.reveal{opacity:1!important}` 让动画元素显形，再 `page.locator('#probe').screenshot()`。
 
 ## 待办与建议路线
 
