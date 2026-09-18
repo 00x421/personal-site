@@ -244,6 +244,10 @@
   --line: #d8d6ce;
   --violet: #7867e8;
   --violet-text: #6355ce;
+  /* CTA 大面积铺色专用的紫。--violet 是点缀色（图标 / 描边 / 小圆点）的用语，
+     而大面积色块与点缀色的亮度需求相反：点要够亮才看得见，面要够安静才不抢戏。
+     亮色下两者同值，暗色下另行压暗（见暗色主题）。 */
+  --cta-violet: var(--violet);
   --lime: #b3c46e;
   --muted: #63625c;
   /* 语义色：面板/卡片/正文（供暗色主题覆盖） */
@@ -277,6 +281,12 @@
   --line: #2c2c31;
   --violet: #9186f0;
   --violet-text: var(--violet);
+  /* 深紫：相对亮度 L 0.079，而页面底色 #141416 只有 0.007。
+     对底色是 2.26:1（区块身份成立），对 --ink 文字是 6.7:1（远超 3:1 门槛）。
+     对比一下：--violet 的 L 是 0.303，是页面底色的 43 倍——在浅色主题里色块
+     比页面暗（0.195 vs 0.895），暗色主题下却会比页面亮得多，同一组配对在这里失效。
+     渐变依然成立：不是变亮，而是从无色染上紫调。 */
+  --cta-violet: #4d3fa6;
   --lime: #a9bd66;
   --muted: #97968f;
   --raised: #1d1d21;
@@ -1141,8 +1151,9 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 /* CTA：纸白 → 紫的地平线。紫色从纸面里漫出来，向右逐渐加重。
    角度取 90°（水平）而不是斜角：站点的视觉语言通篇是水平线
    （hero 坐标纸网格、各区 border-top、列表横线），斜角会读成别的语言。
-   正文用 --ink——它和 --paper 在明暗两套主题里都是配对的一组，
-   所以同一行渐变在两个主题下都自动成立，不需要为暗色另写一套。 */
+   正文用 --ink——它和 --paper 在明暗两套主题里都是配对的一组。
+   但紫色端不能用 --violet：暗色下它被调亮到 #9186f0（为了当点缀色够醒目），
+   铺满 46% 宽度时就成了全页最亮的表面，像一块自发光板——所以另取 --cta-violet。 */
 .cta {
   position: relative;
   margin-bottom: 34px;
@@ -1153,7 +1164,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   align-items: end;
   justify-content: space-between;
   overflow: hidden;
-  background: linear-gradient(90deg, var(--paper) 0%, var(--violet) 100%);
+  background: linear-gradient(90deg, var(--paper) 0%, var(--cta-violet) 100%);
   color: var(--ink);
 }
 /* 噪点跟着墨色走：纸白那端本来就薄，墨色重的地方才需要颗粒。
