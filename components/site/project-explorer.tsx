@@ -4,17 +4,41 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Reveal } from '@/components/site/reveal';
-import { projectFilters, projects } from '@/data/projects';
+
+/**
+ * 卡片需要的字段。
+ *
+ * 这里**不能** import `@/data/projects`：那个模块用 eager 的
+ * `import.meta.glob('?raw')` 把全部 Markdown 原文内联进模块，一旦被客户端组件
+ * 引用，访客为了看筛选栏就要下载 marked、prismjs 和所有案例全文
+ * （实测 84 KB 解压 / 34 KB 传输）。现在字段由服务端以 props 传入，
+ * 类型定义留在本文件，客户端不再触碰数据层。
+ */
+export type ProjectCard = {
+  slug: string;
+  title: string;
+  type: string;
+  year: string;
+  summary: string;
+  tags: string[];
+  tone: 'ink' | 'violet' | 'lime';
+  mark: string;
+  status: string;
+  hasCase: boolean;
+};
+
+type Props = {
+  cards: ProjectCard[];
+  filters: string[];
+};
 
 /** 项目精选：筛选状态与横向滚动需要客户端，整块作为交互孤岛。 */
-export function ProjectExplorer() {
+export function ProjectExplorer({ cards, filters }: Props) {
   const [active, setActive] = useState('全部');
   const railRef = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ start: true, end: true });
   const visibleProjects =
-    active === '全部'
-      ? projects
-      : projects.filter((project) => project.type === active);
+    active === '全部' ? cards : cards.filter((project) => project.type === active);
 
   /** 按滚动位置记录两端状态，供 CSS 渐隐遮罩判断哪一侧还有内容。 */
   const syncEdges = useCallback(() => {
@@ -52,10 +76,10 @@ export function ProjectExplorer() {
   return (
     <>
       {/* 只有一种类型时「全部」与它结果完全相同，整行隐藏 */}
-      {projectFilters.length > 2 && (
+      {filters.length > 2 && (
         <Reveal delay={60}>
           <div className="filters" aria-label="项目筛选">
-            {projectFilters.map((filter) => (
+            {filters.map((filter) => (
               <button
                 key={filter}
                 onClick={() => setActive(filter)}

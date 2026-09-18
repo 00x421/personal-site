@@ -13,6 +13,8 @@ npm run build      # 生产构建 -> dist/
 npm run start      # 本地运行构建产物（wrangler dev，端口 8787）
 npm run lint       # oxlint
 npm run og         # 为全部文章重新生成 1200x630 OG 分享图
+npm run fonts      # 重建字体分片（新增文章用字后跑；会直接改写 globals.css）
+npm run images     # 吉祥物图 PNG → WebP（换图后跑）
 npm run deploy     # 构建并部署到线上服务器（见「部署」一节）
 ```
 
@@ -30,7 +32,8 @@ npm run start
 - **草稿状态**：文章与项目都支持 frontmatter `draft: true`，为真时该条从页面、RSS、搜索索引、sitemap、标签云**全部消失**（因为共用同一份聚合结果）。
 - **标签聚合**：文章标签自动聚合成 `/articles` 标签云与 `/articles/tag/<标签>` 聚合页（中文标签即路径，构建时统一 URL 编解码）。
 - **数字花园微网络**：frontmatter `series` 生成系列眉标与底部阅读顺序导航；正文站内链接自动汇成对方页面的「链接到本文」反向链接（构建期 HTML 扫描，零运行时开销）。
-- **字体分片**：`split-fonts.py` 把 Noto Serif SC 拆成 unicode-range 分片，共 21 片，输出到 `public/fonts/slices/`。首屏用字（标题 / 正文 / CTA 用字 + ASCII）单独成片并 45KB preload，保证标题不闪；`fonts-src/` 是 split 工具的输入（本地中间产物，不进 git），`subset-fonts.py` 负责从 OTF 生成整包。
+- **字体分片**：`split-fonts.py` 把 Noto Serif SC 拆成 unicode-range 分片（29 片），输出到 `public/fonts/slices/`，文件名带内容哈希。**每个字重有一个关键片**（`s0`），覆盖首页全部衬线文字，由 `layout.tsx` 预加载并并行下载——实测首屏只需 3 片 / 97 KB。脚本会直接改写 `app/globals.css` 的 `@font-face` 块与 `lib/font-slices.generated.ts`，采集口径与自检写在脚本头部。`fonts-src/` 是它的输入（本地中间产物，不进 git），`subset-fonts.py` 负责从完整 OTF 生成整包。
+- **静态资源与缓存**：带内容哈希的资产（`/_next/static/`、`/fonts/slices/`）由 nginx 直服并设一年 immutable；图片类一周（文件名无哈希）；页面 `no-cache`（每次重验）。静态资源不经 Node，访问日志也关了。详见 HANDOFF 的部署架构一节。
 - **RSS**：`app/rss.xml/route.ts` 输出 RSS 2.0，已加入 `<link rel="alternate">` 自动发现。
 - **站内搜索**：`app/search.json/route.ts` 聚合文章 / 项目 / 书架输出全文索引（缓存 1 小时），`components/site/site-search.tsx` 原生 `<dialog>` 命令面板（右下角入口 + Cmd/Ctrl+K），首次打开才懒加载索引，多关键词 AND 加权评分，标题 / 摘要命中片段实时高亮。
 - **动态 OG 图**：`npm run og` 用 satori + @resvg/resvg-js 生成 `public/og/articles/{slug}.png` 与 `public/og/projects/{slug}.png`，文章 / 案例页 metadata 自动引用。
@@ -105,7 +108,7 @@ npm run deploy
 
 2. 发布：删掉 `draft: true`（或一开始就不写）。
 3. 生成 OG 分享图：`npm run og`（需按 `subset-fonts.py` 文件头说明先备好源字体）。
-4. 站点用字有变化时（新增长文、新栏目）：先按 `split-fonts.py` 文件头的说明更新首屏字符集，执行 `python split-fonts.py`，把输出的 CSS 块替换 `app/globals.css` 里的 `@font-face` 规则，再 `npm run build`。上游整包子集由 `subset-fonts.py` 生成，输入放在 `fonts-src/`。
+4. 站点用字有变化时（新增长文、新栏目）：`npm run fonts`。它会重出字体分片、直接改写 `app/globals.css` 的 `@font-face` 块与 `lib/font-slices.generated.ts`（preload 清单），并自检分片不重叠。若脚本提示「某标题用字不在 w500 关键片内」，按脚本头部说明重新采集 `CRITICAL_BY_WEIGHT` 再跑一次，然后 `npm run build`。上游整包子集由 `subset-fonts.py` 生成，输入放在 `fonts-src/`。
 
 阅读时长按正文长度自动估算；上一篇 / 下一篇导航和「相关阅读」（按标签重叠推荐，无重叠时回退最新文章）全部自动生成。正文中链接到其他文章（`/articles/<slug>`）时，对方页面底部会自动出现「链接到本文」反向链接。
 

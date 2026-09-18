@@ -42,7 +42,7 @@ export default function Error({
         {/* oxlint-disable-next-line next/no-img-element -- 原创吉祥物贴图，本地静态资源按需加载即可。 */}
         <img
           className="not-found-pup"
-          src="/xwsx-air-pup-thinking-nav.png"
+          src="/xwsx-air-pup-thinking-nav.webp"
           alt="空气小狗歪着头看着出错的页面"
           width={140}
           height={140}

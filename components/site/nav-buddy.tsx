@@ -7,25 +7,25 @@ import { READ_COMPLETE_EVENT } from './reading-progress';
 const airPupStates = [
   {
     id: 'idle',
-    src: '/xwsx-air-pup-nav.png',
+    src: '/xwsx-air-pup-nav.webp',
     label: '待机',
     message: '你好，今天也一起把想法做清晰。',
   },
   {
     id: 'thinking',
-    src: '/xwsx-air-pup-thinking-nav.png',
+    src: '/xwsx-air-pup-thinking-nav.webp',
     label: '思考中',
     message: '让我想想，先把问题拆小一点。',
   },
   {
     id: 'happy',
-    src: '/xwsx-air-pup-happy-nav.png',
+    src: '/xwsx-air-pup-happy-nav.webp',
     label: '开心',
     message: '汪！这个想法听起来不错。',
   },
   {
     id: 'sleeping',
-    src: '/xwsx-air-pup-sleeping-nav.png',
+    src: '/xwsx-air-pup-sleeping-nav.webp',
     label: '休息',
     message: '短暂充电，灵感也需要留白。',
   },

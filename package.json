@@ -13,6 +13,8 @@
     "lint": "oxlint",
     "format": "oxfmt",
     "og": "node --experimental-strip-types scripts/generate-og.ts",
+    "fonts": "python split-fonts.py",
+    "images": "python scripts/optimize-pup-images.py",
     "deploy": "node scripts/deploy.mjs"
   },
   "dependencies": {

@@ -15,6 +15,7 @@ import { RailScroller } from '@/components/site/rail-scroller';
 import { Reveal } from '@/components/site/reveal';
 import { ThemeToggle } from '@/components/site/theme-toggle';
 import { articles } from '@/data/articles';
+import { projectCards, projectFilters } from '@/data/projects';
 import { capabilities, siteIdentity, siteNavigation, toolbox } from '@/lib/site-content';
 
 /** hero 标签带关键词；渲染两份供移动端无缝滚动使用 */
@@ -115,7 +116,8 @@ export default function Home() {
             <p>一些把洞察、设计与技术连接起来的尝试。</p>
           </div>
         </Reveal>
-        <ProjectExplorer />
+        {/* 卡片数据在服务端取出后传入：客户端只拿到字段，拿不到 Markdown 原文 */}
+        <ProjectExplorer cards={projectCards} filters={projectFilters} />
       </section>
       <section id="writing" className="section-wrap writing-section">
         <Reveal>
