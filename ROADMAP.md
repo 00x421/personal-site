@@ -192,6 +192,19 @@ nginx 侧：
 | RSC | 26 KB | 26 KB |
 | **合计** | **1,038 KB** | **476 KB（−54%）** |
 
+### 回访实测
+
+上面是首次访问。缓存策略要验证的是**第二次**：
+
+| | 资源数 | 命中缓存 | 实际传输 |
+| --- | --- | --- | --- |
+| 首次 | 31 | — | 476 KB |
+| 回访 | 31 | **28** | **26 KB（−96%）** |
+
+那 26 KB 是两个 RSC 预取请求（`/projects/...?_rsc=`），它们没有缓存头，属于预期行为。字体、CSS、JS、图片全部命中。
+
+> **测量坑**：第一次测回访时得到「31 个资源全部重新下载」，差点误判成缓存失效。原因是早前用 CDP 设过 `Network.setCacheDisabled(true)`，**这个状态会留在 page target 上**，后续新建 CDP session 再设回 `false` 也不一定恢复。换一个全新页面、完全不碰 CDP 重测，才是真实结果。
+
 另：控制台零错误零警告，3 条字体 preload 无重复，明暗双主题与 390px 移动端均验证通过。
 
 ---
@@ -208,7 +221,7 @@ nginx 侧：
 
 - **框架 JS 535KB**（React 186 + vinext 130 + 业务 112）：vinext beta 固有成本，等稳定版
 - **`globals.css` 2368 行单文件**：注释与分区做得不错，可读性尚可，但无法 tree-shake。按关注点拆分（typography / rails / article / theme）优先级低
-- **图片**：`personal-portrait-scribble.webp` 151KB 可再压到 ~80KB；`xwsx-air-pup-nav.png` 40KB 可转 webp
+- **肖像图**：`personal-portrait-scribble.webp` 151KB。它是手绘质感图，重编码到 q78 只省 6%——用主视觉的画质换 9 KB 不划算，权衡后放过
 - **`.cta` 右上空场**：放大标题后从 55% 降到 43%，仍是一块不对称色场。可视为海报式的刻意留白；若要进一步收，需重新组织文案或加装饰，不建议无设计输入时动手
 - **`text-spacing-trim`**：现代 CSS 有 `text-spacing-trim: trim-start` 可自动收全角标点前侧空白，但目前仅 Chrome 支持，暂不引入
 
