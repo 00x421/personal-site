@@ -244,10 +244,9 @@
   --line: #d8d6ce;
   --violet: #7867e8;
   --violet-text: #6355ce;
-  /* CTA 大面积铺色专用的紫。--violet 是点缀色（图标 / 描边 / 小圆点）的用语，
-     而大面积色块与点缀色的亮度需求相反：点要够亮才看得见，面要够安静才不抢戏。
-     亮色下两者同值，暗色下另行压暗（见暗色主题）。 */
-  --cta-violet: var(--violet);
+  /* CTA 的面色。亮色是「纸白 → 紫」的渐变——紫色从纸面漫出来，向右逐渐加重。
+     暗色改纯色，理由见暗色主题里的说明。 */
+  --cta-bg: linear-gradient(90deg, var(--paper) 0%, var(--violet) 100%);
   --lime: #b3c46e;
   --muted: #63625c;
   /* 语义色：面板/卡片/正文（供暗色主题覆盖） */
@@ -281,12 +280,17 @@
   --line: #2c2c31;
   --violet: #9186f0;
   --violet-text: var(--violet);
-  /* 深紫：相对亮度 L 0.079，而页面底色 #141416 只有 0.007。
-     对底色是 2.26:1（区块身份成立），对 --ink 文字是 6.7:1（远超 3:1 门槛）。
-     对比一下：--violet 的 L 是 0.303，是页面底色的 43 倍——在浅色主题里色块
-     比页面暗（0.195 vs 0.895），暗色主题下却会比页面亮得多，同一组配对在这里失效。
-     渐变依然成立：不是变亮，而是从无色染上紫调。 */
-  --cta-violet: #4d3fa6;
+  /* 暗色下 CTA 用纯深紫，不用渐变。两个理由：
+
+     一、渐变的左端只能取 --paper（近黑），于是中间必经一大片浑浊的灰紫
+     （实测左端 #141416 → 中段 #453e6c），这是「不好看」的真正来源；
+     去掉渐变，浑浊中间调自动消失。
+
+     二、面积与亮度成反比。--violet 在暗色下调亮到 #9186f0 是为了当点缀色够醒目，
+     但铺满全宽时它就成了全页最亮的表面（L 0.294，是页面底色的 41 倍）。
+     深紫 #4d3fa6 的 L 是 0.079：对底色 2.26:1（区块身份成立），
+     对 --ink 文字 6.7:1（远超 3:1 门槛）。 */
+  --cta-bg: #4d3fa6;
   --lime: #a9bd66;
   --muted: #97968f;
   --raised: #1d1d21;
@@ -1148,12 +1152,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   color: var(--body-text);
   font-size: 12px;
 }
-/* CTA：纸白 → 紫的地平线。紫色从纸面里漫出来，向右逐渐加重。
-   角度取 90°（水平）而不是斜角：站点的视觉语言通篇是水平线
-   （hero 坐标纸网格、各区 border-top、列表横线），斜角会读成别的语言。
-   正文用 --ink——它和 --paper 在明暗两套主题里都是配对的一组。
-   但紫色端不能用 --violet：暗色下它被调亮到 #9186f0（为了当点缀色够醒目），
-   铺满 46% 宽度时就成了全页最亮的表面，像一块自发光板——所以另取 --cta-violet。 */
+/* CTA：整页的情绪落点。面色由 --cta-bg 给出（亮色是渐变，暗色是纯色）。
+   正文用 --ink——它和 --paper 在明暗两套主题里都是配对的一组。 */
 .cta {
   position: relative;
   margin-bottom: 34px;
@@ -1164,11 +1164,12 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   align-items: end;
   justify-content: space-between;
   overflow: hidden;
-  background: linear-gradient(90deg, var(--paper) 0%, var(--cta-violet) 100%);
+  background: var(--cta-bg);
   color: var(--ink);
 }
 /* 噪点跟着墨色走：纸白那端本来就薄，墨色重的地方才需要颗粒。
-   用 mask 让它随渐变渐显，而不是全幅铺匀。 */
+   mask 让颗粒随渐变渐显，而不是全幅铺匀。
+   暗色下 CTA 是纯色块，没有「纸白那端」，所以整块均匀铺颗粒。 */
 .cta::before {
   content: '';
   position: absolute;
@@ -1178,6 +1179,10 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   -webkit-mask-image: linear-gradient(90deg, transparent 6%, #000 62%);
   mask-image: linear-gradient(90deg, transparent 6%, #000 62%);
+}
+html[data-theme='dark'] .cta::before {
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 .cta > * {
   position: relative;
@@ -1202,10 +1207,15 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   color: var(--paper);
   border-radius: 0;
 }
-/* 点击已复制邮箱：奶油白反转确认态（暗色下 --ink 偏浅，故文字用固定近黑） */
+/* 点击已复制邮箱：反转确认态 = --ink 与 --paper 互换位置。
+   **两个值都必须走变量。** 曾经这里把文字写成固定近黑（当时的想法是
+   「反转后是亮底，所以配深字」），但暗色主题下 --paper 是 #141416 近黑，
+   于是成了黑底黑字——对比度 1.03:1，点击后文字整块消失。
+   反转的本质是「互换」，不是「亮底深字」；--paper 与 --ink 在明暗两套
+   主题里都是配对的一组，互换后两边自动成立。 */
 .mail-button[data-copied='true'] {
   background: var(--paper);
-  color: #17171b;
+  color: var(--ink);
 }
 .site-footer {
   display: flex;

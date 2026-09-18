@@ -90,6 +90,9 @@ public/fonts/slices/    29 个分片 woff2（进 git，文件名带内容哈希�
    - ⚠️ **历史教训**：分片方案曾因 `all_chars - CRITICAL`（int 集合减 str 集合）恒为空操作而整体失效近两周（关键片被后续片遮蔽、从不被浏览器取用）；修复后又因 stdout 解析把脚本收尾文本写进样式表，压缩成选择器 `DONE :root` 导致全站 CSS 变量失效。两件事都写在 `content/articles/chinese-font-slicing-failed.md`。**改这个脚本时请保留自检**。
 4. **`next.config.ts` 里 `reactMaxHeadersLength: 0`**：禁用 React 经 HTTP Link 头发的资源提示。三重效果：图片 preload 从 HTTP 头转 HTML 标签（首屏真用了，无警告）、vinext 字体 preload 的 Link 头被禁（app router 字体 preload 只走 HTTP 头渠道）、console 零警告。**别删这个配置**，删了 preload 警告会回来。
 5. **吉祥物/主题切换等交互全部渐进增强**：服务端渲染基础态，客户端组件只做增强，JS 失败页面仍完整可读。
+6. **明暗主题的配色一律走变量配对，绝不只写一半**：`--ink` / `--paper`、`--card-ink` / `--card-ink-text`、`--body-text` 这类都是**成对定义**的，在明暗两套主题下各自成立。把其中一半写成固定色值，它就会在某个主题下崩掉——`.mail-button[data-copied]` 曾在暗色下变成黑底黑字（对比度 1.03:1），点击后文字整块消失。新增颜色前先问一句：**它在明暗两个主题下都成立吗？** 批量排查用 `grep -E '(color|background):\s*#[0-9a-fA-F]{3,6}' app/globals.css`（详见 ROADMAP）。
+   - 仅有的例外是 `.project-card.violet { color: #000 }`（紫色在两端都够亮）与 `app/global-error.tsx`（它会替换 `html`/`body`，不能依赖站点 CSS），两者都不要改。
+7. **改动样式后要验交互状态**：静态截图看不到 `:hover` / `:focus` / `[data-*]`，而这类状态正是最容易配色出错的地方。改一个区块时，顺手把该区块内所有带状态的元素逐个验一遍。
 
 ## 性能现状与瓶颈
 
