@@ -100,10 +100,12 @@ public/beian-gongan.png 公安部备案徽标（官方下载件，原样使用�
 7. **改动样式后要验交互状态与共用的类名**：
    - 静态截图看不到 `:hover` / `:focus` / `[data-*]` 状态，而这类状态正是最容易配色出错的地方
    - 删样式前先 `grep` 类名：`project-rail-footer` 曾是**项目区与文章区共用**的（名字带着 `project-` 却跨区域），删项目区时把文章区的分页脚一起打掉了。现名为 `.rail-footer`
-8. **公安部备案条放在 `layout.tsx`，不放首页的 `.site-footer`**：备案号必须在网页源码底部可见，而且**每一页都得有**——只放首页页脚的话，爬到文章页的检查看不到它。所以它是 `layout` 里 `<body>` 的最后一个渲染元素（其后只剩 Next 的模块脚本）。图标在编号之前、`rel="noreferrer"` + `target="_blank"`，都按官方给的 HTML 来。
-   - 图标 `public/beian-gongan.png`（下载件原样，36×40，展示 18×20 正好 2x 覆盖）。**别转 WebP、别重压**——备案徽标要求原样使用，而且它只有 1.4 KB。
+8. **公安部备案与 ICP 备案放在 `layout.tsx`，不放首页的 `.site-footer`**：备案号必须在网页源码底部可见，而且**每一页都得有**——只放首页页脚的话，爬到文章页的检查看不到它。所以它是 `layout` 里 `<body>` 的最后一个渲染元素（其后只剩 Next 的模块脚本）。
+   - 顺序：ICP（`beian.miit.gov.cn`，不要求图标）在前，公安（`beian.mps.gov.cn`）在后。
+   - 公安图标 `public/beian-gongan.png`（下载件原样，36×40，展示 18×20 正好 2x 覆盖）。**别转 WebP、别重压**——备案徽标要求原样使用，而且它只有 1.4 KB。图标在编号之前（官方要求）。
    - 不走 `next/image`（有 `oxlint-disable` 豁免，与站内其他 `<img>` 同一惯例）。
    - nginx 的图片规则会直服它（实测 `200 / image/png / 1403 bytes / max-age=604800`）。
+   - 窄屏需要 `padding-bottom: 74px`：右下角固定搜索按钮（`bottom: 16px`、高 46px）占着离底 16–62px 这条带，而两条备案号并排约 342px 几乎铺满 390px 视口，无论怎么对齐都会从按钮底下穿过。
 
 ## 性能现状与瓶颈
 
@@ -136,6 +138,8 @@ TTFB 61ms，load 754ms（本机宽带下）。缓存策略见「部署架构」�
 
 ### Windows / PowerShell
 - **含中文的文件编辑一律用 Python**（`io.open` + `encoding="utf-8"` + `newline="\n"`）。PowerShell `Get-Content`（无 -Encoding）按 GBK 解码 UTF-8，`Set-Content` 写回 = 乱码固化；`-NoNewline` + 数组拼接 = 丢换行。曾因此损坏 globals.css，靠 git restore 恢复。
+- **含引号 / 反斜杠的多行中文提交信息会被 PowerShell 解析坏**（`\"` 会断行 → `error: pathspec ... did not match`）。改用写一个消息文件 + `git commit -F <file>`，提交后删掉。
+- **验证横向溢出必须用 `clientWidth`，不能用 `innerWidth`**：后者含滚动条宽度（桌面 15px），于是 `scrollWidth > innerWidth` 这个判据在出现滚动条时**恒为 false**，会静默漏报所有横向溢出。正确：`documentElement.scrollWidth > documentElement.clientWidth`；更硬的证据是真的去滚一下看 `scrollX > 0`。曾因为写错判据三次报告过“移动端无横向滚动”，实际有三个元素在撑宽页面。
 - **PowerShell `>` 重定向输出是 UTF-16 LE**：Python 读它要 `encoding="utf-16"`；**二进制文件（字体/图片）绝不能用 PowerShell `>` 从 git 恢复**（会膨胀 2 倍损坏），用 `cmd /c "git cat-file blob <sha> > file"`。
 - **python stdin 管道传中文会变 `?`**：脚本里避免中文路径字面量，用相对路径（工作目录已是项目根）或写临时 .py 文件再跑。
 - `git push` 的 stderr 报 exit code 1 是 PowerShell 误报，看到 `main -> main` 就是成功。

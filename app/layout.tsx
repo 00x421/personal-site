@@ -87,10 +87,23 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {children}
         <SiteSearch />
-        {/* 公安部备案号。官方要求展示在网页源码底部、图标置于备案编号之前。
-            放在 layout 而不是首页的 .site-footer 里，是为了让文章页、案例页
-            等所有页面都带上——备案号只在首页出现时，爬到内页的检查看不到它。 */}
+        {/* 备案信息，两条。
+            ICP（工信部）在前、公安在后——这与多数中文站点的惯例一致，
+            也是办理顺序（先 ICP 才能办公安联网备案）。
+
+            放在 layout 而不是首页的 .site-footer 里，是为了让所有页面都带上：
+            备案检查是逐页抓取的，只放首页的话，爬到 /articles/xxx 就找不到了。
+
+            两家的官方要求不同：
+            - ICP 只要求链接到 beian.miit.gov.cn，不要求图标
+            - 公安要求图标置于编号之前 */}
         <div className="site-filing">
+          <a href="https://beian.miit.gov.cn/" rel="noreferrer" target="_blank">
+            粤ICP备2026135612号-1
+          </a>
+          <span className="site-filing-sep" aria-hidden="true">
+            ·
+          </span>
           <a
             href="https://beian.mps.gov.cn/#/query/webSearch?code=44180202001182"
             rel="noreferrer"

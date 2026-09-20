@@ -459,6 +459,20 @@ button:focus-visible {
   text-align: left;
   box-shadow: 5px 5px 0 var(--violet);
 }
+/* 文章页的小狗在顶栏右端（.article-top-row 是 space-between），
+   而上面的 left: 0 是锚在小狗**左缘**、气泡向右展开——小狗靠右时它就冲出视口。
+   实测 390px 屏上气泡右缘到 489（视口 375），溢出 109px，
+   把整个文档撑出横向滚动条；而这条滚动条只在「读完文章、小狗冒泡」时出现，
+   所以很容易漏掉。
+
+   锚定方向必须按小狗在各自容器里的位置分别给，不能统一：
+   - 首页小狗在左端（.nav-brand-group），左锚才不溢出（右缘 364 < 375）
+   - 文章页小狗在右端，右锚才不溢出（左缘 91 > 0）
+   反过来任何一边都会朝另一侧冲出视口。 */
+.article-top-row .nav-buddy-tip {
+  left: auto;
+  right: 0;
+}
 @keyframes buddy-float {
   0%,
   100% {
@@ -618,8 +632,15 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
     Georgia,
     serif;
   letter-spacing: var(--tracking-cjk-display);
-  /* 窄屏保底：字号不超过「最长行 7 字」能放下的宽度，保证标题恒为两行 */
-  font-size: min(clamp(54px, 8vw, 112px), calc((100vw - 48px) / 6.5));
+  /* 窄屏保底：字号不超过「最长行 7 字」能放下的宽度，保证标题恒为两行。
+     「7 字」在 -0.03em 字距下实测占 6.79em，所以除数必须大于它——
+     原来的 6.5 偏小，390px 屏上标题会超出内容区 3px，
+     连带把整个文档撑出横向滚动条（实测 scrollWidth 378 > clientWidth 375）。
+     取 7.0 留出余量（320 / 360 / 375 / 390 / 414px 屏均无溢出）。
+
+     另注：100vw 含滚动条宽度（桌面约 15px），所以这个算式天然偏乐观，
+     除数留余量也一并吸收它。 */
+  font-size: min(clamp(54px, 8vw, 112px), calc((100vw - 48px) / 7));
 }
 /* CTA 是整页的情绪落点，字号可以比 hero 再大一档：
    该区最长行 5 字，除以 4.65 留出标点与字距余量；
@@ -1274,13 +1295,19 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   align-items: center;
   gap: 5px;
 }
-/* 公安部备案条：合规信息，刻意做得轻——它是必须公开的信息，不是内容。
+/* 备案条：合规信息，刻意做得轻——它是必须公开的信息，不是内容。
    放在 layout 里，所以每个页面底部都有一行。
    首页还会多一条 .site-footer（导航链接那行），两者叠起来就是常规的
-   「页脚 + 法务子行」。 */
+   「页脚 + 法务子行」。
+
+   允许换行：两条备案号并排约 350px，390px 视口下可用宽正好也是 350px，
+   再窄一点就会挤。wrap 后各自居中成两行，读起来仍然清楚。 */
 .site-filing {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
+  gap: 2px 8px;
   padding-bottom: 34px;
   color: var(--muted);
   font-size: 12px;
@@ -1289,6 +1316,9 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+.site-filing-sep {
+  opacity: 0.55;
 }
 /* 徽标按原始比例（下载件是 36×40，这里 18×20 正好是 2x 覆盖） */
 .site-filing img {
@@ -1300,6 +1330,17 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   .section-wrap {
     padding-left: 20px;
     padding-right: 20px;
+  }
+  /* 备案条要在右下角搜索按钮之上。
+     按钮是 position: fixed、bottom 16px、高 46px，占掉离底 16–62px 这条带；
+     而两条备案号并排约 342px，在 390px 视口里几乎铺满宽度，
+     无论怎么对齐都会从按钮底下穿过。所以只能抬高：74px > 62px。 */
+  .site-filing {
+    padding-bottom: 74px;
+    /* 收窄间距换余量：360px 视口下原本只剩 2px，字体会因加载先后微调宽度，
+       卡这么紧会忽而一行忽而两行。收 3px 后余量到 9px，稳定在一行。
+       真到了更窄的屏会换行成两行居中，那也是可接受的降级。 */
+    gap: 2px 5px;
   }
   .search-fab {
     right: 16px;
