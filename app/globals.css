@@ -571,7 +571,11 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   .not-found-actions button,
   .now-actions a,
   .site-footer a,
-  .site-filing a {
+  .site-filing a,
+  /* 代码块的「复制」按钮实测只有 34×16，低于 WCAG 2.2 SC 2.5.8
+     的 24×24 下限。它坐在代码块右上角，直接加 padding 会撑高标题条，
+     所以同样用伪元素外扩（宽 34→50、高 16→28）。 */
+  .code-copy {
     position: relative;
   }
   .back-link::after,
@@ -579,7 +583,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   .not-found-actions button::after,
   .now-actions a::after,
   .site-footer a::after,
-  .site-filing a::after {
+  .site-filing a::after,
+  .code-copy::after {
     content: '';
     position: absolute;
     inset: -11px -8px;
@@ -2067,7 +2072,11 @@ main {
 }
 .article-row {
   display: grid;
-  grid-template-columns: 70px 1fr 26px;
+  /* 中间列用 minmax(0, 1fr) 而不是 1fr：后者的最小值是 min-content，
+     窄屏（≤320px）下长标题会把 1fr 撑宽，把第三列的箭头挤出栅格外
+     （实测 320px 时箭头 right=341，视口只有 320，被切掉 21px）。
+     允许列收缩到内容以下，标题就会正常换行。 */
+  grid-template-columns: 70px minmax(0, 1fr) 26px;
   gap: 25px;
   padding: 30px 0;
   border-bottom: 1px solid var(--line);

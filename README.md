@@ -16,6 +16,7 @@ npm test           # node --test（内容解析 + 集合查询，零新依赖）
 npm run og         # 为全部文章重新生成 1200x630 OG 分享图
 npm run fonts      # 重建字体分片（新增文章用字后跑；会直接改写 globals.css）
 npm run images     # 吉祥物图 PNG → WebP（换图后跑）
+npm run portrait   # 肖像图 → 5 档响应式 WebP（换图后跑，母版放 images-src/）
 npm run deploy     # 构建并部署到线上服务器（见「部署」一节）
 ```
 

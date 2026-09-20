@@ -5,8 +5,8 @@
 ## 当前状态（2026-09-18）
 
 - **站点功能完整**：首页、文章（含标签聚合/系列/反向链接）、项目案例、书架、/now、RSS、站内搜索、OG 图、JSON-LD，全部可用。
-- **质量基线**：Lighthouse 无障碍 / 最佳实践 / SEO 全 100；性能（模拟 Fast 4G 口径）移动端 66 分、LCP 5.5s。
-- **首屏传输**（2026-09-18 实测，禁缓存）：**476 KB**（字体 97 + JS 178 + 图片 158 + RSC 26 + CSS 17）。优化前是 1,038 KB，明细与做法见 [ROADMAP.md](./ROADMAP.md)「第 3 批」。
+- **质量基线**（2026-09-20 Lighthouse 13.4.1 实测）：无障碍 / 最佳实践 / SEO **全 100**；性能移动端 **93–97**（连跑 3 次有 ±4 波动）、桌面端（1350×940）**77**；TBT 0 ms、CLS 0。移动端 Performance 曾为 66，明细见 [ROADMAP.md](./ROADMAP.md)。
+- **首屏传输**（Lighthouse 移动端口径）：**~473 KB**（脚本 175 + 图片 129 + 字体 96 + CSS 18 + 文档 12）。图片已从 159 KB 降到 129 KB（移动）/ 45 KB（桌面），靠肖像图改响应式。
 - **已上线（2026-09-13）**：https://xwsx.top ，自托管 Node（vinext standalone 路径），未走 Cloudflare。部署架构见下节。
 - **测试**：`npm test` 76 个用例（`node --test`，零新依赖）覆盖内容解析与所有集合查询。为此把查询逻辑从 `data/articles.ts` 抽到了 `lib/article-queries.ts`，见下「三层结构」。
 - **CI**：GitHub Actions 每次 push/PR 跑 oxlint + build（node 24）。曾连续 5 次失败：rolldown 1.0.1 自身声明矛盾（deps 钉死 @emnapi/* 1.10.0 + 传递 peer ^1.7.1），Linux npm ci 严格校验误报 Missing 1.11.3，Windows 不装 wasm32 子树无法复现。改 `npm ci --legacy-peer-deps` + `npm install` 兜底后恢复绿；根治需升级 rolldown/vite。
@@ -57,11 +57,14 @@ scripts/generate-og.ts  satori 生成 OG 分享图（纯 Node，npm run og）
 scripts/deploy.mjs      一键部署（npm run deploy，含健康检查与回滚）
 scripts/clean-dist.mjs  跨平台清 dist（替代会静默失效的 fs.rmSync）
 scripts/optimize-pup-images.py  吉祥物 PNG → WebP（npm run images）
+scripts/optimize-portrait.py   肖像图 → 5 档响应式 WebP（npm run portrait）
+images-src/             图像母版（gitignore；恢复命令见 optimize-portrait.py 头部）
 split-fonts.py          字体 unicode-range 分片（见下）
 subset-fonts.py         全量 OTF → 站内用字整包子集（split 的上游）
 fonts-src/              字体中间产物（gitignore，本地保留）
 public/fonts/slices/    27 个分片 woff2（进 git，文件名带内容哈希）
 public/beian-gongan.png 公安部备案徽标（官方下载件，原样使用、勿压缩）
+public/personal-portrait-scribble-{320,480,640,800,1024}.webp  肖像图响应式候选集
 ```
 
 **客户端包的边界（重要）**：`'use client'` 组件**不能** import `@/data/*`。那些模块用 eager 的 `import.meta.glob('?raw')` 把全部 Markdown 原文内联，客户端一旦引用就会连带打进 marked、prismjs 与所有案例全文（实测 `project-explorer` 因此膨胀到 84 KB）。数据在服务端取好，以 props 传入。
@@ -109,30 +112,33 @@ public/beian-gongan.png 公安部备案徽标（官方下载件，原样使用�
 
 ## 性能现状与瓶颈
 
-**首屏传输**（2026-09-18 实测，浏览器 `Performance` API，禁缓存加载首页）：
+**首屏传输**（2026-09-20，Lighthouse 移动端口径）：
 
 | 类型 | 传输 | 说明 |
 | --- | --- | --- |
-| 字体 | **97 KB**（3 个）| 三个关键片，preload 并行下载 |
-| JS | **178 KB** | 其中框架 ~140 KB（gzip） |
-| 图片 | **158 KB** | 肖像是手绘质感图，压缩空间有限 |
-| RSC 数据 | 26 KB | 预取的两个项目案例 |
-| CSS | 17 KB | |
-| **合计** | **476 KB** | 优化前 1,038 KB |
+| JS | **175 KB** | 其中框架 ~140 KB（gzip）——现在是最大一项 |
+| 图片 | **129 KB**（移动）/ **45 KB**（桌面）| 肖像图改响应式后按 DPR 选档 |
+| 字体 | **96 KB**（3 个）| 三个关键片，preload 并行下载 |
+| CSS | 18 KB | |
+| 文档 | 12 KB | |
+| **合计** | **~473 KB** | 优化前 1,038 KB |
 
-TTFB 61ms，load 754ms（本机宽带下）。缓存策略见「部署架构」一节。
+Lighthouse 13.4.1 实测（模拟限速，同口径）：
 
-模拟 Fast 4G（Lighthouse 默认移动口径）：
-
-| 指标 | 值 | 说明 |
+| 指标 | 移动端（412×823 @1.75）| 桌面端（1350×940 @1）|
 |---|---|---|
-| Performance | 66 | 未随本次优化重测 |
-| LCP | 5.5s | 同上 |
-| FCP | 4.6s | 同上 |
+| Performance | **93–97**（3 次，±4 波动）| **77** |
+| Accessibility / Best Practices / SEO | 100 / 100 / 100 | 100 / 100 / 100 |
+| FCP | 1.7 s | 1.7 s |
+| LCP | 2.4–2.8 s | 2.7 s |
+| TBT | **0 ms** | **0 ms** |
+| CLS | **0** | **0** |
 
-- **剩余瓶颈是框架 JS**（React 186KB + vinext 130KB + 业务 112KB raw），vinext beta 固有成本，动不了。稳定版出来前不折腾。
-- **下一步可做的**（按性价比）：字体子集拆分（按页面类型给不同字集，类似关键片的思路但更彻底）、`container` 查询替代部分媒体查询、图片改用 `srcset` 给移动端更小尺寸。
-- **已做过但收益有限的**：肖像图重编码（q78 只省 6%，用主视觉画质换 9 KB 不划算，放弃）。
+- **剩余瓶颈是框架 JS**（175 KB），vinext beta 固有成本，等稳定版。其次是字体 96 KB（中文衬线三字重的关键片总和，已经按字重拆过）。
+- **图片已经不是瓶颈**。肖像图现在是 5 档响应式（320/480/640/800/1024），并且移出了关键路径（`loading="lazy"`——它在所有视口下都在首屏之外）。实测移动端挑 640、真桌面 1350 挑 480，三次选择都正确且清晰（`sharpRatio` ≥ 1）。
+- **下一步可做的**（按性价比）：字体按页面类型给不同字集（比关键片更彻底）、按需加载 `code-block-enhancer` 依赖的 prismjs 语言包。
+- **已做过但收益有限的**：肖像图重编码到 q78（只省 6%，用主视觉画质换 9 KB 不划算，放弃——但**尺寸**过剩是另一回事，已由响应式解决）；小狗图保持单一 192×192（覆盖 3.5× DPR；它是 LCP 元素，多档选择的开销换不回 3 KB）。
+- **`screenEmulation.disabled` 不等于桌面口径**：它会退回 headless 默认窗口（≈720 px），拿到的是中间尺寸的数据。要真桌面视口得显式给 `--screenEmulation.width=1350 --screenEmulation.height=940 --screenEmulation.deviceScaleFactor=1`。
 
 ## 已知坑（血泪经验，务必读）
 

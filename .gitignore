@@ -46,4 +46,8 @@ next-env.d.ts
 
 # font build intermediates (regenerate with subset-fonts.py, see split-fonts.py)
 /fonts-src/
+
+# image masters (regenerate outputs with npm run portrait / npm run images;
+# 恢复母版见 scripts/optimize-portrait.py 头部的 git cat-file 命令)
+/images-src/
 .mimosa/

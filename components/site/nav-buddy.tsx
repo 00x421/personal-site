@@ -145,7 +145,16 @@ export function NavBuddy() {
       aria-expanded={open}
     >
       {/* oxlint-disable-next-line next/no-img-element -- 原创导航吉祥物需保持透明材质，直接使用本地静态资源。 */}
-      <img className="nav-buddy-image" key={state.id} src={state.src} alt="" />
+      <img
+        className="nav-buddy-image"
+        key={state.id}
+        src={state.src}
+        alt=""
+        /* 这是首屏的 LCP 元素（Lighthouse 桌面端实测由它决定 LCP）。
+           它只有 5.8 KB，但如果不标明优先级，就会和 155 KB 的肖像图等资源
+           平起平坐地抢带宽。 */
+        fetchPriority="high"
+      />
       {sleepy && (
         <span className="nav-buddy-z" aria-hidden>
           z

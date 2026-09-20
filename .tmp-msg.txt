@@ -1,0 +1,45 @@
+perf(images): 肖像图改响应式（桌面省 114KB），并修两个移动端小问题
+
+用 Lighthouse 13.4.1 做性能体检时发现的几件事，都不是这轮新引入的。
+
+一、肖像图的「尺寸过剩」（Lighthouse 称 155KB 里 135KB 是浪费）
+这与之前的结论不矛盾，是两件事被混在一起：
+  - 压缩率（q78）    省 7.5KB  ← 之前测的，结论没错
+  - 尺寸过剩         省 134KB ← 之前完全漏了
+而且它在高分屏上还反过来不够用：
+  视口 390  显示 319x432  DPR3 需要 956  768 不够
+  视口 1024 显示 323x576  DPR3 需要 969  不够
+  视口 1440 显示 420x576  DPR3 需要 1259 不够
+同一个文件对谁都不合适。修法：
+  - 从 git 历史取回 1024x1536 母版（faea917 转 WebP 时删掉了 jpg），
+    放 images-src/（gitignore，与 fonts-src/ 同惯例）
+  - 新增 scripts/optimize-portrait.py（npm run portrait）生成 5 档
+  - srcset + sizes，sizes 按 .about-section 实际布局推导并用实测校验
+  - 改 loading=lazy：它在所有视口下都在首屏之外（about 区在 hero 之下），
+    原本却被 preload 进关键路径，和真正的 LCP 元素抢带宽
+  - 小狗图加 fetchPriority=high（它是桌面端 LCP 元素，只有 5.8KB）
+
+效果：移动端图片 159->125KB，LCP 元素从图片变成 h2 文字（3.1->2.4s）；
+桌面端图片 159->45.2KB（-72%）。
+
+srcset 选择经三次实测验证（看挑中哪一档 + sharpRatio，不看会漂移的视口数字）：
+  412@1.75  槽位348 需609 -> 挑640  ✓
+  ~720@1     槽位246 需246 -> 挑320  ✓
+  1350@1     槽位425 需425 -> 挑480  ✓
+
+二、.article-row 在 320px 下把箭头挤出栅格
+grid-template-columns: 70px 1fr 26px 里的 1fr = minmax(auto,1fr)，
+最小值是 min-content，长标题把中间列撑宽，箭头被推到 right=341
+（视口 320，被切 21px）。改成 minmax(0,1fr)。
+
+三、代码块「复制」按钮 34x16，低于 WCAG 2.2 SC 2.5.8 的 24x24
+它坐在代码块右上角，加 padding 会撑高标题条，所以并入站内既有的
+伪元素外扩规则 -> 有效命中区 50x38。
+
+体检覆盖 320/360/390/414 x 9 个页面：全部无横向溢出。
+（差点又踩同一个坑：判据里 scrollTo(300) 后立刻读 scrollX，而站点有
+ scroll-behavior:smooth，读到的是动画前的 0。必须先覆盖成 auto。）
+
+实测结果：移动端 perf 93-97（3 次，±4 波动）、真桌面 1350x940 为 77；
+无障碍/最佳实践/SEO 全 100；TBT 0ms、CLS 0。
+npm test 76/76、tsc 零错误、oxlint 零告警。
