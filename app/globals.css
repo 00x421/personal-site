@@ -820,15 +820,18 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .rail-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 18px;
   color: var(--muted);
   font: 700 10px monospace;
   letter-spacing: 0.05em;
 }
+/* 用 auto 外边距而不是 justify-content: space-between：提示词是条件渲染的
+   （只在轨道真的可滚时才出现），space-between 在没有那个 span 时会把
+   按钮放到左边。auto 外边距两种情况下都正确。 */
 .rail-footer > div {
   display: flex;
   gap: 6px;
+  margin-left: auto;
 }
 .rail-footer button {
   width: 34px;
@@ -1440,9 +1443,6 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   }
   .rail-footer > span {
     display: none;
-  }
-  .rail-footer {
-    justify-content: flex-end;
   }
   /* 窄屏：内容与布局不变，只收间距、缩字号 */
   .project-card {
