@@ -629,25 +629,31 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   display: block;
   white-space: nowrap;
 }
-.hero h1 em,
-.cta h2 em {
+/* hero 与 CTA 的强调语汇：同一支紫（--violet），各自再叠加自己的形态差异
+   （hero 比周围轻一档到 400；CTA 用斜体）。分开写是因为两者字重不同，
+   合在一个选择器里就得靠后边的规则去覆盖，读起来像意外。 */
+.hero h1 em {
   font-weight: 400;
   color: var(--violet);
 }
-/* CTA 标题两行同色（都是 --ink），层次只用形态差异——即斜体——而不是颜色。
-   斜体是 <em> 的浏览器默认值，这里显式写出来是为了防止被后续规则取消
-   （历史上确实取消过一次）。注意 Noto Serif SC 没有真正的斜体字形，
-   这里是浏览器合成倾斜，大字标题下可接受。
+/* .cta h2 em 的强调。
 
-   关于颜色：曾经的限制是「文字跨渐变时任何强调色都会在某一端对比不足」
-   （试过深紫与淡紫两套，各自都只能在渐变的一段里成立），所以用统一 --ink。
-   底色去掉后这条限制已经不存在了，「变成现实。」可以重新用 --violet-text
-   与 hero 的 em 呼应——但当时「不要强调色」是明确说过的决定，
-   所以保持现状，改不改由使用者定。 */
+   历史上这里只能用 color: inherit（全黑）——因为「文字跨渐变时任何强调色
+   都会在某一端对比不足」（试过深紫与淡紫，各自只能在渐变的一段里成立）。
+   底色去掉后这条限制就消失了，于是「变成现实。」可以重新上色。
+
+   为什么是 --violet 而不是 --violet-text：
+   - 与 hero 的 em 同色，两个大标题的强调语汇一致
+   - --violet-text 是为小字可读性调浓的（亮色下 #6355ce）；这里是 151px
+     大字，--violet 的 3.83:1 已远超大字门槛 3:1，不需要牺牲色相
+
+   字重保持 inherit（500，与「一起把它」同重），于是两行只差颜色与斜体两处。
+   斜体显式写出是为了防止被后续规则取消（历史上确实取消过一次）。
+   Noto Serif SC 无真斜体字形，这里是浏览器合成倾斜，大字标题下可接受。 */
 .cta h2 em {
   font-weight: inherit;
   font-style: italic;
-  color: inherit;
+  color: var(--violet);
 }
 .hero-note {
   border-left: 1px solid var(--ink);
