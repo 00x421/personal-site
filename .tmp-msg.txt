@@ -1,29 +1,35 @@
-chore(content): 删掉 3 个占位文章碎片与 2 个不存在的项目
+fix(rail): 拖拽文章轨道后自己回弹
 
-盘点内容时发现「声称」与「证据」对不上。用户确认后清理。
+用户报「拖拽文章的那个条，会自己回弹」。查下来是两个机制叠加，都在强制
+把轨道拉回卡片起点，其中 JS 那个是主凶。
 
-删除：
-- content/articles/build-small-systems.md        206 字
-- content/articles/ai-in-real-workflows.md        174 字
-- content/articles/frontend-details-that-matter.md 159 字
-- content/projects/flowbase.md                    572 字
-- content/projects/atlas-studio.md                556 字
+一、rail-scroller.tsx 里的 settle 挂在 scroll 上（主因）
+它监听 scroll，停止滚动 220ms 后把 scrollLeft 校正到最近的卡片起点。
+于是任何一次手动拖拽，松手后轨道都会自己动一下——而且因为是延迟触发 +
+smooth 动画，看起来完全像「轨道自己弹回去了」。
 
-为什么：三个「草稿」不是草稿，是碎片——正常文章 2000-7300 字，它们
-159-206 字。draft:true 让它们不出现，但留在仓库里会让人以为这站有 7 篇。
-两个项目则是完全不存在的（用户确认），比占位更严重。
+实测（线上）：把 scrollLeft 设到 438px（卡片 2 起点 335、卡片 3 起点 669），
+900ms 后自己被改成 334px。
 
-连带处理的 4 处引用（删文件不是删完就完事）：
-- app/now/page.tsx：「把 Flowbase 与 Atlas Studio 的项目复盘整理成案例」
-  是挂在线上、指向不存在项目的承诺，一并撤掉。留注释说明原因。
-  FOCUS 只剩一条——这是诚实的样子，不是不完整。
-- content/articles/cjk-letter-spacing.md：拉丁标题举例去掉那两个项目
-- README.md：写作示例从 build-small-systems.md 换成真实存在的
-  how-this-site-is-built.md
-- ROADMAP.md：设计依据里的项目名列表更新（规则不变，变的是举例）
+改成只在 resize 时校正。原注释说这段是为了修「resize / 个别手势下停在切字的
+中间态」，那个诉求在 resize 场景下依然成立（卡片宽度是视口相关的，resize 后
+旧的像素 scrollLeft 会错位），所以保留能力、只摘掉 scroll 触发。
+实测：停在 500 → 触发 resize → 回到 335 ✓
 
-验证：首页只剩真实项目；筛选栏自动隐藏（两个项目同 type）；
-文章列表 4 篇；OG 图 6 张正好对应现存内容，无孤儿；
-已删内容的 URL 返回 404；线上 RSS 4 条 / search.json 8 条 /
-sitemap 10 项，三处均无已删内容泄漏。
+二、scroll-snap-type 从 mandatory 改成 proximity
+`mandatory` 在物理上不允许轨道停在非吸附点——连脚本赋值都会被浏览器立即
+纠正。纯 CSS 对照实测（克隆节点，无 JS 干扰）：
+
+  目标 350 → 335    目标 438 → 335    目标 500 → 335    目标 620 → 669
+  改成 proximity 后：
+  目标 350 → 335    目标 438 → 335    目标 500 → 500 ✓  目标 620 → 669
+
+proximity 只在靠近吸附点时轻轻对齐，中间位置可以自由停留；「快速翻到下一张」
+的手感与 mandatory 一致。注意 mandatory 那个「读到半张卡就停不住」的问题，
+正是当初加 settle 的原因——两个机制互相掩盖了对方的毛病。
+
+顺带收益：左右按钮现在每次正好翻一张卡（0 → 335 → 669 → 974，回退对称），
+渐隐遮罩 data-at-start/end 同步正确。
+
+验证（线上）：6 个位置全部 immediate === after，movesAfterStop 0 次。
 npm test 76/76、tsc 零错误、oxlint 零告警。

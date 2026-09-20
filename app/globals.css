@@ -1542,7 +1542,14 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   overflow-x: auto;
   overscroll-behavior-x: contain;
   padding: 1px 1px 18px;
-  scroll-snap-type: x mandatory;
+  /* 用 proximity 而不是 mandatory。
+     `mandatory` 在物理上不允许轨道停在非吸附点——连脚本赋值都会被浏览器
+     纠正（实测把 scrollLeft 设到 438 会被立刻改成 335），于是「往前拖一点点
+     松手就弹回原位」，读半张卡的位置永远停不住。
+     `proximity` 只在靠近吸附点时轻轻对齐，中间位置可以自由停留：
+       目标 350 → 335（对齐）  目标 500 → 500（停住）
+     两者在「快速翻到下一张」的手感上完全一致，差别只在允许不允许中途停留。 */
+  scroll-snap-type: x proximity;
   scrollbar-color: var(--line) transparent;
   scrollbar-width: thin;
 }

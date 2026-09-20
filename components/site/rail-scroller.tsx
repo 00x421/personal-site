@@ -40,8 +40,19 @@ export function RailScroller({ label, hint, itemNoun, children }: RailScrollerPr
     };
   }, [syncEdges]);
 
-  /** 滚动停止后校正到最近的卡片起点：mandatory snap 在个别手势 / resize
-      场景下不生效，轨道会停在切字的中间态，这里兜底自愈。 */
+  /** 窗口尺寸变化后校正到最近的卡片起点。
+   *
+   *  卡片宽度是视口相关的（`38vw` / 窄屏 `82vw`），所以 resize 之后旧的
+   *  `scrollLeft`（一个像素值）很可能落在两张卡之间，需要重新对齐。
+   *
+   *  ⚠️ **只在 resize 时做，不要挂到 scroll 上。** 这段逻辑曾经监听 `scroll`，
+   *  在停止滚动 220ms 后校正——结果是**任何一次手动拖拽都会被拉回最近的卡片
+   *  起点**，而且因为它是延迟触发 + `smooth` 动画，看起来完全像「轨道自己弹
+   *  回去了」（用户报的就是这个）。实测把 `scrollLeft` 设到卡片中间 438px，
+   *  900ms 后自己被改成 334px。
+   *
+   *  现在「停在两张卡之间」是合法状态（轨道用 `proximity` 而非 `mandatory`），
+   *  所以拖拽后不该再有任何自动校正。 */
   useEffect(() => {
     const rail = railRef.current;
     if (!rail) return;
@@ -49,7 +60,8 @@ export function RailScroller({ label, hint, itemNoun, children }: RailScrollerPr
     const settle = () => {
       const items = Array.from(rail.children) as HTMLElement[];
       if (items.length === 0) return;
-      // 卡片的 snap 位置 = 自身 offsetLeft 相对首卡的偏移（首卡 offsetLeft 即轨道左内边距）
+      // 卡片的 snap 位置 = 自身 offsetLeft 相对首卡的偏移
+      // （首卡 offsetLeft 即轨道左内边距，两者相减就得到内容坐标）
       const origin = items[0].offsetLeft;
       const current = rail.scrollLeft;
       let nearestDist = Infinity;
@@ -66,13 +78,13 @@ export function RailScroller({ label, hint, itemNoun, children }: RailScrollerPr
         rail.scrollTo({ left: nearestLeft, behavior: reduced ? 'auto' : 'smooth' });
       }
     };
-    const onScroll = () => {
+    const onResize = () => {
       window.clearTimeout(timer);
       timer = window.setTimeout(settle, 220);
     };
-    rail.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize);
     return () => {
-      rail.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
       window.clearTimeout(timer);
     };
   }, []);
