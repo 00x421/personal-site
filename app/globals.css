@@ -556,14 +556,16 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   .not-found-actions a,
   .not-found-actions button,
   .now-actions a,
-  .site-footer a {
+  .site-footer a,
+  .site-filing a {
     position: relative;
   }
   .back-link::after,
   .not-found-actions a::after,
   .not-found-actions button::after,
   .now-actions a::after,
-  .site-footer a::after {
+  .site-footer a::after,
+  .site-filing a::after {
     content: '';
     position: absolute;
     inset: -11px -8px;
@@ -1271,6 +1273,28 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   display: flex;
   align-items: center;
   gap: 5px;
+}
+/* 公安部备案条：合规信息，刻意做得轻——它是必须公开的信息，不是内容。
+   放在 layout 里，所以每个页面底部都有一行。
+   首页还会多一条 .site-footer（导航链接那行），两者叠起来就是常规的
+   「页脚 + 法务子行」。 */
+.site-filing {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 34px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.site-filing a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* 徽标按原始比例（下载件是 36×40，这里 18×20 正好是 2x 覆盖） */
+.site-filing img {
+  display: block;
+  width: 18px;
+  height: 20px;
 }
 @media (max-width: 720px) {
   .section-wrap {

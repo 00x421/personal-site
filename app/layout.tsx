@@ -87,6 +87,23 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {children}
         <SiteSearch />
+        {/* 公安部备案号。官方要求展示在网页源码底部、图标置于备案编号之前。
+            放在 layout 而不是首页的 .site-footer 里，是为了让文章页、案例页
+            等所有页面都带上——备案号只在首页出现时，爬到内页的检查看不到它。 */}
+        <div className="site-filing">
+          <a
+            href="https://beian.mps.gov.cn/#/query/webSearch?code=44180202001182"
+            rel="noreferrer"
+            target="_blank"
+          >
+            {/* 图标是装饰性的（旁边就是文字），alt 留空避免读屏重复念一遍。
+                不走 next/image：官方备案徽标是要照原样使用的 1.4 KB 静态 PNG，
+                由 nginx 直服，过一遍优化管线没有收益。 */}
+            {/* oxlint-disable-next-line next/no-img-element -- 官方备案徽标，原样使用。 */}
+            <img src="/beian-gongan.png" alt="" width="18" height="20" />
+            粤公网安备44180202001182号
+          </a>
+        </div>
       </body>
     </html>
   );

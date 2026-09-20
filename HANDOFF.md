@@ -35,8 +35,8 @@
 
 ```
 app/                    路由（RSC 服务端组件为主）
-  layout.tsx            全局布局：字体 preload、主题脚本、JSON-LD
-  page.tsx              首页（hero / 精选 / 文章 / 关于 / 怎么做事 / CTA）
+  layout.tsx            全局布局：字体 preload、主题脚本、JSON-LD、**全站备案条**
+  page.tsx              首页（hero / 精选 / 文章 / 关于 / 能做 / CTA / 页脚）
   articles|projects|books|now/   内容页
   rss.xml|search.json|robots.ts|sitemap.ts   机器接口
 components/site/        客户端组件（'use client'，渐进增强）
@@ -60,7 +60,8 @@ scripts/optimize-pup-images.py  吉祥物 PNG → WebP（npm run images）
 split-fonts.py          字体 unicode-range 分片（见下）
 subset-fonts.py         全量 OTF → 站内用字整包子集（split 的上游）
 fonts-src/              字体中间产物（gitignore，本地保留）
-public/fonts/slices/    29 个分片 woff2（进 git，文件名带内容哈希）
+public/fonts/slices/    27 个分片 woff2（进 git，文件名带内容哈希）
+public/beian-gongan.png 公安部备案徽标（官方下载件，原样使用、勿压缩）
 ```
 
 **客户端包的边界（重要）**：`'use client'` 组件**不能** import `@/data/*`。那些模块用 eager 的 `import.meta.glob('?raw')` 把全部 Markdown 原文内联，客户端一旦引用就会连带打进 marked、prismjs 与所有案例全文（实测 `project-explorer` 因此膨胀到 84 KB）。数据在服务端取好，以 props 传入。
@@ -99,6 +100,10 @@ public/fonts/slices/    29 个分片 woff2（进 git，文件名带内容哈希�
 7. **改动样式后要验交互状态与共用的类名**：
    - 静态截图看不到 `:hover` / `:focus` / `[data-*]` 状态，而这类状态正是最容易配色出错的地方
    - 删样式前先 `grep` 类名：`project-rail-footer` 曾是**项目区与文章区共用**的（名字带着 `project-` 却跨区域），删项目区时把文章区的分页脚一起打掉了。现名为 `.rail-footer`
+8. **公安部备案条放在 `layout.tsx`，不放首页的 `.site-footer`**：备案号必须在网页源码底部可见，而且**每一页都得有**——只放首页页脚的话，爬到文章页的检查看不到它。所以它是 `layout` 里 `<body>` 的最后一个渲染元素（其后只剩 Next 的模块脚本）。图标在编号之前、`rel="noreferrer"` + `target="_blank"`，都按官方给的 HTML 来。
+   - 图标 `public/beian-gongan.png`（下载件原样，36×40，展示 18×20 正好 2x 覆盖）。**别转 WebP、别重压**——备案徽标要求原样使用，而且它只有 1.4 KB。
+   - 不走 `next/image`（有 `oxlint-disable` 豁免，与站内其他 `<img>` 同一惯例）。
+   - nginx 的图片规则会直服它（实测 `200 / image/png / 1403 bytes / max-age=604800`）。
 
 ## 性能现状与瓶颈
 
@@ -181,7 +186,7 @@ npm run start       # wrangler dev :8787 预览构建产物
 2. **新内容尽量基于真实经历**。此前有一批占位内容已撤下（见「内容状态」），**编造的细节比空着更伤可信度**。
 3. **已交付**：中文排版字距、可读性与触控目标、版面构图、错误页面、内容治理、04 区能力范围、CTA 渐变、首屏传输优化（1038 → 476 KB）、测试与结构（76 个用例）。逐条记录与实测数字在 ROADMAP。
 4. **待确认的小修正**（行为变更，需你点头）：阅读时长把换行算作字数、标签重复计数、同日文章排序不稳。三条都在 ROADMAP「待办 · 小修正」。
-5. **公安备案**：备案号下来后补到页脚（链接 `beian.mps.gov.cn`，图标放 `public/`）。
+5. **公安备案已上线**（2026-09-20）：粤公网安备44180202001182号，在 `layout.tsx` 里做成全站底部一行（`.site-filing`），图标在编号之前。为什么要全站而不是只放首页页脚，见「关键设计决策」第 8 条。
 
 ## 近期变更里程碑（git log 摘要）
 
