@@ -1,32 +1,29 @@
-fix(content): 修掉 /now 的技术栈事实错误，并让搜索建议词从索引推导
+chore(content): 删掉 3 个占位文章碎片与 2 个不存在的项目
 
-盘点内容时发现两个挂在线上、关于站点自身的问题。两个都不是这轮引入的。
+盘点内容时发现「声称」与「证据」对不上。用户确认后清理。
 
-一、/now 写着本站是「Cloudflare Workers 边缘部署」（事实错误）
-实际是腾讯云自托管：nginx 直服静态资源 + systemd 托管 Node 进程，
-README 里也明确写着 Workers「当前未使用」。那句话是迁移前的方案残留。
+删除：
+- content/articles/build-small-systems.md        206 字
+- content/articles/ai-in-real-workflows.md        174 字
+- content/articles/frontend-details-that-matter.md 159 字
+- content/projects/flowbase.md                    572 字
+- content/projects/atlas-studio.md                556 字
 
-这类错误对「同行 / 技术朋友」读者伤害最大——他们恰好会看技术细节，
-而一个关于自己站点的错误陈述比没有陈述更糟。
-已改为「自托管 Node（nginx + systemd）」，并加注释说明为什么别再写回边缘部署。
+为什么：三个「草稿」不是草稿，是碎片——正常文章 2000-7300 字，它们
+159-206 字。draft:true 让它们不出现，但留在仓库里会让人以为这站有 7 篇。
+两个项目则是完全不存在的（用户确认），比占位更严重。
 
-二、搜索面板 4 个建议词里有 3 个点了搜不到东西
-建议词原为 ['工程手记','Cloudflare','闭环','提示词']，都是内容还是 AI 占位
-阶段的词。占位内容撤下后实测命中：
+连带处理的 4 处引用（删文件不是删完就完事）：
+- app/now/page.tsx：「把 Flowbase 与 Atlas Studio 的项目复盘整理成案例」
+  是挂在线上、指向不存在项目的承诺，一并撤掉。留注释说明原因。
+  FOCUS 只剩一条——这是诚实的样子，不是不完整。
+- content/articles/cjk-letter-spacing.md：拉丁标题举例去掉那两个项目
+- README.md：写作示例从 build-small-systems.md 换成真实存在的
+  how-this-site-is-built.md
+- ROADMAP.md：设计依据里的项目名列表更新（规则不变，变的是举例）
 
-  工程手记   1 条
-  Cloudflare 0 条   <- 站点根本不用 Cloudflare
-  闭环       0 条
-  提示词     0 条
-
-访客点「闭环」看到的是「没找到相关的内容」。而「闭环」「提示词」本身就是
-AI 味最重的词。
-
-改成从索引实时推导出现次数最多的文章 / 项目标签（topTags），
-于是这件事在结构上不会再发生：标签既然出现在某条索引里，就必然有命中。
-书架的状态标签（在读）不参与——把「在读」当搜索词没意义。
-
-实测建议词变为 前端(3) / 调试(2) / 工程实践(2) / 架构(2)，逐个点击均有结果。
-
-验证：npm test 76/76、tsc 零错误、oxlint 零告警；线上 /now 已无
-Cloudflare/Workers/边缘 字样，搜索面板建议词为上述四项且都能搜到。
+验证：首页只剩真实项目；筛选栏自动隐藏（两个项目同 type）；
+文章列表 4 篇；OG 图 6 张正好对应现存内容，无孤儿；
+已删内容的 URL 返回 404；线上 RSS 4 条 / search.json 8 条 /
+sitemap 10 项，三处均无已删内容泄漏。
+npm test 76/76、tsc 零错误、oxlint 零告警。

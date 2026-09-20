@@ -89,7 +89,7 @@ npm run deploy
 
 ### 写一篇文章
 
-文章是 `content/articles/` 下的 Markdown 文件，**文件名即 URL slug**（如 `build-small-systems.md` → `/articles/build-small-systems`）。写作流程：
+文章是 `content/articles/` 下的 Markdown 文件，**文件名即 URL slug**（如 `how-this-site-is-built.md` → `/articles/how-this-site-is-built`）。写作流程：
 
 1. 新建 `content/articles/<slug>.md`，开头是 frontmatter：
 

@@ -23,7 +23,9 @@
 | `--tracking-cjk-display` | `-0.03em` | 展示级中文标题（hero / CTA / 页级大标题 / 案例 h3） |
 | `--tracking-cjk-heading` | `-0.02em` | 小节级中文标题（卡片标题 / 列表标题 / 案例 h4） |
 
-**刻意保留强收紧**的纯拉丁标题：`.brand`（−2px）、`.project-copy h3`（−0.05em）、`.case-title-row` 系列（−0.08em）——项目名是 Spider King / Flowbase / Atlas Studio，英文收紧是对的。装饰性巨号数字 `.project-symbol::after`（−0.12em）同理保留。
+**刻意保留强收紧**的纯拉丁标题：`.brand`（−2px）、`.project-copy h3`（−0.05em）、`.case-title-row` 系列（−0.08em）——项目名是 `Spider King`（纯拉丁）与 `XWSX 个人站`（拉丁 + 中文混排），所以英文部分的收紧是对的。装饰性巨号数字 `.project-symbol::after`（−0.12em）同理保留。
+
+> 原文这里举的例子是「Spider King / Flowbase / Atlas Studio」。后两个是 AI 占位项目，已于 2026-09-20 删除（见「内容清理」一节），示例改为真实存在的项目。规则本身不变。
 
 **验收**：hero 全角逗号／句号左右恢复可见间隙（实测 −8.4px → −3.36px）。
 
@@ -894,6 +896,59 @@ grid-template-columns: 70px 1fr 26px;   /* 1fr = minmax(auto, 1fr)，最小值�
 - **小狗图仍是单一 192×192**（用于 54×54，Lighthouse 建议省 5.2 KB）。刻意留着：192 覆盖 3.5× DPR，而它是 LCP 元素，改成多档会多一次选择开销换 3 KB，不值得。已写进注释
 - **肖像图 480w 是粒度上限**：桌面槽位 425 → 需要 480。加一档 430w 可再省约 10 KB，收益太小
 - 部分眉标/元信息是 10–11 px，属**有意的编辑风格**（不是正文），Lighthouse 不把它算作问题
+
+---
+
+## 内容清理：删掉 AI 占位残留（2026-09-20）
+
+盘点内容时发现「声称」与「证据」对不上，用户确认后清理。
+
+### 删了什么
+
+| 文件 | 字数 | 为什么删 |
+| --- | --- | --- |
+| `content/articles/build-small-systems.md` | 206 | AI 占位碎片，非草稿 |
+| `content/articles/ai-in-real-workflows.md` | 174 | 同上 |
+| `content/articles/frontend-details-that-matter.md` | 159 | 同上 |
+| `content/projects/flowbase.md` | 572 | **项目本身不存在**（用户确认）|
+| `content/projects/atlas-studio.md` | 556 | 同上 |
+
+三个「草稿」不是草稿，是碎片——正常文章是 2000–7300 字，它们 159–206 字。`draft: true` 让它们不出现在线上，但留在仓库里会让人以为这个站有 7 篇文章。
+
+两个项目是**完全不存在的**，比占位更严重。而 `/now` 上还挂着「把 Flowbase 与 Atlas Studio 的项目复盘整理成案例文章」——**一个指向不存在的项目的承诺**。
+
+### 连带处理的引用
+
+删除不是删文件就完事，全仓扫出 4 处引用：
+
+| 位置 | 原文 | 处理 |
+| --- | --- | --- |
+| `app/now/page.tsx` | 「把 Flowbase 与 Atlas Studio 的项目复盘…」| 删掉该条，并留注释说明为什么 |
+| `content/articles/cjk-letter-spacing.md` | 「拉丁标题：项目名叫 Spider King、Flowbase、Atlas Studio」| 改为只举 `Spider King` |
+| `README.md` | 用 `build-small-systems.md` 当写作示例 | 改为 `how-this-site-is-built.md`（真实存在）|
+| `ROADMAP.md`（本文件）| 「项目名是 Spider King / Flowbase / Atlas Studio」| 更新示例 + 加注说明 |
+
+`ROADMAP` 那处是设计依据（为什么保留拉丁标题的强收紧）。**规则本身不变**——`Spider King` 是纯拉丁、`XWSX 个人站` 是拉丁中文混排，收紧英文部分依然正确；变的只是举例。
+
+> **`/now` 的意义是「如实写下来」。** 挂着不会发生的计划，比那块位置空着更假。所以那条承诺一并撤掉，`FOCUS` 只剩一条——这是诚实的样子，不是不完整。
+
+### 验证
+
+| 项 | 结果 |
+| --- | --- |
+| 首页项目卡 | Spider King、XWSX 个人站（只剩真的）|
+| 项目筛选栏 | 自动隐藏（两个项目同 type，`filters.length > 2` 不成立）|
+| 文章列表 / 标签云 | 4 篇；标签 前端3 / 调试2 / 工程实践2 + 6 个 ×1 |
+| OG 图 | 6 张正好对应现存内容，**无孤儿文件** |
+| 已删内容的 URL | `/articles/build-small-systems`、`/projects/flowbase` 均返回 404 页 |
+| 线上产物 | RSS 4 条、search.json 8 条、sitemap 10 项，**三处均无已删内容泄漏** |
+| `npm test` / `tsc` / `oxlint` | 76/76 / 零错误 / 零告警 |
+
+### 顺带记下一个观察（本次不动）
+
+**标签云里 9 个标签有 6 个只对应 1 篇文章**，「排版」「设计」甚至只出现在同一篇里。标签密度低于体量时，标签云看起来更像装饰而非导航。
+
+解决方向有两个，都要等内容变多才有意义：合并近义标签（如「排版」并入「设计」），或只在标签有 ≥2 篇文章时才进云。**当前 4 篇文章的体量下，两种做法都只是把稀薄的信号藏起来而已。**
 
 ---
 
