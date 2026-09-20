@@ -1,25 +1,34 @@
-fix(rail): 「横向浏览更多文章」只在真有整张卡看不见时才显示
+feat(identity): 名字改为「烦恼全無先生」，并恢复轨道提示文字
 
-桌面端 1440 下这条提示是空话：可滚范围只有 112px，4 篇文章都至少露出一部分
-——能滚，但没有「更多文章」可看。这和项目区当初那条「横向浏览更多项目」
-是同一类问题（提示承诺了体验不到的事）。
+两件事。
 
-判据经过一次修正。第一版用「能不能滚」（scrollWidth - clientWidth > 4），
-但 1440 下 maxScroll = 112 仍然判定为可滚，提示照旧显示——说明「可滚」
-和「有内容看不见」不是一回事。改成逐卡判断：任一张卡的左右边缘都在视野
-之外才算数。
+一、名字：Linling Qi -> 烦恼全無先生
+名字散落在 7 处，其中 4 处是硬编码字符串（不走 siteIdentity），
+本次一并收拢：
 
-实测分界点很干净（完全隐藏的卡数 → 提示）：
-  1440/1280  0 张 → 隐藏
-  1024/820   1 张 → 显示
-  480        2 张 → 显示
-  390        3 张 → 显示
-六个宽度下「提示是否显示」与「是否有整卡隐藏」完全一致。
+- lib/site-content.ts                      name 字段（唯一真源）
+- app/layout.tsx                           JSON-LD Person.name
+- app/articles/[slug]/page.tsx             3 处：openGraph.authors /
+                                           Article.author / Article.publisher
 
-顺带把 .rail-footer 的 justify-content: space-between 换成
-.rail-footer > div 的 margin-left: auto——提示词是条件渲染的，
-space-between 在它缺席时会把翻页按钮甩到左边。auto 外边距两种情况下都对，
-也顺带删掉了移动端那条只为修这个而存在的 justify-content: flex-end。
+文章页的 3 处改为引用 siteIdentity.name，以后改名只需动一处。
+（页面文案、肖像图 alt 本来就引用 siteIdentity，自动跟随。）
 
-验证：npm test 76/76、tsc 零错误、oxlint 零告警；线上 390/1024/1440
-三个宽度判断一致，按钮均贴右。
+二、恢复「横向浏览更多文章」
+上一轮我把它改成条件渲染（只在有整张卡被遮住时显示）。用户认为保留更好，
+改回常显。
+
+回头看那个条件判断确实是过度设计：为「桌面端 4 篇文章都露着一部分」
+这个暂时状态，写了 20 行判断、跨 6 个断点验证，换来的只是少一行小字。
+而且那句话本身没说错——轨道确实可以横向拖，它是操作提示，不是内容承诺。
+
+顺带删掉窄屏的 .rail-footer > span { display: none }：实测没必要，
+提示 94px + 间距 18px + 按钮 74px = 186px，360px 视口下容器宽 335px，
+余量 149px。现在提示在所有宽度常显。
+
+.rail-footer > div 的 margin-left: auto 保留——窄屏规则删掉后它不是必需的，
+但比 justify-content: space-between 更稳（提示若将来再加条件渲染也不会甩按钮）。
+
+验证：线上首页与文章页 HTML 均无 Linling Qi 残留、JSON-LD author 为
+「烦恼全無先生」；提示在 1440 与 390 下均 display: block 且放得下；
+npm test 76/76、tsc 零错误、oxlint 零告警。

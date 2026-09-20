@@ -16,10 +16,15 @@ type RailScrollerProps = {
 export function RailScroller({ label, hint, itemNoun, children }: RailScrollerProps) {
   const railRef = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ start: true, end: true });
-  /** 是否至少有一张卡完全在视野之外。决定要不要显示「横向浏览更多…」。 */
-  const [hasHiddenCard, setHasHiddenCard] = useState(false);
-
-  /** 按滚动位置记录两端状态，供 CSS 渐隐遮罩判断哪一侧还有内容。 */
+  /**
+   * 按滚动位置记录两端状态，供 CSS 渐隐遮罩判断哪一侧还有内容。
+   *
+   * 曾经还顺带算过一个「是否有整张卡被完全遮住」并据此隐藏提示文字。
+   * 那是过度设计：桌面端 4 篇文章确实都露着一部分（可滚范围 112px），
+   * 但「横向浏览更多文章」这句话在窄屏是真的、在桌面也并没有说错——
+   * 轨道确实可以横向拖。实测这个判断写了 20 行、跨 6 个断点验证，
+   * 换来的只是少一行小字。已改回常显。
+   */
   const syncEdges = useCallback(() => {
     const rail = railRef.current;
     if (!rail) return;
@@ -28,25 +33,6 @@ export function RailScroller({ label, hint, itemNoun, children }: RailScrollerPr
       start: rail.scrollLeft <= 4,
       end: max <= 4 || rail.scrollLeft >= max - 4,
     });
-
-    // 提示词该不该出现，判断的是「有没有整张卡看不见」，
-    // 而不是「能不能滚」。两者不是一回事：桌面端 1440 下可滚范围只有 112px，
-    // 四张卡都至少露出一部分——能滚，但没有「更多文章」可看。
-    // 那时提示读起来是空话。所以逐卡判断：任一张的左右边缘都在视野之外才算数。
-    const items = Array.from(rail.children) as HTMLElement[];
-    if (items.length === 0) {
-      setHasHiddenCard(false);
-      return;
-    }
-    const origin = items[0].offsetLeft;
-    const viewLeft = rail.scrollLeft;
-    const viewRight = viewLeft + rail.clientWidth;
-    setHasHiddenCard(
-      items.some((item) => {
-        const left = item.offsetLeft - origin;
-        return left + item.offsetWidth <= viewLeft + 4 || left >= viewRight - 4;
-      }),
-    );
   }, []);
 
   useEffect(() => {
@@ -128,12 +114,10 @@ export function RailScroller({ label, hint, itemNoun, children }: RailScrollerPr
       <div className="writing-rail" ref={railRef} aria-label={label}>
         {children}
       </div>
-      {/* 提示词只在轨道真的放不下时出现。
-          桌面端曾长期显示「横向浏览更多文章」，但那时 4 篇文章几乎全部露在外面
-          （可滚范围只有 112px）——提示承诺了体验不到的事，是空话。
-          判断依据来自组件已经算出的 scrollWidth - clientWidth，不额外测量。 */}
+      {/* 提示与翻页按钮。提示常显——它是「这里可以横向拖」的提示，
+          不是「还有更多内容」的承诺，两种宽度下读起来都成立。 */}
       <div className="rail-footer">
-        {hasHiddenCard && <span>{hint}</span>}
+        <span>{hint}</span>
         <div>
           <button
             type="button"

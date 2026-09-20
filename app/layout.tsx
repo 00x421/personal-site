@@ -43,7 +43,7 @@ const siteJsonLd = {
     {
       '@type': 'Person',
       '@id': `${siteUrl}/#person`,
-      name: 'Linling Qi',
+      name: '烦恼全無先生',
       alternateName: 'XWSX',
       email: 'techlocker@163.com',
       url: siteUrl,

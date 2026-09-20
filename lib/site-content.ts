@@ -1,6 +1,6 @@
 export const siteIdentity = {
   brand: 'XWSX',
-  name: 'Linling Qi',
+  name: '烦恼全無先生',
   email: 'techlocker@163.com',
   github: 'https://github.com/00x421',
   motto: '信我所行',

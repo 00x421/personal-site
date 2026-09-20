@@ -6,6 +6,7 @@ import { CodeBlockEnhancer } from '@/components/site/code-block-enhancer';
 import { NavBuddy } from '@/components/site/nav-buddy';
 import { ReadingProgress } from '@/components/site/reading-progress';
 import { articles, getAdjacent, getArticle, getBacklinks, getRelated, getSeries } from '@/data/articles';
+import { siteIdentity } from '@/lib/site-content';
 
 export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }));
@@ -28,7 +29,7 @@ export async function generateMetadata({
       description: article.description,
       type: 'article',
       publishedTime: article.published,
-      authors: ['Linling Qi'],
+      authors: [siteIdentity.name],
       tags: article.tags,
       images: [
         {
@@ -66,10 +67,10 @@ export default async function ArticleDetailPage({
     datePublished: article.published,
     author: {
       '@type': 'Person',
-      name: 'Linling Qi',
+      name: siteIdentity.name,
       url: 'https://github.com/00x421',
     },
-    publisher: { '@type': 'Person', name: 'Linling Qi' },
+    publisher: { '@type': 'Person', name: siteIdentity.name },
     image: `${siteUrl}/og/articles/${article.slug}.png`,
     mainEntityOfPage: {
       '@type': 'WebPage',
