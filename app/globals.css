@@ -244,9 +244,6 @@
   --line: #d8d6ce;
   --violet: #7867e8;
   --violet-text: #6355ce;
-  /* CTA 的面色。亮色是「纸白 → 紫」的渐变——紫色从纸面漫出来，向右逐渐加重。
-     暗色改纯色，理由见暗色主题里的说明。 */
-  --cta-bg: linear-gradient(90deg, var(--paper) 0%, var(--violet) 100%);
   /* 项目卡的大面积色块。与 --violet / --lime 同族，但它们是**点缀色**
      （图标 / 描边 / 小圆点），而这里是铺满 1212×174 的一片，
      两者对亮度的需求相反：点要够亮才看得见，面要够沉才不刺眼。
@@ -289,17 +286,6 @@
   --line: #2c2c31;
   --violet: #9186f0;
   --violet-text: var(--violet);
-  /* 暗色下 CTA 用纯深紫，不用渐变。两个理由：
-
-     一、渐变的左端只能取 --paper（近黑），于是中间必经一大片浑浊的灰紫
-     （实测左端 #141416 → 中段 #453e6c），这是「不好看」的真正来源；
-     去掉渐变，浑浊中间调自动消失。
-
-     二、面积与亮度成反比。--violet 在暗色下调亮到 #9186f0 是为了当点缀色够醒目，
-     但铺满全宽时它就成了全页最亮的表面（L 0.294，是页面底色的 41 倍）。
-     深紫 #4d3fa6 的 L 是 0.079：对底色 2.26:1（区块身份成立），
-     对 --ink 文字 6.7:1（远超 3:1 门槛）。 */
-  --cta-bg: #4d3fa6;
   /* 同一套道理（见亮色主题）：暗色下 --violet 被调亮到 #9186f0，
      那是为了当点缀色；铺满一整张卡时它就成了全页最亮的表面
      （L 0.294，是页面底色的 41.5 倍，和当初 CTA 犯的是同一个错）。
@@ -648,12 +634,16 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   font-weight: 400;
   color: var(--violet);
 }
-/* CTA 标题两行同色（都是 --ink），层次只用形态差异——即斜体——
-   而不是颜色：文字跨渐变时任何强调色都会在某一端对比不足
-   （试过深紫与淡紫两套，各自都只能在渐变的一段里成立）。
+/* CTA 标题两行同色（都是 --ink），层次只用形态差异——即斜体——而不是颜色。
    斜体是 <em> 的浏览器默认值，这里显式写出来是为了防止被后续规则取消
    （历史上确实取消过一次）。注意 Noto Serif SC 没有真正的斜体字形，
-   这里是浏览器合成倾斜，大字标题下可接受。 */
+   这里是浏览器合成倾斜，大字标题下可接受。
+
+   关于颜色：曾经的限制是「文字跨渐变时任何强调色都会在某一端对比不足」
+   （试过深紫与淡紫两套，各自都只能在渐变的一段里成立），所以用统一 --ink。
+   底色去掉后这条限制已经不存在了，「变成现实。」可以重新用 --violet-text
+   与 hero 的 em 呼应——但当时「不要强调色」是明确说过的决定，
+   所以保持现状，改不改由使用者定。 */
 .cta h2 em {
   font-weight: inherit;
   font-style: italic;
@@ -1181,10 +1171,24 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   color: var(--body-text);
   font-size: 12px;
 }
-/* CTA：整页的情绪落点。面色由 --cta-bg 给出（亮色是渐变，暗色是纯色）。
-   正文用 --ink——它和 --paper 在明暗两套主题里都是配对的一组。 */
+/* CTA：整页的情绪落点——纯纸面，没有底色。
+
+   它曾经是一整块色场（先是 --violet 纯紫，再是「纸白 → 紫」渐变，
+   再是压暗的纯紫）。三层理由让底色退场：
+
+   一、那片色场 1212×439，占首页总高的 10.5%，而其中约 46% 的宽度上
+   没有任何内容——它是页面上最大的单个元素，也是最大的空场。
+
+   二、它是全站唯一的满幅色块。其余区块一律只用 1px 细线分隔
+   （.writing-section / .stack-section 的 border-top），所以色场在这里
+   读起来是外来物，而不是这个站点自己的语言。
+
+   三、层次已经由体量承担：CTA 标题 151.2px，区块标题 57px，差 2.65 倍。
+   这个落差不需要颜色帮忙就足以读出「收束」。
+
+   去掉后标题最差对比度从 8.16:1 升到 15.97:1（暗色 6.72 → 15.17）。
+   这不是去掉底色的理由（8.16:1 本就达标），而是顺带的好处。 */
 .cta {
-  position: relative;
   margin-bottom: 34px;
   padding-top: 58px;
   padding-bottom: 58px;
@@ -1192,30 +1196,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   /* 邮箱按钮落在右下角：横向贴右、纵向贴底 */
   align-items: end;
   justify-content: space-between;
-  overflow: hidden;
-  background: var(--cta-bg);
   color: var(--ink);
-}
-/* 噪点跟着墨色走：纸白那端本来就薄，墨色重的地方才需要颗粒。
-   mask 让颗粒随渐变渐显，而不是全幅铺匀。
-   暗色下 CTA 是纯色块，没有「纸白那端」，所以整块均匀铺颗粒。 */
-.cta::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.14;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  -webkit-mask-image: linear-gradient(90deg, transparent 6%, #000 62%);
-  mask-image: linear-gradient(90deg, transparent 6%, #000 62%);
-}
-html[data-theme='dark'] .cta::before {
-  -webkit-mask-image: none;
-  mask-image: none;
-}
-.cta > * {
-  position: relative;
-  z-index: 1;
 }
 .cta .eyebrow {
   margin-bottom: 25px;
