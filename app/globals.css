@@ -1193,10 +1193,24 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   padding-top: 58px;
   padding-bottom: 58px;
   display: flex;
-  /* 邮箱按钮落在右下角：横向贴右、纵向贴底 */
+  /* 允许换行：标题与按钮放得下就并排，放不下时按钮自己落到下一行。
+     改前是「≤720px 一律竖排」，于是 640–720px 这段明明放得下也竖排
+     （实测 720px：标题 367 + 按钮 268 = 635 < 可用 665），
+     结果标题下方一大片空场、按钮缩在左下角，右侧 300px 白空着。 */
+  flex-wrap: wrap;
+  /* 按钮贴右，且与标题块底部齐平（即与「变成现实。」同一水平） */
   align-items: end;
   justify-content: space-between;
+  gap: 26px 40px;
   color: var(--ink);
+}
+/* 标题块不参与收缩：字号由 100vw 算出，再被 flex 挤压会让「变成现实。」断行 */
+.cta-copy {
+  flex: 0 0 auto;
+}
+/* 换行后按钮独占一行，justify-content 不再生效，靠 auto 外边距推到右缘 */
+.cta .mail-button {
+  margin-left: auto;
 }
 .cta .eyebrow {
   margin-bottom: 25px;
@@ -1407,14 +1421,13 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   .toolbox-label {
     width: auto;
   }
-  /* 渐变在两个尺寸下都成立，不需要回退；只调堆叠与间距 */
+  /* 不再强制竖排：改由 flex-wrap 自适应——放得下并排，放不下才换行。
+     竖排会把按钮压到左下角，而右侧往往还空着一大片。 */
   .cta {
     margin-bottom: 20px;
     padding-top: 45px;
     padding-bottom: 45px;
-    align-items: start;
-    gap: 35px;
-    flex-direction: column;
+    gap: 26px;
   }
   .site-footer {
     flex-wrap: wrap;

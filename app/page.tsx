@@ -229,7 +229,7 @@ export default function Home() {
         </Reveal>
       </section>
       <section className="cta section-wrap">
-        <div>
+        <div className="cta-copy">
           <span className="eyebrow">有一个值得解决的问题？</span>
           <h2>
             一起把它
