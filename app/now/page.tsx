@@ -14,7 +14,10 @@ const nowBlocks = [
   {
     label: 'FOCUS / 正在专注',
     items: [
-      '打磨这个个人站 XWSX：React 19 服务端组件、Cloudflare Workers 边缘部署、无障碍与性能细节。',
+      // 部署方式写实：本站是自托管 Node（nginx 直服静态资源 + systemd 托管进程），
+      // 不是边缘函数。早期草稿曾写「Cloudflare Workers 边缘部署」，
+      // 那是迁移前的方案，已废弃——这类关于自身技术栈的错误对同行读者最伤。
+      '打磨这个个人站 XWSX：React 19 服务端组件、自托管 Node（nginx + systemd）、无障碍与性能细节。',
       '把 Flowbase 与 Atlas Studio 的项目复盘整理成可读的案例文章。',
     ],
   },

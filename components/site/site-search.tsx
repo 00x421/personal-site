@@ -21,7 +21,32 @@ const TYPE_LABEL: Record<Entry['type'], string> = {
 };
 
 const MAX_RESULTS = 8;
-const SUGGESTIONS = ['工程手记', 'Cloudflare', '闭环', '提示词'];
+
+/**
+ * 建议词从已加载的索引实时推导：取文章与项目里出现次数最多的标签。
+ *
+ * 曾经硬编码为 ['工程手记', 'Cloudflare', '闭环', '提示词']——那是内容还是
+ * AI 占位阶段的词。占位内容撤下后，其中三个在当前索引里命中 **0 条**：
+ * 访客点一下「闭环」，看到的是「没找到相关的内容」。而且「闭环」「提示词」
+ * 本身就是那股 AI 味最重的词。
+ *
+ * 从索引导出后这件事在结构上不会再发生：一个标签既然出现在某条索引里，
+ * 它就必然有命中。文章与项目之外的类型（书架的状态标签）不参与，
+ * 把「在读」当搜索词没意义。
+ */
+const SUGGESTION_COUNT = 4;
+
+function topTags(entries: Entry[]): string[] {
+  const counts = new Map<string, number>();
+  for (const entry of entries) {
+    if (entry.type === 'book') continue;
+    for (const tag of entry.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, SUGGESTION_COUNT)
+    .map(([tag]) => tag);
+}
 
 function escapeRe(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -79,6 +104,7 @@ export function SiteSearch() {
     () => query.trim().toLowerCase().split(/\s+/).filter(Boolean),
     [query],
   );
+  const suggestions = useMemo(() => (entries ? topTags(entries) : []), [entries]);
   const results = useMemo(() => {
     if (!entries || terms.length === 0) return [];
     return entries
@@ -232,14 +258,16 @@ export function SiteSearch() {
           {entries !== null && terms.length === 0 && (
             <li className="search-hint">
               <p>输入关键词，搜索全站的文章、项目与书架。</p>
-              <p className="search-hint-terms">
-                试试：
-                {SUGGESTIONS.map((term) => (
-                  <button type="button" key={term} onClick={() => choose(term)}>
-                    {term}
-                  </button>
-                ))}
-              </p>
+              {suggestions.length > 0 && (
+                <p className="search-hint-terms">
+                  试试：
+                  {suggestions.map((term) => (
+                    <button type="button" key={term} onClick={() => choose(term)}>
+                      {term}
+                    </button>
+                  ))}
+                </p>
+              )}
             </li>
           )}
           {entries !== null && terms.length > 0 && results.length === 0 && (
