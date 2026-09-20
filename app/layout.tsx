@@ -3,20 +3,21 @@ import { preload } from 'react-dom';
 import './globals.css';
 import { SiteSearch } from '@/components/site/site-search';
 import { criticalFontSlices } from '@/lib/font-slices.generated';
+import { siteDescription, siteIdentity, siteTitle } from '@/lib/site-content';
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
   ),
-  title: 'XWSX — 信我所行',
-  description: 'XWSX（信我所行）— 产品、设计与代码交汇处的个人作品集。',
+  title: siteTitle,
+  description: siteDescription,
   alternates: {
     canonical: '/',
     types: { 'application/rss+xml': '/rss.xml' },
   },
   icons: { icon: '/favicon.svg' },
   openGraph: {
-    title: 'XWSX — 信我所行',
-    description: 'XWSX（信我所行）— 产品、设计与代码交汇处的个人作品集。',
+    title: siteTitle,
+    description: siteDescription,
     images: [
       {
         url: '/og.jpg',
@@ -28,8 +29,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'XWSX — 信我所行',
-    description: 'XWSX（信我所行）— 产品、设计与代码交汇处的个人作品集。',
+    title: siteTitle,
+    description: siteDescription,
     images: ['/og.jpg'],
   },
   robots: { index: true, follow: true },
@@ -43,18 +44,18 @@ const siteJsonLd = {
     {
       '@type': 'Person',
       '@id': `${siteUrl}/#person`,
-      name: '烦恼全無先生',
+      name: siteIdentity.name,
       alternateName: 'XWSX',
-      email: 'techlocker@163.com',
+      email: siteIdentity.email,
       url: siteUrl,
-      sameAs: ['https://github.com/00x421'],
+      sameAs: [siteIdentity.github],
     },
     {
       '@type': 'WebSite',
       '@id': `${siteUrl}/#website`,
       url: siteUrl,
-      name: 'XWSX — 信我所行',
-      description: 'XWSX（信我所行）— 产品、设计与代码交汇处的个人作品集。',
+      name: siteTitle,
+      description: siteDescription,
       publisher: { '@id': `${siteUrl}/#person` },
       inLanguage: 'zh-CN',
     },

@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { bookStatuses, books, booksByStatus } from '@/data/books';
+import { siteIdentity } from '@/lib/site-content';
 
 export const metadata: Metadata = {
-  title: '书架 — XWSX',
+  title: `书架 — ${siteIdentity.brand}`,
   description: '我正在读、读完和想读的书，以及每本书留下的一句话。',
   alternates: { canonical: '/books' },
 };

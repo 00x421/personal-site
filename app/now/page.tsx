@@ -5,7 +5,7 @@ import { MailLink } from '@/components/site/mail-link';
 import { siteIdentity } from '@/lib/site-content';
 
 export const metadata: Metadata = {
-  title: '此刻 — XWSX',
+  title: `此刻 — ${siteIdentity.brand}`,
   description: '我此刻正在专注、探索和阅读的东西——一页纸的当下状态。',
   alternates: { canonical: '/now' },
 };

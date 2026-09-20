@@ -1,9 +1,6 @@
 import { articles } from '@/data/articles';
 import { escapeXml } from '@/lib/content-parse';
-
-const SITE_TITLE = 'XWSX — 信我所行';
-const SITE_DESCRIPTION =
-  'XWSX（信我所行）— 产品、设计与代码交汇处的个人作品集。';
+import { siteDescription, siteTitle } from '@/lib/site-content';
 
 export function GET() {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
@@ -26,9 +23,9 @@ export function GET() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>${escapeXml(SITE_TITLE)}</title>
+    <title>${escapeXml(siteTitle)}</title>
     <link>${base}</link>
-    <description>${escapeXml(SITE_DESCRIPTION)}</description>
+    <description>${escapeXml(siteDescription)}</description>
     <language>zh-CN</language>
     <atom:link href="${base}/rss.xml" rel="self" type="application/rss+xml"/>
 ${items}

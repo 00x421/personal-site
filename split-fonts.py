@@ -60,7 +60,9 @@ CRITICAL_BY_WEIGHT = {
     "700": "·",
 }
 
-# 每个字重都要带的 ASCII 与常用标点（品牌字标 XWSX、年份、CTA 的邮箱等都是 ASCII）
+# 字标是 XWSX（纯 ASCII），已在 PUNCTUATION 里，不需要额外加。
+
+# 每个字重都要带的 ASCII 与常用标点（字标 XWSX、年份、CTA 的邮箱等都是 ASCII）
 PUNCTUATION = (
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
@@ -281,4 +283,56 @@ print(f"关键片合计 {kb:.1f} KB（这些字节首屏本来就要下载，pre
 for stray in ("DONE", "Traceback"):
     if stray in updated:
         raise SystemExit(f"写入后 {CSS_FILE} 里出现了意外的 {stray}，请检查。")
+
+# ---------------------------------------------------------------- 回退自检
+#
+# 两种失败都会让字**静默**回退到系统字体：不报错、不警告，只是字形悄悄变了。
+# 这个项目在 2026-09-20 一天里三种都撞过，所以三道都补上。
+
+# ① content/ 里的每个字都必须存在于子集里。
+#    最容易漏的一环：文章是后写的，site-chars.txt 却是旧的。
+#    「搞」「崩」（文章标题「第二天，同一个脚本把整站的样式搞崩了」）就是这样漏的。
+probe = load_font("fonts-src/noto-serif-sc-500.woff2", Options())
+subset_codes = set(probe.getBestCmap())
+probe.close()
+
+content_codes: set[int] = set()
+for root, _, files in os.walk("content"):
+    for fn in files:
+        if fn.endswith(".md"):
+            with open(os.path.join(root, fn), encoding="utf-8") as f:
+                content_codes |= {ord(c) for c in f.read() if c.strip()}
+
+absent = sorted(content_codes - subset_codes)
+if absent:
+    print(
+        f"⚠ content/ 里有 {len(absent)} 个字不在字体子集内，会回退到系统字体：\n"
+        f"   {''.join(chr(c) for c in absent)}\n"
+        "   按脚本头部说明重采 site-chars.txt 后重跑 subset-fonts.py。"
+    )
+
+# ② 字标与箴言直接出现在首屏的衬线字体里，必须在对应字重的关键片内。
+#    字重映射来自实测（getComputedStyle）：.brand 是 700，.site-footer > span 是 400。
+#    `name` 不在此列：它只出现在 hero 问候，而那句用的是 Helvetica Neue（系统栈），
+#    根本不吃这套中文字体。哪天把它挪进衬线语境，记得在这里补上。
+IDENTITY_FILE = os.path.join("lib", "site-content.ts")
+if os.path.isfile(IDENTITY_FILE):
+    with open(IDENTITY_FILE, encoding="utf-8") as f:
+        block = re.search(
+            r"export const siteIdentity = \{(.*?)\} as const;", f.read(), re.S
+        )
+    for label, key, weight in (
+        ("brand（导航字标）", "brand", "700"),
+        ("motto（页脚署名）", "motto", "400"),
+    ):
+        m = block and re.search(rf"{key}:\s*'([^']+)'", block.group(1))
+        if not m:
+            continue
+        critical = set(CRITICAL_BY_WEIGHT[weight])
+        miss = sorted(c for c in set(m.group(1)) if ord(c) > 0x7F and c not in critical)
+        if miss:
+            print(
+                f"⚠ {label}用字不在 w{weight} 关键片内：{''.join(miss)}\n"
+                f"   首屏会回退到系统字体，请把 CRITICAL_BY_WEIGHT[{weight!r}] 补上。"
+            )
 

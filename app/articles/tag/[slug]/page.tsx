@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { getArticlesByTag, getAllTags } from '@/data/articles';
+import { siteIdentity } from '@/lib/site-content';
 
 export function generateStaticParams() {
   return getAllTags().map(({ tag }) => ({ slug: tag }));
@@ -16,9 +17,9 @@ export async function generateMetadata({
   const { slug } = await params;
   const tag = decodeURIComponent(slug);
   const tagged = getArticlesByTag(tag);
-  if (tagged.length === 0) return { title: '标签不存在 — XWSX' };
+  if (tagged.length === 0) return { title: `标签不存在 — ${siteIdentity.brand}` };
   return {
-    title: `${tag} 标签下的文章 — XWSX`,
+    title: `${tag} 标签下的文章 — ${siteIdentity.brand}`,
     description: `${tagged.length} 篇与「${tag}」相关的文章。`,
     alternates: { canonical: `/articles/tag/${tag}` },
     robots: { index: false, follow: true },

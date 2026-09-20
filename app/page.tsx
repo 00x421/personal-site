@@ -78,8 +78,7 @@ export default function Home() {
           <div className="hero-note">
             <p>
               你好，我是 <strong>{siteIdentity.name}</strong>。
-              <strong>{siteIdentity.brand}</strong>{' '}
-              是我记录产品、代码与思考的个人空间；我在设计、代码与 AI
+              这里记录我的产品、代码与思考；我在设计、代码与 AI
               的交界处工作。
             </p>
             <div className="code-line">

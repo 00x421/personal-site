@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { articles, getAllTags } from '@/data/articles';
+import { siteIdentity } from '@/lib/site-content';
 
 export const metadata: Metadata = {
-  title: '技术文章 — XWSX',
+  title: `技术文章 — ${siteIdentity.brand}`,
   description: '关于前端工程、中文排版、性能与调试的实践记录。',
   alternates: { canonical: '/articles' },
 };

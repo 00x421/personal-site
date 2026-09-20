@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { CodeBlockEnhancer } from '@/components/site/code-block-enhancer';
 import { getProject, projects } from '@/data/projects';
+import { siteIdentity } from '@/lib/site-content';
 
 export function generateStaticParams() {
   return projects
@@ -18,10 +19,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const project = getProject(slug);
-  if (!project?.hasCase) return { title: '项目不存在 — XWSX' };
+  if (!project?.hasCase) return { title: `项目不存在 — ${siteIdentity.brand}` };
   const ogImage = `/og/projects/${project.slug}.png`;
   return {
-    title: `${project.title} — XWSX`,
+    title: `${project.title} — ${siteIdentity.brand}`,
     description: project.summary,
     alternates: { canonical: `/projects/${slug}` },
     openGraph: {

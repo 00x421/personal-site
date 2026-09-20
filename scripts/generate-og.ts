@@ -316,7 +316,7 @@ function projectCard(project: Project) {
       createElement(
         'span',
         { style: { fontSize: 24, fontWeight: 500, color: COLORS.ink } },
-        `${project.year} · XWSX`,
+        `${project.year} · ${siteIdentity.brand}`,
       ),
       createElement('div', { style: { display: 'flex', gap: 12 } }, tags),
     ),

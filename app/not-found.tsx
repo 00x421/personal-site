@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { siteIdentity } from '@/lib/site-content';
 
 export const metadata: Metadata = {
-  title: '页面走丢了 — XWSX',
+  title: `页面走丢了 — ${siteIdentity.brand}`,
   robots: { index: false, follow: false },
 };
 

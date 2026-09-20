@@ -19,9 +19,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const article = getArticle(slug);
-  if (!article) return { title: '文章不存在 — XWSX' };
+  if (!article) return { title: `文章不存在 — ${siteIdentity.brand}` };
   return {
-    title: `${article.title} — XWSX`,
+    title: `${article.title} — ${siteIdentity.brand}`,
     description: article.description,
     alternates: { canonical: `/articles/${article.slug}` },
     openGraph: {

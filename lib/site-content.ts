@@ -1,10 +1,22 @@
 export const siteIdentity = {
+  /** 字标：导航左上角、页脚署名、OG 卡片身份行、子页标题后缀 */
   brand: 'XWSX',
+  /** 人名：hero 问候、JSON-LD Person/作者、portrait 的 alt */
   name: '烦恼全無先生',
   email: 'techlocker@163.com',
   github: 'https://github.com/00x421',
   motto: '信我所行',
 } as const;
+
+/**
+ * 站点标题与描述 —— metadata、OG/Twitter 卡片、RSS、JSON-LD WebSite 共用。
+ *
+ * 之前这几个字符串在 layout.tsx、rss.xml、各页 metadata 里各写一遍，
+ * 改品牌时漏掉一处就会出现「导航写着 A、浏览器标签写着 B」。
+ * 现在只有这里一处来源。
+ */
+export const siteTitle = `${siteIdentity.brand} — ${siteIdentity.motto}`;
+export const siteDescription = `${siteIdentity.brand}（${siteIdentity.motto}）— 产品、设计与代码交汇处的个人作品集。`;
 
 export const siteNavigation = [
   ['#work', '项目'],
