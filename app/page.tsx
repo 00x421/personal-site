@@ -259,7 +259,7 @@ export default function Home() {
             Email
           </MailLink>
         </div>
-        <span>Designed with intent</span>
+        <span>Writing is thinking.</span>
       </footer>
     </main>
   );
