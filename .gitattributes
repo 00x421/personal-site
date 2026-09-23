@@ -1,0 +1,25 @@
+# 换行符统一为 LF。这不是洁癖，是修两个真实故障：
+#
+#   1. 仓库里所有文本文件曾被 Windows 的 CRLF 改写，于是 `git status` 常年
+#      显示「55 个文件被修改、+15692/-15692」。因为差异纯粹是行尾，真实改动
+#      被彻底淹没 —— 加这个文件之前，`git diff --ignore-cr-at-eol` 是空的。
+#   2. split-fonts.py 的历史事故之一就是 CRLF 让结尾标记匹配失败，脚本收尾
+#      文本混进样式表、压缩成 `DONE :root` 后整块 CSS 变量失效（线上故障）。
+#      eol=lf 从根上消掉这个变数。
+#
+# text=auto 让 git 自行判定文本/二进制；下面再对二进制显式声明一遍，
+# 避免任何「被当作文本处理」的可能。恢复二进制资产时不要走 PowerShell
+# 重定向（UTF-16 会膨胀 2 倍损坏），用 `git cat-file blob <sha>`。
+* text=auto eol=lf
+
+*.woff2 binary
+*.woff binary
+*.ttf binary
+*.otf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.pdf binary

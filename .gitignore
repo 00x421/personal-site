@@ -23,6 +23,8 @@
 tsconfig.tsbuildinfo
 # 本地临时截图（验证页面时用）
 .tmp-*.png
+# Playwright MCP 驱动浏览器验证时落在 cwd 的截图与快照
+/.playwright-mcp/
 # 中文提交信息走 git commit -F，避免 PowerShell 引号/反斜杠问题。
 # 这个文件曾被误提交进仓库一次，所以连文本一起忽略。
 .tmp-*.txt
