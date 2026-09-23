@@ -32,7 +32,7 @@ npm run start
 
 - **App Router 服务端组件**：首页在服务端渲染，可交互部件（主题切换、滚动轨道、小狗吉祥物）以客户端组件（`'use client'`）注入。
 - **Markdown 内容管线**：`content/articles/*.md`、`content/projects/*.md` 与 `content/books/*.md` + frontmatter；站点侧由 Vite `import.meta.glob` 构建期内联（运行时零文件系统依赖），`scripts/generate-og.ts` 在纯 Node 下 fs 直读，两侧共享 `lib/markdown.ts` 解析（marked 渲染 + 阅读时长估算）。项目案例页由 Markdown 正文驱动：`##` 分区 CSS 计数器自动编号，frontmatter `deliverables` 尾部自动成区。代码块由 Prism 在服务端高亮（token 色走 CSS 变量明暗双主题），复制按钮由客户端组件对已有 `<pre>` 渐进增强。
-- **三层内容结构**：解析（`lib/content-parse.ts`，零依赖）→ 查询（`lib/article-queries.ts`，纯函数收 `Article[]`）→ 加载（`data/*.ts`，只做 `import.meta.glob` 与转发）。前两层能在纯 Node 下跑，所以有测试；第三层只有 Vite 能跑，靠前两层间接覆盖。**新查询逻辑加到 `article-queries.ts` 并带测试。**
+- **三层内容结构**：解析（`lib/content-parse.ts`，零依赖）→ 渲染（`lib/markdown.ts`，marked + prismjs）→ 查询（`lib/article-queries.ts`，纯函数收 `Article[]`）→ 加载（`data/*.ts`，只做 `import.meta.glob` 与转发）。**只有加载层不可测**（门槛是 `import.meta.glob`，不是依赖重量——渲染层实测能被 `node --test` 直接导入），其余几层都有 `npm test` 覆盖。**新查询逻辑加到 `article-queries.ts` 并带测试。**
 - **同一套分层也用到了机器接口与静态断言上**：`lib/feed-builders.ts` 负责 RSS / `search.json` / sitemap 的序列化（route 只剩「取数据 → 包 Response」）；`lib/css-integrity.ts` 与 `lib/glyph-coverage.ts` 把两次样式表事故与「缺字形静默回退」从「人看一眼截图」变成**构建门禁**。三者都在 `npm test` 里有直接覆盖。
 - **草稿状态**：文章与项目都支持 frontmatter `draft: true`，为真时该条从页面、RSS、搜索索引、sitemap、标签云**全部消失**（因为共用同一份聚合结果）。
 - **标签聚合**：文章标签自动聚合成 `/articles` 标签云与 `/articles/tag/<标签>` 聚合页（中文标签即路径，构建时统一 URL 编解码）。

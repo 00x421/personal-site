@@ -8,7 +8,7 @@
 - **质量基线**（2026-09-20 Lighthouse 13.4.1 实测）：无障碍 / 最佳实践 / SEO **全 100**；性能移动端 **93–97**（连跑 3 次有 ±4 波动）、桌面端（1350×940）**77**；TBT 0 ms、CLS 0。移动端 Performance 曾为 66，明细见 [ROADMAP.md](./ROADMAP.md)。
 - **首屏传输**（Lighthouse 移动端口径）：**~473 KB**（脚本 175 + 图片 129 + 字体 96 + CSS 18 + 文档 12）。图片已从 159 KB 降到 129 KB（移动）/ 45 KB（桌面），靠肖像图改响应式。
 - **已上线（2026-09-13）**：https://xwsx.top ，自托管 Node（vinext standalone 路径），未走 Cloudflare。部署架构见下节。
-- **测试**：`npm test` **140 个用例**（`node --test`，零新依赖）覆盖三层纯函数层：内容解析、集合查询、机器接口序列化（RSS / search.json / sitemap）、以及 globals.css 结构断言与字形覆盖。为此把查询逻辑从 `data/articles.ts` 抽到了 `lib/article-queries.ts`、把序列化从三个 route 抽到了 `lib/feed-builders.ts`，见下「三层结构」。
+- **测试**：`npm test` **162 个用例**（`node --test`，零新依赖）覆盖四层纯函数层：内容解析、Markdown 渲染管线、集合查询、机器接口序列化（RSS / search.json / sitemap），以及 globals.css 结构断言与字形覆盖。为此把查询逻辑从 `data/articles.ts` 抽到了 `lib/article-queries.ts`、把序列化从三个 route 抽到了 `lib/feed-builders.ts`，见下「三层结构」。
 - **CI**：GitHub Actions 每次 push/PR 跑 oxlint + build（node 24）。曾连续 5 次失败：rolldown 1.0.1 自身声明矛盾（deps 钉死 @emnapi/* 1.10.0 + 传递 peer ^1.7.1），Linux npm ci 严格校验误报 Missing 1.11.3，Windows 不装 wasm32 子树无法复现。改 `npm ci --legacy-peer-deps` + `npm install` 兜底后恢复绿；根治需升级 rolldown/vite。
 
 ## 部署架构（2026-09-13 起，静态资源直服 2026-09-18 加入）
@@ -55,7 +55,7 @@ lib/                    解析与聚合（构建期+运行时共享）
   font-slices.generated.ts  关键片清单（split-fonts.py 生成，勿手改）
 data/                   文章/项目/书架的 TS 数据层（import.meta.glob 内联，并转发到 article-queries）
 content/                Markdown 内容源（articles/projects/books + frontmatter）
-tests/                  node --test 套件（npm test）
+tests/                  node --test 套件（npm test，162 用例）
 scripts/generate-og.ts  satori 生成 OG 分享图（纯 Node，npm run og）
 scripts/deploy.mjs      一键部署（npm run deploy，含健康检查与回滚）
 scripts/clean-dist.mjs  跨平台清 dist（替代会静默失效的 fs.rmSync）
@@ -79,11 +79,19 @@ public/personal-portrait-scribble-{320,480,640,800,1024}.webp  肖像图响应�
 | 层 | 文件 | 依赖 | 可测 |
 | --- | --- | --- | --- |
 | 解析 | `lib/content-parse.ts` | 无 | ✅ 直接 `node --test` |
+| 渲染 | `lib/markdown.ts` | marked + prismjs | ✅ 同上（**曾经误判为不可测**，见下）|
 | 查询 | `lib/article-queries.ts` | 仅 `import type`（编译期擦除）| ✅ 同上 |
-| 加载 | `data/*.ts` | `import.meta.glob`（仅 Vite）| ❌ 靠上面两层间接覆盖 |
+| 序列化 | `lib/feed-builders.ts` | 仅 `import type` + `escapeXml` | ✅ 同上 |
+| 断言 | `lib/css-integrity.ts` / `lib/glyph-coverage.ts` | 无 / 仅 `import type` | ✅ 同上 |
+| 加载 | `data/*.ts` | `import.meta.glob`（仅 Vite）| ❌ 靠上面几层间接覆盖 |
 
 `data/*.ts` 因此只剩「加载 + 排序 + 转发」三件事。**新写查询逻辑请加到 `lib/article-queries.ts` 并带上测试**，不要往 `data/*.ts` 里塞。
-`Article` 类型从 `lib/markdown.ts` 用 `import type` 引入即可——只取类型不会把 marked / prismjs 拖进测试进程。
+
+> ⚠️ **一处被写进文档很久的错误判断**：`lib/markdown.ts` 曾被归到「只有 Vite 能跑」那一层（理由是要把 marked / prismjs 拖进测试进程）。2026-09-23 实测证明**它可以被 `node --experimental-strip-types --test` 直接导入**，marked 与 prismjs 在纯 Node 下都能加载。
+>
+> 真正不可测的只有 `data/*.ts`——它们的门槛是 `import.meta.glob`，不是依赖重量。挡住测试的是 `import.meta.glob` 这一个 API，不是「依赖多」。教训：判断「某模块不可测」时，先花两分钟试一下，别凭依赖列表推断。现在由 `tests/markdown.test.ts` 直接覆盖渲染管线。
+>
+> `Article` / `Project` 类型仍然建议用 `import type` 引入（能少加载一个模块就少一个），但那只是优化，不再是前置条件。
 
 **数据流**：`content/*.md` → 构建期 `import.meta.glob` 内联进 JS（运行时零文件系统依赖）→ `lib/*` 聚合 → 各页面 RSC 渲染。搜索索引 `/search.json` 与 RSS 同源聚合。`draft: true` 的文章与项目在这一层就被过滤，因此页面、RSS、搜索索引、sitemap、标签云的表现自动一致。
 
