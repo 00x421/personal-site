@@ -8,6 +8,7 @@ import {
   readString,
   splitFrontmatter,
   stripComments,
+  unique,
 } from './content-parse.ts';
 
 // 代码块 → 带 data-lang 的 pre；语言标签与复制按钮由客户端增强组件接管。
@@ -74,7 +75,9 @@ export function buildArticle(slug: string, raw: string): Article {
     description: readString(data, 'description') ?? '',
     published: readString(data, 'published') ?? '',
     readTime: estimateReadTime(body),
-    tags: parseList(data.tags),
+    // 去重在解析层做：标签云、RSS 的 category、搜索索引、相关阅读评分
+    // 都读同一个 tags 数组，在这里收敛就不会各处漏一处。
+    tags: unique(parseList(data.tags)),
     series: readString(data, 'series'),
     draft: readString(data, 'draft') === 'true',
     html: marked.parse(body, { async: false, gfm: true }),
@@ -94,7 +97,7 @@ export function buildProject(slug: string, raw: string): Project {
     type,
     year: readString(data, 'year') ?? '',
     summary: readString(data, 'summary') ?? '',
-    tags: parseList(data.tags),
+    tags: unique(parseList(data.tags)),
     tone: tone === 'violet' || tone === 'lime' ? tone : 'ink',
     mark: readString(data, 'mark') ?? '00',
     order: Number(readString(data, 'order') ?? NaN) || 99,

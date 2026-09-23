@@ -11,14 +11,19 @@ import type { Article } from './markdown.ts';
  */
 
 /**
- * 按发布日期倒序（新的在前）。
+ * 按发布日期倒序（新的在前），**同日按 slug 升序**。
  *
- * 刻意**不加第二排序键**：同日发布的文章（本站有三篇 2026-09-17）在原来就依赖
- * 输入顺序，而 `Array.prototype.sort` 保证稳定，所以结果是可复现的。加 slug 兜底
- * 会改变「上一篇 / 下一篇」的走向——重构不应该顺手改行为，见 ROADMAP 待办。
+ * 第二个排序键是 2026-09-23 加上的。在那之前同日文章完全依赖输入顺序：
+ * 因为 `Array.prototype.sort` 稳定，结果仍可复现，但输入顺序一变（换构建
+ * 工具、改 glob 模式）排版就会静默重排。
+ *
+ * 当时的顾虑是“会改变上一篇 / 下一篇的走向”，实测**没有发生**：本站 4 篇
+ * 文章的现有顺序恰好就是 slug 升序，所以这次是零可见代价的修复。
  */
 export function sortByNewest(articles: Article[]): Article[] {
-  return [...articles].sort((a, b) => b.published.localeCompare(a.published));
+  return [...articles].sort(
+    (a, b) => b.published.localeCompare(a.published) || a.slug.localeCompare(b.slug),
+  );
 }
 
 /** 列表按发布日期倒序：newer 为索引更小的一篇，older 为更早的一篇。 */
@@ -61,11 +66,12 @@ export function filterByTag(articles: Article[], tag: string): Article[] {
   return articles.filter((article) => article.tags.includes(tag));
 }
 
-/** 全站标签按文章数倒序，同级按名称稳定排序。 */
+/** 全站标签按文章数倒序，同级按名称稳定排序。
+    同一篇文章里的重复标签只计一次（用 Set 收敛，见 lib/content-parse.ts 的 unique）。 */
 export function collectTags(articles: Article[]): { tag: string; count: number }[] {
   const counts = new Map<string, number>();
   for (const article of articles) {
-    for (const tag of article.tags) {
+    for (const tag of new Set(article.tags)) {
       counts.set(tag, (counts.get(tag) ?? 0) + 1);
     }
   }
@@ -82,10 +88,15 @@ export function findBacklinks(articles: Article[], slug: string): Article[] {
   );
 }
 
-/** 同系列文章按发布正序（阅读顺序）；series 不存在时返回空数组。 */
+/** 同系列文章按发布正序（阅读顺序），同日按 slug 升序；series 不存在时返回空数组。
+
+    第二个排序键的理由与 sortByNewest 相同，而这里更要紧：本站「工程手记」
+    三篇**全部同一天发布**，所以在此之前系列阅读顺序实际由输入顺序决定。 */
 export function findSeries(articles: Article[], series: string | undefined): Article[] {
   if (!series) return [];
   return articles
     .filter((article) => article.series === series)
-    .sort((a, b) => a.published.localeCompare(b.published));
+    .sort(
+      (a, b) => a.published.localeCompare(b.published) || a.slug.localeCompare(b.slug),
+    );
 }

@@ -27,7 +27,7 @@ function article(partial: Partial<Article> & { slug: string }): Article {
   };
 }
 
-/** 与本站真实数据同构：三篇同日发布，用来锁住“同日不定序”的现有行为。 */
+/** 与本站真实数据同构：三篇同日发布（本站三篇 2026-09-17 就是这个形状）。 */
 const list: Article[] = [
   article({ slug: 'a', published: '2026-09-17', tags: ['前端', '字体'] }),
   article({ slug: 'b', published: '2026-09-17', tags: ['前端', '性能'] }),
@@ -53,13 +53,22 @@ describe('sortByNewest', () => {
     );
   });
 
-  it('同日保持输入顺序（sort 稳定），不引入 slug 兜底', () => {
-    // 加 slug 兜底会重排同日文章，进而改变“上一篇 / 下一篇”。锁住现状。
+  it('同日按 slug 升序兜底，顺序不再依赖文件枚举顺序', () => {
+    // 行为变更（2026-09-23）：同日文章过去完全依赖输入顺序。因为 sort 稳定，
+    // 结果仍是可复现的，但输入顺序一变（换构建工具、改 glob 模式）排版就会变。
+    // 加 slug 第二排序键后与输入顺序无关。
+    // 实测：本站 4 篇文章的「上一篇 / 下一篇」顺序未变，没有可见代价。
     const shuffled = [article({ slug: 'z', published: '2026-09-17' }), ...list];
     assert.deepEqual(
       sortByNewest(shuffled).slice(0, 4).map((x) => x.slug),
-      ['z', 'a', 'b', 'c'],
+      ['a', 'b', 'c', 'z'],
     );
+  });
+
+  it('同一批文章无论以什么顺序传入，结果都一致', () => {
+    const forward = sortByNewest(list).map((x) => x.slug);
+    const reversed = sortByNewest([...list].reverse()).map((x) => x.slug);
+    assert.deepEqual(reversed, forward);
   });
 
   it('空数组安全', () => {
@@ -188,8 +197,17 @@ describe('collectTags', () => {
   });
 
   it('一篇文章里的重复标签只算一次', () => {
+    // 行为变更（2026-09-23）：此前按标签数组逐项累加，重复项会被计两次。
+    // 当前内容没有触发，属于防御性修复。
     const data = [article({ slug: 'x', tags: ['前端', '前端'] })];
-    // 这里如实记录：目前的实现按标签数组逐项累加，重复项会被计两次
+    assert.deepEqual(collectTags(data), [{ tag: '前端', count: 1 }]);
+  });
+
+  it('同一标签在不同文章里仍分别计数', () => {
+    const data = [
+      article({ slug: 'x', tags: ['前端', '前端'] }),
+      article({ slug: 'y', tags: ['前端'] }),
+    ];
     assert.deepEqual(collectTags(data), [{ tag: '前端', count: 2 }]);
   });
 
@@ -260,6 +278,21 @@ describe('findSeries', () => {
 
   it('同系列按发布时间正序（阅读顺序，与列表页相反）', () => {
     assert.deepEqual(findSeries(data, '工程手记').map((x) => x.slug), ['p1', 'p2']);
+  });
+
+  it('同日按 slug 升序兜底，阅读顺序不依赖输入顺序（2026-09-23 行为变更）', () => {
+    // 与 sortByNewest 同一类缺陷：本站「工程手记」三篇全部同一天发布，
+    // 所以此前系列阅读顺序实际由输入顺序决定。
+    const sames = [
+      article({ slug: 'p3', published: '2026-01-01', series: '工程手记' }),
+      article({ slug: 'p1', published: '2026-01-01', series: '工程手记' }),
+      article({ slug: 'p2', published: '2026-01-01', series: '工程手记' }),
+    ];
+    assert.deepEqual(findSeries(sames, '工程手记').map((x) => x.slug), ['p1', 'p2', 'p3']);
+    assert.deepEqual(
+      findSeries([...sames].reverse(), '工程手记').map((x) => x.slug),
+      ['p1', 'p2', 'p3'],
+    );
   });
 
   it('undefined / 空串返回空数组', () => {

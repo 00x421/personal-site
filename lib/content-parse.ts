@@ -74,12 +74,24 @@ export function stripComments(body: string): string {
   return body.replace(/<!--[\s\S]*?-->/g, '');
 }
 
-/** 去掉 Markdown 语法噪音后按字符数估算阅读时长（中文约 400 字/分钟）。 */
+/** 去掉 Markdown 语法噪音与**全部空白**后按字符数估算阅读时长（中文约 400 字/分钟）。
+
+    空白不计入是 2026-09-23 的行为变更。此前只剔语法字符，换行与空格照算，
+    于是小标题多、空行多的文章被系统性高估（实测本站长文多算 2–3 分钟：
+    chinese-font-slicing-failed 17→14、node-rm-sync-silent-failure 12→10）。
+    代码块的缩进与换行同样算排版、不算阅读量。 */
 export function estimateReadTime(body: string): string {
-  const text = body
-    .replace(/```[\s\S]*?```/g, (block) => block.replace(/[^\S\n]+/g, ''))
-    .replace(/[#>*`~_[\]()!|-]/g, '');
+  const text = body.replace(/[\s#>*`~_[\]()!|-]/g, '');
   return `${Math.max(1, Math.ceil(text.length / 400))} min read`;
+}
+
+/** 去重并保持首次出现的顺序。
+
+    用于标签：标签是集合语义，同一篇里写两次没有意义，而重复项会让下游各自
+    出错（标签云计数、RSS 的 category、搜索索引、相关阅读的标签重叠评分）。
+    去重放在解析层，是为了让这些下游**一次全部正确**，而不是每处各修一遍。 */
+export function unique(values: string[]): string[] {
+  return [...new Set(values)];
 }
 
 /** XML 文本转义（RSS / sitemap 用）。`&` 必须最先替换，否则会二次转义后续实体。 */

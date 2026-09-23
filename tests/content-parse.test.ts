@@ -190,24 +190,31 @@ describe('estimateReadTime', () => {
     assert.equal(estimateReadTime('#### **---** ~~~ [] () ! | _ `'), '1 min read');
   });
 
-  it('但空白仍计入字数（现状，见 ROADMAP）', () => {
-    // 实测发现的偏差：只有语法字符被剔除，换行与空格照算。
-    // 所以空行多、小标题多的文章会被轻微高估。锁住现状，改动另行决策。
+  it('空白不计入字数（2026-09-23 行为变更）', () => {
+    // 此前只剔语法字符，换行与空格照算，于是空行多、小标题多的文章被系统性高估
+    // （实测本站长文多算 2–3 分钟）。改为空白一律剔除。
     const plain = '字'.repeat(400);
     const noisy = `# ${'字'.repeat(200)}\n\n## ${'字'.repeat(200)}`;
     assert.equal(estimateReadTime(plain), '1 min read');
-    assert.equal(estimateReadTime(noisy), '2 min read');
+    assert.equal(estimateReadTime(noisy), '1 min read');
+  });
+
+  it('小标题与空行再密集也不撑出时长', () => {
+    const airy = ['# 标题', '', '正文一句话。', '', '## 小标题', '', '另一句。'].join('\n');
+    assert.equal(estimateReadTime(airy), '1 min read');
   });
 
   it('代码块只按去掉空白后的字符数计', () => {
     const block = '```ts\nconst a = 1;\n```';
-    // 代码块内所有空白被压缩掉，剩下的字符远少于 400
+    // 代码块内的缩进与换行同样算排版、不算阅读量
     assert.equal(estimateReadTime(block), '1 min read');
   });
 
-  it('代码块里的 # 不会让结果偏小', () => {
-    const withCode = `\`\`\`\n${'字'.repeat(400)}\n\`\`\``;
-    assert.equal(estimateReadTime(withCode), '2 min read');
+  it('代码块里的字计入阅读量，但代码块的空白不计', () => {
+    // 该用例原名「代码块里的 # 不会让结果偏小」，但它断言的实际是「换行也计字数」
+    // ——400 字 + 2 个换行 = 402 → 2 min。空白改为不计后语义才能对准名字。
+    assert.equal(estimateReadTime(`\`\`\`\n${'字'.repeat(400)}\n\`\`\``), '1 min read');
+    assert.equal(estimateReadTime(`\`\`\`\n${'字'.repeat(401)}\n\`\`\``), '2 min read');
   });
 });
 
