@@ -1,37 +1,17 @@
 import { articles } from '@/data/articles';
-import { escapeXml } from '@/lib/content-parse';
+import { buildRssXml } from '@/lib/feed-builders';
 import { siteDescription, siteTitle } from '@/lib/site-content';
 
+/**
+ * RSS 2.0。序列化逻辑在 `lib/feed-builders.ts`（纯函数，有测试）；
+ * 这里只负责取数据、包响应头。
+ */
 export function GET() {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
-  const items = articles
-    .map((article) => {
-      const url = `${base}/articles/${article.slug}`;
-      return [
-        '    <item>',
-        `      <title>${escapeXml(article.title)}</title>`,
-        `      <link>${url}</link>`,
-        `      <guid isPermaLink="true">${url}</guid>`,
-        `      <pubDate>${new Date(article.published).toUTCString()}</pubDate>`,
-        `      <description>${escapeXml(article.description)}</description>`,
-        `      ${article.tags.map((tag) => `<category>${escapeXml(tag)}</category>`).join('\n      ')}`,
-        '    </item>',
-      ].join('\n');
-    })
-    .join('\n');
-
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>${escapeXml(siteTitle)}</title>
-    <link>${base}</link>
-    <description>${escapeXml(siteDescription)}</description>
-    <language>zh-CN</language>
-    <atom:link href="${base}/rss.xml" rel="self" type="application/rss+xml"/>
-${items}
-  </channel>
-</rss>
-`;
+  const xml = buildRssXml(articles, {
+    baseUrl: process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
+    title: siteTitle,
+    description: siteDescription,
+  });
 
   return new Response(xml, {
     headers: {

@@ -2,17 +2,16 @@
 
 import { Search, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { SearchEntry } from '@/lib/feed-builders';
 
-type Entry = {
-  type: 'article' | 'project' | 'book';
-  title: string;
-  desc: string;
-  tags: string[];
-  url: string;
-  meta: string;
-  /** 服务端已小写化的全文匹配文本。 */
-  text: string;
-};
+/**
+ * 索引契约的唯一来源是 `lib/feed-builders.ts`——`/search.json` 就是它序列化的结果。
+ * 这里过去手抄了一份同形类型，字段一旦增减两处会静默漂移。
+ *
+ * `import type` 编译期即被擦除，所以不会把服务端代码带进客户端包
+ * （这条边界见 HANDOFF「客户端包的边界」）。
+ */
+type Entry = SearchEntry;
 
 const TYPE_LABEL: Record<Entry['type'], string> = {
   article: '文章',
