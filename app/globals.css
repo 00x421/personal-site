@@ -275,8 +275,15 @@
   --raised: #eceae2;
   --card-ink: #1c1c20;
   --card-ink-text: #f5f4ef;
-  --portrait-bg: #d8d4cc;
+  /* 画框（画板）底色比页面纸色深一档，让 16px 的画板边能读成一块「裱上去的板」。
+     原来 #d8d4cc 与页面 #f4f2ec 太近，亮色主题下整张卡会糊成一块空框，
+     抓不住 03 区唯一的视觉重心。 */
+  --portrait-bg: #cdc7b9;
   --portrait-ink: #4f4d48;
+  /* 画芯那张纸的底色：**刻意不在暗色主题覆盖**。它是「墨画在真纸上」，
+     纸在暗色主题里仍然是纸——实测观感是深色画板上的纸白画芯，
+     是刻意的物理质感，不是漏写（已在 lib/css-integrity.ts 登记为例外）。 */
+  --portrait-paper: #f6f2e8;
   --body-text: #4e4d49;
   --grid-line: rgba(23, 23, 27, 0.055);
   --noise-opacity: 0.05;
@@ -1089,9 +1096,13 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   flex: none;
   height: 560px;
   overflow: hidden;
-  background: #f6f2e8;
+  background: var(--portrait-paper);
   transform: translateZ(28px);
-  box-shadow: 0 12px 20px rgb(0 0 0 / 0.12);
+  /* 发丝内描边 + 投影：让画芯从画板与页面底色里分离出来。
+     描边用 --line（主题成对），所以暗色下自动换成深色细线。 */
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 12px 20px rgb(0 0 0 / 0.12);
 }
 .portrait-media img {
   position: absolute;
