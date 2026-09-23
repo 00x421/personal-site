@@ -8,7 +8,7 @@
 - **质量基线**（2026-09-20 Lighthouse 13.4.1 实测）：无障碍 / 最佳实践 / SEO **全 100**；性能移动端 **93–97**（连跑 3 次有 ±4 波动）、桌面端（1350×940）**77**；TBT 0 ms、CLS 0。移动端 Performance 曾为 66，明细见 [ROADMAP.md](./ROADMAP.md)。
 - **首屏传输**（Lighthouse 移动端口径）：**~473 KB**（脚本 175 + 图片 129 + 字体 96 + CSS 18 + 文档 12）。图片已从 159 KB 降到 129 KB（移动）/ 45 KB（桌面），靠肖像图改响应式。
 - **已上线（2026-09-13）**：https://xwsx.top ，自托管 Node（vinext standalone 路径），未走 Cloudflare。部署架构见下节。
-- **测试**：`npm test` 76 个用例（`node --test`，零新依赖）覆盖内容解析与所有集合查询。为此把查询逻辑从 `data/articles.ts` 抽到了 `lib/article-queries.ts`，见下「三层结构」。
+- **测试**：`npm test` **140 个用例**（`node --test`，零新依赖）覆盖三层纯函数层：内容解析、集合查询、机器接口序列化（RSS / search.json / sitemap）、以及 globals.css 结构断言与字形覆盖。为此把查询逻辑从 `data/articles.ts` 抽到了 `lib/article-queries.ts`、把序列化从三个 route 抽到了 `lib/feed-builders.ts`，见下「三层结构」。
 - **CI**：GitHub Actions 每次 push/PR 跑 oxlint + build（node 24）。曾连续 5 次失败：rolldown 1.0.1 自身声明矛盾（deps 钉死 @emnapi/* 1.10.0 + 传递 peer ^1.7.1），Linux npm ci 严格校验误报 Missing 1.11.3，Windows 不装 wasm32 子树无法复现。改 `npm ci --legacy-peer-deps` + `npm install` 兜底后恢复绿；根治需升级 rolldown/vite。
 
 ## 部署架构（2026-09-13 起，静态资源直服 2026-09-18 加入）
@@ -47,6 +47,9 @@ components/site/        客户端组件（'use client'，渐进增强）
 lib/                    解析与聚合（构建期+运行时共享）
   content-parse.ts      frontmatter 解析 / 阅读时长 / XML 转义（**零依赖，可直接测**）
   article-queries.ts    集合查询纯函数（收 Article[]；运行时零 import，可直接测）
+  feed-builders.ts      RSS / search.json / sitemap 序列化（纯函数，**route 里不再拼字符串**）
+  css-integrity.ts      globals.css 结构断言（字体分片区 / :root 完整性 / 主题成对 / 裸色值）
+  glyph-coverage.ts     字形覆盖断言（内容用字 ⊆ 分片 unicode-range 并集）
   markdown.ts           marked 配置 + buildArticle / buildProject
   highlight.ts          Prism 高亮
   font-slices.generated.ts  关键片清单（split-fonts.py 生成，勿手改）
@@ -56,13 +59,15 @@ tests/                  node --test 套件（npm test）
 scripts/generate-og.ts  satori 生成 OG 分享图（纯 Node，npm run og）
 scripts/deploy.mjs      一键部署（npm run deploy，含健康检查与回滚）
 scripts/clean-dist.mjs  跨平台清 dist（替代会静默失效的 fs.rmSync）
+scripts/check-css-integrity.ts   样式表结构门禁（npm run check:css，build 里跑）
+scripts/check-glyph-coverage.ts  字形覆盖门禁（npm run check:glyphs，build 里跑）
 scripts/optimize-pup-images.py  吉祥物 PNG → WebP（npm run images）
 scripts/optimize-portrait.py   肖像图 → 5 档响应式 WebP（npm run portrait）
 images-src/             图像母版（gitignore；恢复命令见 optimize-portrait.py 头部）
 split-fonts.py          字体 unicode-range 分片（见下）
 subset-fonts.py         全量 OTF → 站内用字整包子集（split 的上游）
 fonts-src/              字体中间产物（gitignore，本地保留）
-public/fonts/slices/    27 个分片 woff2（进 git，文件名带内容哈希）
+public/fonts/slices/    31 个分片 woff2（进 git，文件名带内容哈希；数量由字形覆盖断言盯住）
 public/beian-gongan.png 公安部备案徽标（官方下载件，原样使用、勿压缩）
 public/personal-portrait-scribble-{320,480,640,800,1024}.webp  肖像图响应式候选集
 ```
@@ -175,7 +180,8 @@ Lighthouse 13.4.1 实测（模拟限速，同口径）：
 ```bash
 npm run dev         # 本地开发服务器 :3000，HMR
 npm run lint        # oxlint
-npm test            # node --test（内容解析与集合查询）
+npm test            # node --test（解析 / 查询 / 机器接口 / 样式表断言）
+npm run check       # 静态断言：globals.css 结构 + 字形覆盖（build 第一步就跑）
 npm run build       # 必须过，CI 同款
 npm run start       # wrangler dev :8787 预览构建产物
 ```
@@ -194,7 +200,7 @@ npm run start       # wrangler dev :8787 预览构建产物
 
 1. **内容维护节奏**：新文章 → `npm run og` → 用字有变化时跑字体分片（README「写一篇文章」第 4 步）。
 2. **新内容尽量基于真实经历**。此前有一批占位内容已撤下（见「内容状态」），**编造的细节比空着更伤可信度**。
-3. **已交付**：中文排版字距、可读性与触控目标、版面构图、错误页面、内容治理、04 区能力范围、CTA 渐变、首屏传输优化（1038 → 476 KB）、测试与结构（76 个用例）。逐条记录与实测数字在 ROADMAP。
+3. **已交付**：中文排版字距、可读性与触控目标、版面构图、错误页面、内容治理、04 区能力范围、CTA 渐变、首屏传输优化（1038 → 476 KB）、测试与结构、以及**两条静态断言门禁**（样式表结构 / 字形覆盖，见 ROADMAP 第 5 批）。逐条记录与实测数字在 ROADMAP。
 4. **待确认的小修正**（行为变更，需你点头）：阅读时长把换行算作字数、标签重复计数、同日文章排序不稳。三条都在 ROADMAP「待办 · 小修正」。
 5. **公安备案已上线**（2026-09-20）：粤公网安备44180202001182号，在 `layout.tsx` 里做成全站底部一行（`.site-filing`），图标在编号之前。为什么要全站而不是只放首页页脚，见「关键设计决策」第 8 条。
 
