@@ -7,7 +7,10 @@
   },
   "scripts": {
     "dev": "vinext dev",
-    "build": "node scripts/clean-dist.mjs && vinext build",
+    "check": "npm run check:css && npm run check:glyphs",
+    "check:css": "node --experimental-strip-types scripts/check-css-integrity.ts",
+    "check:glyphs": "node --experimental-strip-types scripts/check-glyph-coverage.ts",
+    "build": "node scripts/clean-dist.mjs && npm run check && vinext build",
     "postbuild": "node scripts/fix-standalone.mjs",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",

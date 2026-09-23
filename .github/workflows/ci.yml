@@ -22,5 +22,11 @@ jobs:
         run: npm run lint
       - name: Test
         run: npm test
+      # 与 build 里重复跑一次，只为让失败归因清楚：
+      # 「结构/字形断言没过」和「打包炸了」是两类完全不同的修复路径。
+      # 这两条断言拦截的是历史上四次「不报错但也没生效」的静默失败，
+      # 详见 lib/css-integrity.ts 与 lib/glyph-coverage.ts 的文件头。
+      - name: 静态断言（样式表结构 / 字形覆盖）
+        run: npm run check
       - name: Build
         run: npm run build
