@@ -200,9 +200,6 @@ export function SiteSearch() {
           title="搜索本站（Ctrl K）"
         >
           <Search size={16} aria-hidden="true" />
-          <span className="search-fab-kbd" aria-hidden="true">
-            ⌘K
-          </span>
         </button>
       )}
 

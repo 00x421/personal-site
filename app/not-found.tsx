@@ -20,19 +20,19 @@ export default function NotFound() {
           <h1>
             这条路，
             <br />
-            <em>小狗也没走过。</em>
+            <em>小信也没走过。</em>
           </h1>
           <p>
-            它对着地址栏歪了歪头：要找的页面不在这里。
+            它对着地址栏扫了一遍：要找的页面不在这里。
             <br />
-            跟着它的耳朵，从下面挑个方向继续。
+            跟着它的天线，从下面挑个方向继续。
           </p>
         </header>
-        {/* oxlint-disable-next-line next/no-img-element -- 原创吉祥物贴图，本地静态资源按需加载即可。 */}
+        {/* oxlint-disable-next-line next/no-img-element -- 吉祥物贴图（GrokBot，署名见 open-source-notices.txt），本地静态资源按需加载即可。 */}
         <img
-          className="not-found-pup"
-          src="/xwsx-air-pup-thinking-nav.webp"
-          alt="空气小狗歪着头思考路线"
+          className="not-found-buddy"
+          src="/grokbot-thinking-nav.webp"
+          alt="小信歪着头思考路线"
           width={140}
           height={140}
           loading="lazy"

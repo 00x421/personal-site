@@ -6,6 +6,12 @@ export const siteIdentity = {
   email: 'techlocker@163.com',
   github: 'https://github.com/00x421',
   motto: '信我所行',
+  /**
+   * 吉祥物的名字。取自 motto 的「信」——它的人设也是这个字：
+   * 只依据站内内容回答，答不出就直说（诚实条款）。
+   * 2026-09-30 站主让起名，定「小信」；两个字都在字体分片覆盖内。
+   */
+  botName: '小信',
 } as const;
 
 /**

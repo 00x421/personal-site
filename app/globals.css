@@ -270,6 +270,7 @@
   --tone-violet-ink: #000;
   --tone-lime: var(--lime);
   --tone-lime-ink: var(--ink);
+  --danger: #b4483c;
   --muted: #63625c;
   /* 语义色：面板/卡片/正文（供暗色主题覆盖） */
   --raised: #eceae2;
@@ -321,6 +322,7 @@
   --tone-violet-ink: #f0ede5;
   --tone-lime: #4a5530;
   --tone-lime-ink: #f0ede5;
+  --danger: #e07a6e;
   --muted: #97968f;
   --raised: #1d1d21;
   --card-ink: #232328;
@@ -467,11 +469,16 @@ button:focus-visible {
 }
 .nav-buddy-tip {
   position: absolute;
-  top: calc(100% - 3px);
-  left: 0;
+  /* 头顶右侧：垂直居中对齐按钮，向右展开。此前是「下方弹出」
+     （top: calc(100% - 3px)），2026-09-30 随新吉祥物改到侧面。 */
+  top: 50%;
+  left: calc(100% + 10px);
+  translate: 0 -50%;
   z-index: 4;
   width: max-content;
-  max-width: min(250px, calc(100vw - 40px));
+  /* 190px 是移动端狗狗左缘的占位（brand+狗狗右缘实测 ~182px）：
+     375px 屏上最长台词的气泡右缘 367，320px 屏也只剩 8px 余量，不撑出横向滚动 */
+  max-width: min(250px, calc(100vw - 190px));
   padding: 10px 12px;
   border: 1px solid var(--ink);
   color: var(--ink);
@@ -483,19 +490,16 @@ button:focus-visible {
   text-align: left;
   box-shadow: 5px 5px 0 var(--violet);
 }
-/* 文章页的小狗在顶栏右端（.article-top-row 是 space-between），
-   而上面的 left: 0 是锚在小狗**左缘**、气泡向右展开——小狗靠右时它就冲出视口。
-   实测 390px 屏上气泡右缘到 489（视口 375），溢出 109px，
-   把整个文档撑出横向滚动条；而这条滚动条只在「读完文章、小狗冒泡」时出现，
-   所以很容易漏掉。
-
-   锚定方向必须按小狗在各自容器里的位置分别给，不能统一：
-   - 首页小狗在左端（.nav-brand-group），左锚才不溢出（右缘 364 < 375）
-   - 文章页小狗在右端，右锚才不溢出（左缘 91 > 0）
-   反过来任何一边都会朝另一侧冲出视口。 */
+/* 气泡锚在狗狗侧面后，展开方向必须朝视口内侧，按狗狗在各自容器里的位置分别给：
+   - 首页狗狗在左端（.nav-brand-group），气泡向右展开（左锚，上面的默认值）
+   - 文章页狗狗在顶栏右端（.article-top-row 是 space-between），
+     气泡从狗狗左缘向左展开（右锚）：right: calc(100% + 10px)
+     把气泡右缘钉在狗狗左侧 10px，再长的台词也只往视口内长。
+   反过来任何一边都会朝视口外冲出，把文档撑出横向滚动条
+   （「下方弹出」时代就因锚向不对在 390px 屏上溢出过 109px）。 */
 .article-top-row .nav-buddy-tip {
   left: auto;
-  right: 0;
+  right: calc(100% + 10px);
 }
 @keyframes buddy-float {
   0%,
@@ -671,21 +675,34 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
      除数留余量也一并吸收它。 */
   font-size: min(clamp(54px, 8vw, 112px), calc((100vw - 48px) / 7));
 }
-/* CTA 是整页的情绪落点，字号可以比 hero 再大一档：
-   该区最长行 5 字，除以 4.65 留出标点与字距余量；
-   放大后标题横向占比从 42% 提到 55%，右上不再是大片空场。 */
+/* CTA 是整页的情绪落点，字号可以比 hero 再大一档。
+   缩进定版（2026-09-30 站主拍板，同日从 0.5em 加深到 1em）：第二行
+   「变成现实。」右错一个整字——「变」对齐第一行的第二个字，阶梯感
+   最强且两行仍咬合；1.2em 以上开始松散。行宽预算：1em 缩进 + 4.65em
+   = 5.65em，除数同步 4.65 → 5.7，否则窄屏上第二行会撞破内容区
+   （与 6.5→7.0 那次同类）。 */
 .cta h2 {
-  font-size: min(clamp(54px, 10.5vw, 152px), calc((100vw - 120px) / 4.65));
+  font-size: min(clamp(54px, 10.5vw, 152px), calc((100vw - 120px) / 5.7));
+}
+.cta h2 em {
+  margin-left: 1em;
 }
 .h1-line {
   display: block;
   white-space: nowrap;
 }
 /* hero 与 CTA 的强调语汇：同一支紫（--violet），各自再叠加自己的形态差异
-   （hero 比周围轻一档到 400；CTA 用斜体）。分开写是因为两者字重不同，
-   合在一个选择器里就得靠后边的规则去覆盖，读起来像意外。 */
+   （hero 比周围轻一档到 400；CTA 斜体）。分开写是因为两者字重不同，
+   合在一个选择器里就得靠后边的规则去覆盖，读起来像意外。
+
+   斜体的反复，记录终态（2026-09-30）：站主先嫌 hero 假斜体显脏，三处
+   一刀切扳正；随后看 CTA 直立版又觉得斜体更好。终态是**按语气分家**——
+   CTA 是动作句，斜体的前倾与 1em 错位的右移同向，动感叠加，斜体定版；
+   hero 与列表页是陈述句，直立（显式 normal，防浏览器默认 italic 回潮，
+   Noto Serif SC 无真斜体，假斜体在陈述性的衬线大字上显脏）。 */
 .hero h1 em {
   font-weight: 400;
+  font-style: normal;
   color: var(--violet);
 }
 /* .cta h2 em 的强调。
@@ -699,9 +716,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
    - --violet-text 是为小字可读性调浓的（亮色下 #6355ce）；这里是 151px
      大字，--violet 的 3.83:1 已远超大字门槛 3:1，不需要牺牲色相
 
-   字重保持 inherit（500，与「一起把它」同重），于是两行只差颜色与斜体两处。
-   斜体显式写出是为了防止被后续规则取消（历史上确实取消过一次）。
-   Noto Serif SC 无真斜体字形，这里是浏览器合成倾斜，大字标题下可接受。 */
+   字重保持 inherit（500，与「一起把它」同重）；斜体是 CTA 专属的形态
+   差异（理由见上方「斜体的反复」），显式写出防被后续规则覆盖。 */
 .cta h2 em {
   font-weight: inherit;
   font-style: italic;
@@ -1389,9 +1405,6 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
     width: 46px;
     height: 46px;
   }
-  .search-fab-kbd {
-    display: none;
-  }
   .search-modal {
     top: 7vh;
   }
@@ -1764,18 +1777,6 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   color: var(--violet-text);
   transform: translateY(-2px);
 }
-.search-fab-kbd {
-  position: absolute;
-  bottom: 100%;
-  margin-bottom: 6px;
-  padding: 2px 6px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--paper);
-  color: var(--muted);
-  font: 500 10px/1.4 'IBM Plex Mono', monospace;
-  white-space: nowrap;
-}
 .search-modal {
   position: fixed;
   top: 11vh;
@@ -1983,6 +1984,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .article-index-head h1 em {
   color: var(--violet);
   font-weight: 400;
+  font-style: normal;
 }
 .article-index-head p {
   max-width: 350px;
@@ -1994,7 +1996,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .not-found-shell {
   min-height: 100dvh;
 }
-.not-found-pup {
+.not-found-buddy {
   display: block;
   margin: 26px 0 0 -6px;
   animation: not-found-float 5s ease-in-out infinite;
@@ -2036,7 +2038,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .not-found-pup {
+  .not-found-buddy {
     animation: none;
   }
 }
@@ -2805,5 +2807,214 @@ main {
   .portrait-foot {
     transform: none;
     transition: none;
+  }
+}
+
+/* ═══ 问小机器人（bot-chat）══════════════════════════════════
+   入口：GrokBot 气泡里的提示行；第二次点击打开面板。
+   面板交互镜像站内搜索（.search-modal），提示行是气泡内的
+   非交互 span——面板由外层按钮的「再点一次」打开，避免按钮套按钮。 */
+.nav-buddy-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--violet-text);
+  font-size: 10px;
+}
+.bot-chat-modal {
+  position: fixed;
+  top: 10vh;
+  width: 100%;
+  max-width: min(560px, calc(100vw - 24px));
+  margin: 0 auto;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 28px 70px color-mix(in srgb, var(--ink) 26%, transparent);
+  overflow: hidden;
+  /* dialog 曾嵌在 .nav-buddy（button）里，text-align:center 从 button 继承过来
+     把回答全部居中；现在已移出为兄弟节点，这里显式 left 兜底。 */
+  text-align: left;
+}
+.bot-chat-modal::backdrop {
+  background: color-mix(in srgb, var(--ink) 30%, transparent);
+  backdrop-filter: blur(3px);
+}
+.bot-chat-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.bot-chat-head img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+.bot-chat-head strong {
+  flex: 1;
+  font: 700 14px/1.4 inherit;
+}
+.bot-chat-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+.bot-chat-close:hover,
+.bot-chat-close:focus-visible {
+  border-color: var(--violet);
+  color: var(--violet-text);
+}
+.bot-chat-log {
+  max-height: 46vh;
+  padding: 14px 16px;
+  overflow-y: auto;
+  /* 滚动能力保留、滚动条不显示（同 .mobile-section-nav 的先例）：
+     回答区通常只超出行高一两行，一条 12px 的灰杆比内容还抢眼。 */
+  scrollbar-width: none;
+  font: 400 14px/1.7 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+.bot-chat-log::-webkit-scrollbar {
+  display: none;
+}
+.bot-chat-hint p {
+  margin: 0 0 10px;
+  color: var(--muted);
+}
+.bot-chat-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bot-chat-examples button {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  font: 400 12px/1.5 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+.bot-chat-examples button:hover,
+.bot-chat-examples button:focus-visible {
+  border-color: var(--violet);
+  color: var(--violet-text);
+}
+.bot-chat-question {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.bot-chat-question span {
+  margin-right: 8px;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-size: 10px;
+}
+.bot-chat-answer {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.bot-chat-answer a,
+.bot-chat-answer a:visited {
+  color: var(--violet-text);
+}
+.bot-chat-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  margin-left: 2px;
+  background: var(--violet);
+  vertical-align: -2px;
+  animation: bot-chat-blink 0.9s step-end infinite;
+}
+@keyframes bot-chat-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.bot-chat-sources {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+.bot-chat-sources a {
+  margin-right: 10px;
+  color: var(--violet-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.bot-chat-error {
+  margin: 0;
+  color: var(--danger);
+}
+.bot-chat-input-row {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+}
+.bot-chat-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  outline: none;
+  color: var(--ink);
+  font: 400 16px/1.4 inherit;
+}
+.bot-chat-input::placeholder {
+  color: var(--muted);
+}
+.bot-chat-send {
+  padding: 7px 16px;
+  border: 1px solid var(--violet);
+  border-radius: 9px;
+  background: var(--violet);
+  color: var(--paper);
+  cursor: pointer;
+  font: 700 13px/1.4 inherit;
+  transition: opacity 0.2s;
+}
+.bot-chat-send:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.bot-chat-note {
+  margin: 0;
+  padding: 0 16px 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bot-chat-cursor {
+    animation: none;
+  }
+}
+/* 小屏：面板贴顶加高，日志区跟着放大 */
+@media (max-width: 640px) {
+  .bot-chat-modal {
+    top: 6vh;
+  }
+  .bot-chat-log {
+    max-height: 56vh;
   }
 }

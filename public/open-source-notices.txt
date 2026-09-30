@@ -1,6 +1,7 @@
 Open-source notices
 
-The site assistant's state-interaction approach is adapted from LaoA GrokBot.
+The site mascot (GrokBot) — its character artwork and state-interaction
+approach — is adapted from LaoA GrokBot.
 
 LaoA GrokBot
 Copyright (c) 2026 老A玩AI

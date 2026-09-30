@@ -1,7 +1,6 @@
 import {
   ArrowDownRight,
   ArrowUpRight,
-  Code2,
   Mail,
   Sparkles,
 } from 'lucide-react';
@@ -231,7 +230,7 @@ export default function Home() {
         <div className="cta-copy">
           <span className="eyebrow">有一个值得解决的问题？</span>
           <h2>
-            一起把它
+            一起把它，
             <br />
             <em>变成现实。</em>
           </h2>
@@ -253,7 +252,7 @@ export default function Home() {
           <Link href="/now">现在</Link>
           <Link href="/books">书架</Link>
           <a href={siteIdentity.github} target="_blank" rel="noreferrer">
-            <Code2 size={16} /> GitHub · 00x421
+            GitHub · 00x421
           </a>
           <MailLink email={siteIdentity.email} copiedText="已复制">
             Email
