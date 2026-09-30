@@ -16,7 +16,7 @@ npm test           # node --test（内容解析 / 集合查询 / 路由输出，
 npm run check      # 静态断言：globals.css 结构 + 字体字形覆盖（build 第一步就跑）
 npm run og         # 为全部文章重新生成 1200x630 OG 分享图
 npm run fonts      # 重建字体分片（新增文章用字后跑；会直接改写 globals.css）
-npm run images     # 吉祥物图 PNG → WebP（换图后跑）
+npm run mascot     # 从 GrokBot 开源项目的矢量数据重出吉祥物四态贴图（换吉祥物后跑）
 npm run portrait   # 肖像图 → 5 档响应式 WebP（换图后跑，母版放 images-src/）
 npm run deploy     # 构建并部署到线上服务器（见「部署」一节）
 ```
@@ -30,7 +30,7 @@ npm run start
 
 ## 技术要点
 
-- **App Router 服务端组件**：首页在服务端渲染，可交互部件（主题切换、滚动轨道、小狗吉祥物）以客户端组件（`'use client'`）注入。
+- **App Router 服务端组件**：首页在服务端渲染，可交互部件（主题切换、滚动轨道、机器人吉祥物）以客户端组件（`'use client'`）注入。
 - **Markdown 内容管线**：`content/articles/*.md`、`content/projects/*.md` 与 `content/books/*.md` + frontmatter；站点侧由 Vite `import.meta.glob` 构建期内联（运行时零文件系统依赖），`scripts/generate-og.ts` 在纯 Node 下 fs 直读，两侧共享 `lib/markdown.ts` 解析（marked 渲染 + 阅读时长估算）。项目案例页由 Markdown 正文驱动：`##` 分区 CSS 计数器自动编号，frontmatter `deliverables` 尾部自动成区。代码块由 Prism 在服务端高亮（token 色走 CSS 变量明暗双主题），复制按钮由客户端组件对已有 `<pre>` 渐进增强。
 - **三层内容结构**：解析（`lib/content-parse.ts`，零依赖）→ 渲染（`lib/markdown.ts`，marked + prismjs）→ 查询（`lib/article-queries.ts`，纯函数收 `Article[]`）→ 加载（`data/*.ts`，只做 `import.meta.glob` 与转发）。**只有加载层不可测**（门槛是 `import.meta.glob`，不是依赖重量——渲染层实测能被 `node --test` 直接导入），其余几层都有 `npm test` 覆盖。**新查询逻辑加到 `article-queries.ts` 并带测试。**
 - **同一套分层也用到了机器接口与静态断言上**：`lib/feed-builders.ts` 负责 RSS / `search.json` / sitemap 的序列化（route 只剩「取数据 → 包 Response」）；`lib/css-integrity.ts` 与 `lib/glyph-coverage.ts` 把两次样式表事故与「缺字形静默回退」从「人看一眼截图」变成**构建门禁**。三者都在 `npm test` 里有直接覆盖。
@@ -41,6 +41,7 @@ npm run start
 - **静态资源与缓存**：带内容哈希的资产（`/_next/static/`、`/fonts/slices/`）由 nginx 直服并设一年 immutable；图片类一周（文件名无哈希）；页面 `no-cache`（每次重验）。静态资源不经 Node，访问日志也关了。详见 HANDOFF 的部署架构一节。
 - **RSS**：`app/rss.xml/route.ts` 输出 RSS 2.0，已加入 `<link rel="alternate">` 自动发现。
 - **站内搜索**：`app/search.json/route.ts` 聚合文章 / 项目 / 书架输出全文索引（缓存 1 小时），`components/site/site-search.tsx` 原生 `<dialog>` 命令面板（右下角入口 + Cmd/Ctrl+K），首次打开才懒加载索引，多关键词 AND 加权评分，标题 / 摘要命中片段实时高亮。
+- **站内 AI 问答**：点 GrokBot 两下（气泡里有提示）打开提问面板，`app/api/ask/route.ts` 把问题向量化和构建期生成的片段索引做余弦检索，取 top-4 交给 LLM 流式作答，附来源链接。检索低于相关度门槛时直接承认「站里没写」，不劳烦 LLM。系统提示强制「只依据站内内容、绝不编造」。风控：单 IP 每小时 8 问 + 全站每天 1000 问（内存滑动窗口）+ 问题 300 字截断 + max_tokens 1500 + 上游 30s 超时。纯函数层在 `lib/ask.ts`（切片 / 检索 / 提示词 / 限流，`npm test` 覆盖）；向量索引由 prebuild 的 `scripts/generate-ask-index.ts` 生成（无 key 时优雅关闭，CI 不受影响；**deploy 时记得带 `ASK_EMBED_*`，否则问答会随部署一起下线**——deploy 脚本会在缺 key 时警告）。本地无 key 调试可起任意 OpenAI 兼容 mock。
 - **动态 OG 图**：`npm run og` 用 satori + @resvg/resvg-js 生成 `public/og/articles/{slug}.png` 与 `public/og/projects/{slug}.png`，文章 / 案例页 metadata 自动引用。
 - **结构化数据**：布局注入 Person/WebSite JSON-LD，文章页注入 Article JSON-LD。
 - **无障碍**：Lighthouse 无障碍 100 / 最佳实践 100 / SEO 100。
@@ -51,6 +52,8 @@ npm run start
 | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | 站点正式 URL（构建时内联，用于 canonical / RSS / OG / JSON-LD）。未设置时回退 `http://localhost:3000`。 |
 | `NOTO_SRC_DIR` | 可选。OG 脚本读取源字体的目录，默认 `%TEMP%/noto-src`。 |
+| `ASK_EMBED_BASE_URL` / `ASK_EMBED_API_KEY` / `ASK_EMBED_MODEL` | 可选。站内 AI 问答的向量 API（**构建期**读，prebuild 生成向量索引；缺 key 时功能整体关闭、构建照常通过）。默认硅基流动 `BAAI/bge-m3`（免费档）。 |
+| `ASK_LLM_BASE_URL` / `ASK_LLM_API_KEY` / `ASK_LLM_MODEL` | 可选。回答问题的 chat API（**运行期**读，需配到服务器 systemd 环境）。默认硅基流动 `Qwen/Qwen2.5-7B-Instruct`（免费档）。任何 OpenAI 兼容服务均可。 |
 
 ## 部署（自托管 Node）
 

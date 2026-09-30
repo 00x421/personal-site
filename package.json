@@ -11,6 +11,7 @@
     "check:css": "node --experimental-strip-types scripts/check-css-integrity.ts",
     "check:glyphs": "node --experimental-strip-types scripts/check-glyph-coverage.ts",
     "build": "node scripts/clean-dist.mjs && npm run check && vinext build",
+    "prebuild": "node --experimental-strip-types scripts/generate-ask-index.ts",
     "postbuild": "node scripts/fix-standalone.mjs",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
@@ -18,7 +19,7 @@
     "test": "node --experimental-strip-types --test \"tests/*.test.ts\"",
     "og": "node --experimental-strip-types scripts/generate-og.ts",
     "fonts": "python split-fonts.py",
-    "images": "python scripts/optimize-pup-images.py",
+    "mascot": "node scripts/capture-grokbot.mjs",
     "deploy": "node scripts/deploy.mjs",
     "portrait": "python scripts/optimize-portrait.py"
   },

@@ -83,6 +83,14 @@ console.log(
 
 // ---- 1. 构建 --------------------------------------------------------------
 log('1/5', `构建生产产物（NEXT_PUBLIC_SITE_URL=${SITE_URL}）`);
+if (!process.env.ASK_EMBED_API_KEY) {
+  // prebuild 无 key 时会写入 enabled:false 的空索引——问答功能随本次部署整体下线。
+  // 刻意不阻止（有时就是要主动下线），但必须让人看见，不许静默。
+  console.warn(
+    '  ⚠ 未设置 ASK_EMBED_API_KEY：本次部署后线上 AI 问答将整体关闭（向量索引为空）。\n' +
+      '    若非有意下线，请带 key 重新部署：ASK_EMBED_API_KEY=... ASK_EMBED_MODEL=BAAI/bge-m3 npm run deploy',
+  );
+}
 sh('npm run build', {
   env: { ...process.env, NEXT_PUBLIC_SITE_URL: SITE_URL },
 });
