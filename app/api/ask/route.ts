@@ -1,4 +1,12 @@
-import { assertSafeBaseUrl, buildMessages, extractSseDelta, retrieve, sanitizeQuestion, SlidingWindowLimiter } from '@/lib/ask';
+import {
+  assertSafeBaseUrl,
+  buildMessages,
+  chunkPath,
+  extractSseDelta,
+  retrieve,
+  sanitizeQuestion,
+  SlidingWindowLimiter,
+} from '@/lib/ask';
 import { askIndex } from '@/lib/ask-index.generated';
 
 /**
@@ -74,9 +82,12 @@ export async function POST(request: Request) {
   }
 
   let question = '';
+  let previous = '';
   try {
-    const body = (await request.json()) as { question?: string };
+    const body = (await request.json()) as { question?: string; previous?: string };
     question = sanitizeQuestion(String(body.question ?? ''));
+    // 上一问仅用于理解指代（「那第二步呢？」），同样清洗限长
+    previous = sanitizeQuestion(String(body.previous ?? ''));
   } catch {
     return json({ error: 'bad-request' }, 400);
   }
@@ -105,7 +116,9 @@ export async function POST(request: Request) {
 
   let queryEmbedding: number[] | null;
   try {
-    queryEmbedding = await embedQuestion(question);
+    // 指代消解的廉价做法：把上一问拼进检索 query——「那第二步呢？」
+    // 单独 embed 会完全失焦，拼上「上一问」后向量才有落点
+    queryEmbedding = await embedQuestion(previous ? `${previous} ${question}` : question);
   } catch {
     queryEmbedding = null;
   }
@@ -144,6 +157,7 @@ export async function POST(request: Request) {
             heading: hit.heading,
             text: hit.text,
           })),
+          previous,
         ),
         stream: true,
         // Qwen3 系是推理模型，思维链会把 max_tokens 吃光导致正文为空；
@@ -206,10 +220,4 @@ export async function POST(request: Request) {
   return new Response(stream, {
     headers: { 'content-type': 'application/x-ndjson; charset=utf-8', 'cache-control': 'no-store' },
   });
-}
-
-function chunkPath(chunk: { kind: 'article' | 'project' | 'meta'; slug: string }): string {
-  if (chunk.kind === 'article') return `/articles/${chunk.slug}`;
-  if (chunk.kind === 'project') return `/projects/${chunk.slug}`;
-  return '/';
 }

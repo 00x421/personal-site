@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   chunkDocument,
+  chunkPath,
   stripMarkdown,
   cosineSimilarity,
   retrieve,
@@ -10,6 +11,7 @@ import {
   SlidingWindowLimiter,
   extractSseDelta,
   assertSafeBaseUrl,
+  SYSTEM_PROMPT,
   MAX_CHUNK_CHARS,
   MIN_RELEVANCE,
   type IndexedChunk,
@@ -63,6 +65,41 @@ test('chunkDocument 没有小节头时只有引言一片', () => {
   assert.deepEqual(chunks.map((c) => c.heading), ['引言']);
 });
 
+test('chunkDocument 示例代码块内的「## 标题」不产生假片段（回归：how-this-site-is-built）', () => {
+  const chunks = chunkDocument({
+    slug: 'demo',
+    title: '演示文章',
+    kind: 'article',
+    body: [
+      '开场引言，长度必须超过二十个字符的门槛，所以这里再补几句凑数。',
+      '',
+      '```markdown',
+      '---',
+      'title: 示例',
+      '---',
+      '## 正文从这里开始',
+      '```',
+      '',
+      '## 真实的小节',
+      '',
+      '真实小节的正文，同样需要超过二十个字符的门槛才能通过过滤，再补一句。',
+    ].join('\n'),
+  });
+  // 「## 正文从这里开始」在围栏代码块内部，先剥围栏再切片就不会误认成小节
+  assert.deepEqual(
+    chunks.map((c) => c.heading),
+    ['引言', '真实的小节'],
+  );
+  assert.ok(!chunks.some((c) => c.text.includes('import.meta.glob')));
+});
+
+test('chunkPath 各类型的引用路径', () => {
+  assert.equal(chunkPath({ kind: 'article', slug: 'a' }), '/articles/a');
+  assert.equal(chunkPath({ kind: 'project', slug: 'p' }), '/projects/p');
+  assert.equal(chunkPath({ kind: 'book', slug: 'books' }), '/books');
+  assert.equal(chunkPath({ kind: 'meta', slug: 'site' }), '/');
+});
+
 test('cosineSimilarity 平行/正交/反向/零向量', () => {
   assert.equal(cosineSimilarity([1, 0], [2, 0]), 1);
   assert.equal(cosineSimilarity([1, 0], [0, 3]), 0);
@@ -96,9 +133,22 @@ test('buildMessages 带上系统条款、来源路径与问题', () => {
   ]);
   assert.equal(messages[0].role, 'system');
   assert.ok(messages[0].content.includes('绝不编造'));
-  assert.ok(messages[0].content.includes('200 字以内'));
+  assert.ok(messages[0].content.includes('无关的忽略'));
   assert.ok(messages[1].content.includes('/articles/font'));
   assert.ok(messages[1].content.includes('字体分片是怎么回事？'));
+});
+
+test('buildMessages 带上一问时标注「不要回答它」，不带时不出现', () => {
+  const withPrev = buildMessages('那第二步呢？', [
+    { title: 't', path: '/articles/a', heading: 'h', text: 'x' },
+  ], '这个站的字体是怎么优化的？');
+  assert.ok(withPrev[1].content.includes('不要回答它'));
+  assert.ok(withPrev[1].content.includes('这个站的字体是怎么优化的？'));
+  assert.ok(SYSTEM_PROMPT.length > 0);
+  const withoutPrev = buildMessages('那第二步呢？', [
+    { title: 't', path: '/articles/a', heading: 'h', text: 'x' },
+  ]);
+  assert.ok(!withoutPrev[1].content.includes('不要回答它'));
 });
 
 test('sanitizeQuestion 去控制字符、折叠空白、截断', () => {

@@ -46,6 +46,8 @@ export function BotChat({ open, onClose }: { open: boolean; onClose: () => void 
   const dialogRef = useRef<HTMLDialogElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  /** 面板内的上一问：随下一问传给后端做指代消解（「那第二步呢？」）。 */
+  const lastQuestionRef = useRef<string | null>(null);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [sources, setSources] = useState<Source[] | null>(null);
@@ -81,7 +83,7 @@ export function BotChat({ open, onClose }: { open: boolean; onClose: () => void 
       const res = await fetch('/api/ask', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ question: q }),
+        body: JSON.stringify({ question: q, previous: lastQuestionRef.current ?? undefined }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
@@ -100,6 +102,7 @@ export function BotChat({ open, onClose }: { open: boolean; onClose: () => void 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
+      lastQuestionRef.current = q;
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;

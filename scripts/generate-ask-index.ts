@@ -18,24 +18,19 @@ import path from 'node:path';
 import {
   assertSafeBaseUrl,
   chunkDocument,
+  chunkPath,
   MAX_CHUNK_CHARS,
   type AskChunk,
   type AskIndex,
   type IndexedChunk,
 } from '../lib/ask.ts';
-import { readString, splitFrontmatter } from '../lib/content-parse.ts';
+import { readList, readString, splitFrontmatter } from '../lib/content-parse.ts';
 import { capabilities, siteDescription, siteIdentity, siteTitle, toolbox } from '../lib/site-content.ts';
 
 const BASE_URL = process.env.ASK_EMBED_BASE_URL ?? 'https://api.siliconflow.cn/v1';
 const API_KEY = process.env.ASK_EMBED_API_KEY ?? '';
 const MODEL = process.env.ASK_EMBED_MODEL ?? 'BAAI/bge-m3';
 const OUT_FILE = path.resolve('lib/ask-index.generated.ts');
-
-function chunkPath(chunk: AskChunk): string {
-  if (chunk.kind === 'article') return `/articles/${chunk.slug}`;
-  if (chunk.kind === 'project') return `/projects/${chunk.slug}`;
-  return '/';
-}
 
 /** 目录名由 kind 白名单映射，不接受自由字符串拼接路径。 */
 function readDocs(kind: 'article' | 'project'): { slug: string; title: string; kind: 'article' | 'project'; body: string }[] {
@@ -59,7 +54,41 @@ function readDocs(kind: 'article' | 'project'): { slug: string; title: string; k
   });
 }
 
-/** 站点自述片段：让机器人答得了「这是谁的站 / 他能做什么」。 */
+/** 书架进索引：访客问「在看什么书」必须有的答。
+    books 只认 frontmatter（正文不渲染），片段引用统一指向 /books。 */
+function bookChunks(): AskChunk[] {
+  const full = path.resolve('content', 'books');
+  let files: string[] = [];
+  try {
+    files = readdirSync(full).filter((f) => f.endsWith('.md'));
+  } catch {
+    return [];
+  }
+  return files.flatMap((file) => {
+    const { data } = splitFrontmatter(readFileSync(path.join(full, file), 'utf8'));
+    const title = readString(data, 'title');
+    if (!title) return [];
+    const parts = [
+      `书架：《${title}》`,
+      readString(data, 'author') && `作者 ${readString(data, 'author')}`,
+      readString(data, 'status') && `状态：${readString(data, 'status')}`,
+      readString(data, 'started') && `开始于 ${readString(data, 'started')}`,
+      readString(data, 'takeaway'),
+      readList(data, 'tags').length > 0 && `标签：${readList(data, 'tags').join('、')}`,
+    ].filter(Boolean);
+    return [
+      {
+        slug: 'books',
+        title: `书架 · ${title}`,
+        kind: 'book',
+        heading: '书架',
+        text: parts.join('。').slice(0, MAX_CHUNK_CHARS),
+      },
+    ];
+  });
+}
+
+/** 站点自述片段：让机器人答得了「这是谁的站 / 站长能做什么 / 小信是谁」。 */
 function metaChunks(): AskChunk[] {
   const text = [
     siteTitle,
@@ -67,6 +96,7 @@ function metaChunks(): AskChunk[] {
     `站长 ${siteIdentity.name}（字标 ${siteIdentity.brand}），联系方式 ${siteIdentity.email}，GitHub ${siteIdentity.github}。`,
     `能做的事：${capabilities.map((c) => `${c.name}——${c.detail}`).join(' ')}`,
     `工具箱：${toolbox.map(([level, items]) => `${level}：${items.join('、')}`).join('；')}`,
+    `吉祥物叫「${siteIdentity.botName}」——一个 GrokBot 风格的紫色小机器人（形象改编自开源项目 LaoA-GrokBot），也就是这个问答助手本人。它只依据站内内容回答，答不出就直说；站点导航右下角还能搜索全站（Ctrl/Cmd+K）。`,
   ].join('\n');
   return [
     {
@@ -109,6 +139,7 @@ const docs = [
 ];
 const chunks: AskChunk[] = [
   ...docs.flatMap((doc) => chunkDocument(doc)),
+  ...bookChunks(),
   ...metaChunks(),
 ];
 
