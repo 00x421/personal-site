@@ -356,7 +356,10 @@ async function runHttp() {
       return;
     }
     if (rateLimited(ip)) {
-      res.writeHead(429, { 'content-type': 'application/json' });
+      res.writeHead(429, {
+        'content-type': 'application/json',
+        'retry-after': '60',
+      });
       res.end(JSON.stringify({ error: 'rate-limited', retryAfterSec: 60 }));
       return;
     }
