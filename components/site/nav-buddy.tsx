@@ -85,8 +85,13 @@ export function NavBuddy() {
   const [chatOpen, setChatOpen] = useState(false);
   const [askEnabled, setAskEnabled] = useState<boolean | null>(null);
   const askStatusRef = useRef<Promise<boolean> | null>(null);
+  /** 探测失败后的冷却截止时间：站点抖动时不该每次点击都重发请求。 */
+  const askRetryNotBeforeRef = useRef(0);
 
   function ensureAskStatus(): Promise<boolean> {
+    if (Date.now() < askRetryNotBeforeRef.current) {
+      return Promise.resolve(false);
+    }
     askStatusRef.current ??= fetch('/api/ask')
       .then((res) => res.json() as Promise<{ enabled: boolean }>)
       .then((data) => {
@@ -95,6 +100,7 @@ export function NavBuddy() {
       })
       .catch(() => {
         askStatusRef.current = null;
+        askRetryNotBeforeRef.current = Date.now() + 60_000;
         return false;
       });
     return askStatusRef.current;

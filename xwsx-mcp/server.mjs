@@ -369,10 +369,21 @@ async function runHttp() {
     // 显式逐请求断开，语义与 stateless 完全一致
     res.setHeader('connection', 'close');
 
-    // stateless：每请求独立的 server + transport，处理完即弃
+    // JSON-RPC 请求体很小，1MB 上限防恶意大 body 耗内存
+    const MAX_BODY_BYTES = 1024 * 1024;
     let body = '';
-    req.on('data', (chunk) => (body += chunk));
+    let oversized = false;
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > MAX_BODY_BYTES) {
+        oversized = true;
+        res.writeHead(413, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: 'payload-too-large' }));
+        req.destroy();
+      }
+    });
     req.on('end', async () => {
+      if (oversized) return;
       let parsed;
       try {
         parsed = JSON.parse(body);

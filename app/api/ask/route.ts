@@ -19,7 +19,7 @@ import { askIndex } from '@/lib/ask-index.generated';
  *
  * 风控（免费额度保护）：单 IP 每小时 8 问 + 全站每天 1000 问，
  * 内存滑动窗口（单 Node 进程部署，重启清零可接受）；
- * 问题 300 字截断、LLM max_tokens 1500、上游 30s 超时。
+ * 问题 300 字截断、LLM max_tokens 1500、上游 60s 超时（含流式 body 读取）。
  */
 
 const PER_IP_LIMIT = 8;
@@ -76,6 +76,11 @@ function ndjsonEvent(event: Record<string, unknown>): Uint8Array {
 }
 
 export async function POST(request: Request) {
+  // 恶意大 body 在 JSON.parse 之前就挡掉（question 本身 300 字截断，
+  // 10KB 对合法请求宽裕一整个数量级）
+  if (Number(request.headers.get('content-length') ?? 0) > 10_000) {
+    return json({ error: 'payload-too-large' }, 413);
+  }
   const llm = llmConfig();
   if (!askIndex.enabled || !llm) {
     return json({ error: 'ask-disabled' }, 503);
@@ -168,7 +173,7 @@ export async function POST(request: Request) {
         max_tokens: 1500,
         temperature: 0.3,
       }),
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(60_000),
     });
   } catch {
     return json({ error: 'llm-unreachable' }, 502);
@@ -204,6 +209,12 @@ export async function POST(request: Request) {
             const delta = extractSseDelta(line);
             if (delta) safeEnqueue({ t: 'd', v: delta });
           }
+        }
+        // 上游最后一行可能不带换行——flush 残留，别让结尾丢字
+        if (buffer.trim()) {
+          const delta = extractSseDelta(buffer);
+          if (delta) safeEnqueue({ t: 'd', v: delta });
+          buffer = '';
         }
         safeEnqueue({ t: 's', sources });
       } catch {

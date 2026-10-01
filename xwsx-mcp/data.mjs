@@ -13,6 +13,7 @@ const TTL_MS = Number(process.env.XWSX_CACHE_TTL_MS ?? 30 * 60 * 1000);
 
 let cache = null;
 let fetchedAt = 0;
+let inflight = null;
 
 async function load() {
   const res = await fetch(`${SITE_URL}/api/content`, {
@@ -27,18 +28,24 @@ async function load() {
   return data;
 }
 
-/** TTL 内直接返回缓存；过期则重拉。重拉失败时回退旧数据（站点抖动不放大成工具失败）。 */
+/** TTL 内直接返回缓存；过期则重拉（并发请求共享同一次 load，不放大流量）。
+    重拉失败时回退旧数据（站点抖动不放大成工具失败）。 */
 export async function getData() {
   if (cache && Date.now() - fetchedAt < TTL_MS) return cache;
-  try {
-    return await load();
-  } catch (error) {
-    if (cache) {
-      console.error(`[xwsx-mcp] refresh failed, serving stale cache: ${error.message}`);
-      return cache;
-    }
-    throw error;
-  }
+  inflight ??= load()
+    .then((data) => {
+      inflight = null;
+      return data;
+    })
+    .catch((error) => {
+      inflight = null;
+      if (cache) {
+        console.error(`[xwsx-mcp] refresh failed, serving stale cache: ${error.message}`);
+        return cache;
+      }
+      throw error;
+    });
+  return inflight;
 }
 
 export const siteUrl = SITE_URL;
