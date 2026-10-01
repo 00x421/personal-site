@@ -42,6 +42,11 @@ npm run start
 - **RSS**：`app/rss.xml/route.ts` 输出 RSS 2.0，已加入 `<link rel="alternate">` 自动发现。
 - **站内搜索**：`app/search.json/route.ts` 聚合文章 / 项目 / 书架输出全文索引（缓存 1 小时），`components/site/site-search.tsx` 原生 `<dialog>` 命令面板（右下角入口 + Cmd/Ctrl+K），首次打开才懒加载索引，多关键词 AND 加权评分，标题 / 摘要命中片段实时高亮。
 - **站内 AI 问答**：点 GrokBot 两下（气泡里有提示）打开提问面板，`app/api/ask/route.ts` 把问题向量化和构建期生成的片段索引做余弦检索，取 top-4 交给 LLM 流式作答，附来源链接。检索低于相关度门槛时直接承认「站里没写」，不劳烦 LLM。系统提示强制「只依据站内内容、绝不编造」。风控：单 IP 每小时 8 问 + 全站每天 1000 问（内存滑动窗口）+ 问题 300 字截断 + max_tokens 1500 + 上游 30s 超时。纯函数层在 `lib/ask.ts`（切片 / 检索 / 提示词 / 限流，`npm test` 覆盖）；向量索引由 prebuild 的 `scripts/generate-ask-index.ts` 生成（无 key 时优雅关闭，CI 不受影响；**deploy 时记得带 `ASK_EMBED_*`，否则问答会随部署一起下线**——deploy 脚本会在缺 key 时警告）。本地无 key 调试可起任意 OpenAI 兼容 mock。
+- **MCP server**：站点内容作为 MCP 工具暴露给任何 AI 客户端（`xwsx-mcp/`，独立依赖不进网站 bundle）。五个只读工具：`search_site`（关键词检索，与站内搜索同评分语汇）/ `get_article`（markdown 全文）/ `list_articles` / `list_projects` / `get_site_stats`，外加在读书目资源。零 LLM 调用、draft 同源过滤、HTTP 模式带 per-IP 限流。数据源是 `/api/content`（公开全文端点，1h 缓存）。两种用法：
+  - **本地 stdio**（推荐先试）：`cd xwsx-mcp && npm install`，Claude Desktop/Claude Code 配置里加
+    `{"mcpServers": {"xwsx": {"command": "node", "args": ["/绝对路径/xwsx-mcp/server.mjs"], "env": {"XWSX_SITE_URL": "https://xwsx.top"}}}}`
+  - **公开 HTTP 端点**（已部署）：任何支持 Streamable HTTP 的客户端直接连 `https://xwsx.top/mcp`。服务器侧是独立 systemd 服务 `xwsx-mcp.service`（绑 127.0.0.1:8899，nginx 精确 location 反代，与主站进程隔离），per-IP 60 req/min 限流
+  - 验证：`cd xwsx-mcp && npm run smoke`（stdio + http 双模式 9 项断言）
 - **动态 OG 图**：`npm run og` 用 satori + @resvg/resvg-js 生成 `public/og/articles/{slug}.png` 与 `public/og/projects/{slug}.png`，文章 / 案例页 metadata 自动引用。
 - **结构化数据**：布局注入 Person/WebSite JSON-LD，文章页注入 Article JSON-LD。
 - **无障碍**：Lighthouse 无障碍 100 / 最佳实践 100 / SEO 100。

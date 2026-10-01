@@ -39,6 +39,7 @@ app/                    路由（RSC 服务端组件为主）
   page.tsx              首页（hero / 精选 / 文章 / 关于 / 能做 / CTA / 页脚）
   articles|projects|books|now/   内容页
   api/ask/route.ts      站内 AI 问答：POST 流式作答（NDJSON）+ GET 开关状态；检索构建期向量索引
+  api/content/route.ts  站点内容机器可读全文出口（MCP 数据源；draft 同源过滤；1h 缓存）
   rss.xml|search.json|robots.ts|sitemap.ts   机器接口
 components/site/        客户端组件（'use client'，渐进增强）
   nav-buddy.tsx         导航栏 GrokBot 小机器人（四态轮播 / 主动搭话 / **两连点开 AI 问答**）
@@ -62,6 +63,10 @@ content/                Markdown 内容源（articles/projects/books + frontmatt
 tests/                  node --test 套件（npm test，174 用例）
 scripts/generate-og.ts  satori 生成 OG 分享图（纯 Node，npm run og）
 scripts/generate-ask-index.ts  AI 问答向量索引（prebuild 自动跑；无 key 优雅关闭，key 在 API 失败时大声失败）
+xwsx-mcp/               MCP server（独立 npm 包，不进网站 bundle）：五工具只读暴露站点内容；
+                        stdio（本地 Claude）+ Streamable HTTP（服务器 systemd xwsx-mcp.service，
+                        绑 127.0.0.1:8899，nginx location = /mcp 反代，per-IP 60/min 限流）；
+                        数据源 /api/content；npm run smoke 双模式 9 项断言；SDK 锁 1.31
 scripts/deploy.mjs      一键部署（npm run deploy，含健康检查与回滚）
 scripts/clean-dist.mjs  跨平台清 dist（替代会静默失效的 fs.rmSync）
 scripts/check-css-integrity.ts   样式表结构门禁（npm run check:css，build 里跑）
