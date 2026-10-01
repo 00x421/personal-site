@@ -71,6 +71,9 @@ async function withHttp() {
     env: { ...process.env, XWSX_SITE_URL: SITE, XWSX_PORT: '8899', XWSX_RATE_LIMIT_PER_MIN: '10' },
     stdio: ['ignore', 'ignore', 'inherit'],
   });
+  // 崩溃路径也要杀子进程——曾因 smoke 崩溃留下孤儿进程占住 8899，
+  // 后续测试请求全部打到旧进程上（数据还是旧缓存），排障时极易误判
+  process.on('exit', () => child.kill());
   // 等服务就绪
   await new Promise((resolve, reject) => {
     const t0 = Date.now();

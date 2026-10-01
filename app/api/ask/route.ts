@@ -105,6 +105,8 @@ export async function POST(request: Request) {
       { 'retry-after': String(perIp.retryAfterSec) },
     );
   }
+  // 刻意在业务校验之前计数：限流的目的是给免费额度上闸，
+  // 失败的请求同样消耗服务器资源；恢复能力靠 retryAfterSec 引导重试
   const global = globalLimiter.check('site');
   if (!global.ok) {
     return json(

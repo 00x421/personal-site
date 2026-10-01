@@ -1,4 +1,4 @@
-import { readList, readString, splitFrontmatter } from '@/lib/content-parse';
+import { estimateReadTime, readList, readString, splitFrontmatter } from '@/lib/content-parse';
 import { buildProject } from '@/lib/markdown';
 import { books } from '@/data/books';
 import { capabilities, siteDescription, siteIdentity, siteTitle, toolbox } from '@/lib/site-content';
@@ -99,9 +99,8 @@ function buildPayload(): ContentPayload {
     }))
     .sort((a, b) => a.slug.localeCompare(b.slug));
 
-  const readTime = (body: string) =>
-    `${Math.max(1, Math.ceil(body.replace(/\s/g, '').length / 400))} min read`;
-
+  // 阅读时长必须复用 estimateReadTime——站点文章页用的同一个口径；
+  // 这里曾自写一份（只去空白不去语法字符），数值与站内显示不一致
   return {
     site: {
       title: siteTitle,
@@ -113,7 +112,7 @@ function buildPayload(): ContentPayload {
     },
     articles: articles.map(({ draft: _draft, ...rest }) => ({
       ...rest,
-      readTime: readTime(rest.content),
+      readTime: estimateReadTime(rest.content),
     })),
     projects,
     books: books.map(({ slug, title, author, status, started, takeaway }) => ({

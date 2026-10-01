@@ -45,7 +45,7 @@ npm run start
 - **MCP server**：站点内容作为 MCP 工具暴露给任何 AI 客户端（`xwsx-mcp/`，独立依赖不进网站 bundle）。五个只读工具：`search_site`（关键词检索，与站内搜索同评分语汇）/ `get_article`（markdown 全文）/ `list_articles` / `list_projects` / `get_site_stats`，外加在读书目资源。零 LLM 调用、draft 同源过滤、HTTP 模式带 per-IP 限流。数据源是 `/api/content`（公开全文端点，1h 缓存）。两种用法：
   - **本地 stdio**（推荐先试）：`cd xwsx-mcp && npm install`，Claude Desktop/Claude Code 配置里加
     `{"mcpServers": {"xwsx": {"command": "node", "args": ["/绝对路径/xwsx-mcp/server.mjs"], "env": {"XWSX_SITE_URL": "https://xwsx.top"}}}}`
-  - **公开 HTTP 端点**（已部署）：任何支持 Streamable HTTP 的客户端直接连 `https://xwsx.top/mcp`。服务器侧是独立 systemd 服务 `xwsx-mcp.service`（绑 127.0.0.1:8899，nginx 精确 location 反代，与主站进程隔离），per-IP 60 req/min 限流
+  - **公开 HTTP 端点**（已部署）：任何支持 Streamable HTTP 的客户端直接连 `https://xwsx.top/mcp`。服务器侧是独立 systemd 服务 `xwsx-mcp.service`（绑 127.0.0.1:8899，nginx 精确 location 反代，与主站进程隔离），per-IP 60 req/min 限流。内容更新的可见延迟：MCP 缓存 30min + `/api/content` 缓存 1h，最长约 90 分钟
   - 验证：`cd xwsx-mcp && npm run smoke`（stdio + http 双模式 9 项断言）
 - **动态 OG 图**：`npm run og` 用 satori + @resvg/resvg-js 生成 `public/og/articles/{slug}.png` 与 `public/og/projects/{slug}.png`，文章 / 案例页 metadata 自动引用。
 - **结构化数据**：布局注入 Person/WebSite JSON-LD，文章页注入 Article JSON-LD。

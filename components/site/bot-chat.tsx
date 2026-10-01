@@ -146,6 +146,9 @@ export function BotChat({ open, onClose }: { open: boolean; onClose: () => void 
       aria-label="向小信提问"
       onClose={() => {
         setPhase('idle');
+        // 上一问的指代链只在本会话内有效——关掉面板即作废，
+        // 否则重开后问新话题，检索会被陈旧的 previous 带偏
+        lastQuestionRef.current = null;
         onClose();
       }}
       onKeyDown={(event) => {
