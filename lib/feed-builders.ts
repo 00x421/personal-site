@@ -49,7 +49,7 @@ export type SearchEntry = {
 };
 
 /** RSS 频道元信息，来自 `lib/site-content.ts`（调用方传入，本层不读站点常量）。 */
-export type RssChannel = {
+type RssChannel = {
   title: string;
   description: string;
   /** 站点绝对 URL，无尾斜杠（如 https://xwsx.top）。 */
@@ -161,7 +161,7 @@ export function buildSearchEntries(input: {
 }
 
 /** 与 `MetadataRoute.Sitemap` 结构兼容，但本层不 import next（保持零运行时依赖）。 */
-export type SitemapEntry = { url: string; lastModified: Date };
+type SitemapEntry = { url: string; lastModified: Date };
 
 /**
  * sitemap。只有**写了正文**的项目才有案例页，所以 `hasCase` 为假的项目和

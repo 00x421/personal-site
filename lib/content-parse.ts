@@ -8,7 +8,7 @@
  */
 
 /** frontmatter 的原始键值：字符串，或空值后跟随的 “- 条目” 块列表。 */
-export type RawFrontmatter = Record<string, string | string[]>;
+type RawFrontmatter = Record<string, string | string[]>;
 
 /** 去掉 YAML 风格的包裹引号：`year: '2026'` 与 `year: 2026` 应等价。
     只处理首尾成对的引号，`it's` 这类内含引号的值不受影响。 */
@@ -88,7 +88,7 @@ export function estimateReadTime(body: string): string {
 /** 去重并保持首次出现的顺序。
 
     用于标签：标签是集合语义，同一篇里写两次没有意义，而重复项会让下游各自
-    出错（标签云计数、RSS 的 category、搜索索引、相关阅读的标签重叠评分）。
+    出错（标签云计数、RSS 的 category、搜索索引）。
     去重放在解析层，是为了让这些下游**一次全部正确**，而不是每处各修一遍。 */
 export function unique(values: string[]): string[] {
   return [...new Set(values)];

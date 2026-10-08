@@ -26,7 +26,7 @@
 import { cssIntegrityRules } from './css-integrity.ts';
 
 /** 缺失字符按文件归集。`chars` 已去重并按码位升序。 */
-export type GlyphCoverageReport = {
+type GlyphCoverageReport = {
   /** unicode-range 并集的码位数量。 */
   coveredCount: number;
   /** 解析到的 unicode-range 条数（一个分片一条）。 */

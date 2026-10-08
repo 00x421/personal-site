@@ -31,7 +31,7 @@ export type TocEntry = { id: string; text: string; depth: 2 | 3 };
 /** 给 h2/h3 注入锚点 id（h2-0 / h3-1 …按出现序号），并返回目录树。
     在构建期一次性完成（html 是构建产物），序号在单篇文档内稳定。
     标题内可能含 <code> 等内联标记——目录文本剥掉标签留纯文字。 */
-export function injectHeadingIds(html: string): { html: string; toc: TocEntry[] } {
+function injectHeadingIds(html: string): { html: string; toc: TocEntry[] } {
   const toc: TocEntry[] = [];
   const counters = { 2: 0, 3: 0 } as Record<2 | 3, number>;
   const out = html.replace(
@@ -100,7 +100,7 @@ export function buildArticle(slug: string, raw: string): Article {
     description: readString(data, 'description') ?? '',
     published: readString(data, 'published') ?? '',
     readTime: estimateReadTime(body),
-    // 去重在解析层做：标签云、RSS 的 category、搜索索引、相关阅读评分
+    // 去重在解析层做：标签云、RSS 的 category、搜索索引
     // 都读同一个 tags 数组，在这里收敛就不会各处漏一处。
     tags: unique(parseList(data.tags)),
     series: readString(data, 'series'),

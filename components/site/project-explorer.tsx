@@ -13,7 +13,7 @@ import { Reveal } from '@/components/site/reveal';
  * （实测 84 KB 解压 / 34 KB 传输）。现在字段由服务端以 props 传入，
  * 类型定义留在本文件，客户端不再触碰数据层。
  */
-export type ProjectCard = {
+type ProjectCard = {
   slug: string;
   title: string;
   type: string;

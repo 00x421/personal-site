@@ -45,7 +45,7 @@ export const MAX_CHUNK_CHARS = 1500;
 /** 只剥围栏代码块（``` 或 ~~~，行首匹配；孤立闭合围栏单独剥掉）。
     必须在按 `## ` 切片**之前**调用：示例代码块内部常有「## 标题」字样，
     先切片会把它当成真实小节边界，产出假片段（how-this-site-is-built 实测）。 */
-export function stripFences(raw: string): string {
+function stripFences(raw: string): string {
   return raw
     .replace(/^```[^\n]*\n[\s\S]*?^```[^\n]*$/gm, ' ')
     .replace(/^~~~[^\n]*\n[\s\S]*?^~~~[^\n]*$/gm, ' ')
@@ -115,7 +115,7 @@ export function cosineSimilarity(a: number[], b: number[]): number {
     0.48 是两边之间的空档。改阈值前先跑体检脚本看分布。 */
 export const MIN_RELEVANCE = 0.48;
 
-export type ScoredChunk = IndexedChunk & { score: number };
+type ScoredChunk = IndexedChunk & { score: number };
 
 export function retrieve(
   queryEmbedding: number[],
@@ -174,9 +174,9 @@ export function assertSafeBaseUrl(rawUrl: string): string {
   return rawUrl.replace(/\/+$/, '');
 }
 
-/** 清洗访客输入：去控制字符、折叠空白、截断。 */
-export const MAX_QUESTION_CHARS = 300;
+const MAX_QUESTION_CHARS = 300;
 
+/** 清洗访客输入：去控制字符、折叠空白、截断。 */
 export function sanitizeQuestion(raw: string): string {
   return raw
     // eslint-disable-next-line no-control-regex -- 控制字符就是要清掉的东西

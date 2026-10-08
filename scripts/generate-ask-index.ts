@@ -18,7 +18,6 @@ import path from 'node:path';
 import {
   assertSafeBaseUrl,
   chunkDocument,
-  chunkPath,
   MAX_CHUNK_CHARS,
   type AskChunk,
   type AskIndex,

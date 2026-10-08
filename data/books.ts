@@ -1,6 +1,6 @@
 import { readString, splitFrontmatter } from '@/lib/content-parse';
 
-export type BookStatus = '在读' | '读完' | '想读';
+type BookStatus = '在读' | '读完' | '想读';
 
 export type Book = {
   slug: string;

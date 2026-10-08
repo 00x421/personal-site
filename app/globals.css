@@ -295,7 +295,7 @@
   /* 标题字距策略：拉丁字形自带侧边空白（side bearing），收紧才显得整齐；
      汉字是满 em 方框，同样的负值会先让字形相撞，再吃掉全角标点的呼吸感——
      而标点留白正是中文排版的节奏来源。所以 CJK 只做很轻的收紧。
-     例外：纯拉丁标题（.brand / .case-title-row h1 / .project-copy h3）保持
+     例外：纯拉丁标题（.brand / .project-copy h3）保持
      原来的强收紧，那是它们该有的样子。 */
   --tracking-cjk-display: -0.03em;
   --tracking-cjk-heading: -0.02em;
@@ -1028,10 +1028,6 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   overflow: hidden;
   pointer-events: none;
   z-index: 0;
-}
-/* 几何图形是为 450px 纵向卡准备的填充物，横向卡里没有它们的位置 */
-.project-symbol div {
-  display: none;
 }
 /* 水印竖直居中、完整可见。126px 是在 174px 卡高下不裁切的上限附近，
    字号再大就会顶到上下边缘，显得像渲染事故而不是装饰 */
@@ -2569,10 +2565,6 @@ main {
 .article-series-pos {
   color: var(--muted);
 }
-.article-series-num {
-  color: var(--violet-text);
-  font: 12px monospace;
-}
 @media (max-width: 640px) {
   .article-nav,
     .article-nav-card.is-empty {
@@ -2728,17 +2720,6 @@ main {
 }
 
 /* ============ 动效组件 ============ */
-
-/* 项目卡装饰图形的缓慢浮动（translate 属性，与 transform 互不冲突） */
-@keyframes symbol-float {
-  0%,
-  100% {
-    translate: 0 0;
-  }
-  50% {
-    translate: 0 -10px;
-  }
-}
 
 /* 用户偏好减弱动效时，关闭 CSS 装饰动画与光泽扫过 */
 @media (prefers-reduced-motion: reduce) {

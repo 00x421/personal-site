@@ -17,7 +17,7 @@
  * `tests/css-integrity.test.ts`）。文件读写留在 `scripts/check-css-integrity.ts`。
  */
 
-export type Finding = {
+type Finding = {
   /** error 让构建失败；warn 只提示。 */
   level: 'error' | 'warn';
   code: string;
