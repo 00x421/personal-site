@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { StampSeal } from './stamp-seal';
 import { READ_COMPLETE_EVENT } from './reading-progress';
-import { siteIdentity } from '@/lib/site-content';
 
 /**
  * 文末朱印区：纸墨站点的「读完仪式」。
@@ -59,12 +58,7 @@ export function ArticleSeal({ slug }: { slug: string }) {
         {stamped && (
           <StampSeal text="已读" ariaLabel="已读完本篇" entering size={64} />
         )}
-        <StampSeal
-          text="信我所行"
-          ariaLabel={`闲章：${siteIdentity.motto}`}
-          muted={!stamped}
-          size={76}
-        />
+        <StampSeal text="小信" ariaLabel="小信的印章" muted={!stamped} size={64} />
       </div>
       {!stamped && previous && (
         <p className="article-seal-note is-quiet">

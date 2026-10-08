@@ -7,7 +7,7 @@ import { ArticleSeal } from '@/components/site/article-seal';
 import { ArticleToc } from '@/components/site/article-toc';
 import { NavBuddy } from '@/components/site/nav-buddy';
 import { ReadingProgress } from '@/components/site/reading-progress';
-import { articles, getAdjacent, getArticle, getBacklinks, getSeries } from '@/data/articles';
+import { articles, getAdjacent, getArticle, getSeries } from '@/data/articles';
 import { siteIdentity } from '@/lib/site-content';
 
 export function generateStaticParams() {
@@ -55,7 +55,6 @@ export default async function ArticleDetailPage({
   const article = getArticle(slug);
   if (!article) notFound();
   const { newer, older } = getAdjacent(slug);
-  const backlinks = getBacklinks(slug);
   const series = getSeries(article.series);
   const seriesIndex = series.findIndex((item) => item.slug === slug);
   const siteUrl =
@@ -155,55 +154,6 @@ export default async function ArticleDetailPage({
             <span className="article-nav-card is-empty" aria-hidden="true" />
           )}
         </nav>
-        {series.length > 1 && (
-          <section className="article-series-box" aria-label="系列文章">
-            <span className="section-index">SERIES / {article.series}</span>
-            <ol>
-              {series.map((item, index) =>
-                item.slug === slug ? (
-                  <li key={item.slug} className="is-current" aria-current="page">
-                    <span className="article-series-num">
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                    <strong>{item.title}</strong>
-                    <span className="article-nav-meta">本篇</span>
-                  </li>
-                ) : (
-                  <li key={item.slug}>
-                    <Link href={`/articles/${item.slug}`}>
-                      <span className="article-series-num">
-                        {String(index + 1).padStart(2, '0')}
-                      </span>
-                      <strong>{item.title}</strong>
-                      <span className="article-nav-meta">
-                        {item.published} · {item.readTime}
-                      </span>
-                    </Link>
-                  </li>
-                ),
-              )}
-            </ol>
-          </section>
-        )}
-        {backlinks.length > 0 && (
-          <section className="article-backlinks" aria-label="链接到本文">
-            <span className="section-index">LINKED FROM / 链接到本文</span>
-            <div className="article-related-grid">
-              {backlinks.map((item) => (
-                <Link
-                  key={item.slug}
-                  href={`/articles/${item.slug}`}
-                  className="article-related-card"
-                >
-                  <strong>{item.title}</strong>
-                  <span className="article-nav-meta">
-                    {item.published} · {item.readTime}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
         <Link href="/#top" className="article-end-link">
           回到首页 <ArrowUpRight size={17} />
         </Link>

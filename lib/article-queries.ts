@@ -61,14 +61,6 @@ export function collectTags(articles: Article[]): { tag: string; count: number }
     .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 }
 
-/** 反向链接：正文里链接到本文的其他文章，按发布时间倒序。 */
-export function findBacklinks(articles: Article[], slug: string): Article[] {
-  const linkedFrom = `href="/articles/${slug}"`;
-  return sortByNewest(
-    articles.filter((article) => article.slug !== slug && article.html.includes(linkedFrom)),
-  );
-}
-
 /** 同系列文章按发布正序（阅读顺序），同日按 slug 升序；series 不存在时返回空数组。
 
     第二个排序键的理由与 sortByNewest 相同，而这里更要紧：本站「工程手记」

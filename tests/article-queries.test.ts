@@ -5,7 +5,6 @@ import {
   collectTags,
   filterByTag,
   findAdjacentLoop,
-  findBacklinks,
   findSeries,
   sortByNewest,
 } from '../lib/article-queries.ts';
@@ -22,6 +21,7 @@ function article(partial: Partial<Article> & { slug: string }): Article {
     tags: [],
     draft: false,
     html: '',
+    toc: [],
     ...partial,
   };
 }
@@ -154,58 +154,6 @@ describe('collectTags', () => {
   it('无标签返回空数组', () => {
     assert.deepEqual(collectTags([article({ slug: 'x' })]), []);
     assert.deepEqual(collectTags([]), []);
-  });
-});
-
-describe('findBacklinks', () => {
-  it('找出正文里链接到本文的文章', () => {
-    const data = [
-      article({ slug: 'me' }),
-      article({ slug: 'fan', published: '2026-05-01', html: '<a href="/articles/me">x</a>' }),
-      article({ slug: 'other', published: '2026-06-01', html: '没有链接' }),
-    ];
-    assert.deepEqual(findBacklinks(data, 'me').map((x) => x.slug), ['fan']);
-  });
-
-  it('按发布时间倒序', () => {
-    const data = [
-      article({ slug: 'me' }),
-      article({ slug: 'old', published: '2026-01-01', html: 'href="/articles/me"' }),
-      article({ slug: 'new', published: '2026-09-01', html: 'href="/articles/me"' }),
-    ];
-    assert.deepEqual(findBacklinks(data, 'me').map((x) => x.slug), ['new', 'old']);
-  });
-
-  it('不把自己算作自己的反向链接', () => {
-    const data = [article({ slug: 'me', html: 'href="/articles/me"' })];
-    assert.deepEqual(findBacklinks(data, 'me'), []);
-  });
-
-  it('严格匹配完整路径，前缀相同不算', () => {
-    // 链接到 /articles/me-too 的文章不应被当成链接到 /articles/me
-    const data = [
-      article({ slug: 'me' }),
-      article({ slug: 'x', html: '<a href="/articles/me-too">x</a>' }),
-    ];
-    assert.deepEqual(findBacklinks(data, 'me'), []);
-  });
-
-  it('没有反向链接时返回空数组', () => {
-    assert.deepEqual(findBacklinks(list, 'a'), []);
-  });
-
-  it('不修改入参', () => {
-    const data = [
-      article({ slug: 'me' }),
-      article({ slug: 'old', published: '2026-01-01', html: 'href="/articles/me"' }),
-      article({ slug: 'new', published: '2026-09-01', html: 'href="/articles/me"' }),
-    ];
-    const before = data.map((x) => x.slug);
-    findBacklinks(data, 'me');
-    assert.deepEqual(
-      data.map((x) => x.slug),
-      before,
-    );
   });
 });
 

@@ -2,9 +2,7 @@ import { buildArticle, type Article } from '@/lib/markdown';
 import {
   collectTags,
   filterByTag,
-  findAdjacent,
   findAdjacentLoop,
-  findBacklinks,
   findSeries,
   sortByNewest,
 } from '@/lib/article-queries';
@@ -42,10 +40,6 @@ export function getArticlesByTag(tag: string) {
 
 export function getAllTags() {
   return collectTags(articles);
-}
-
-export function getBacklinks(slug: string) {
-  return findBacklinks(articles, slug);
 }
 
 export function getSeries(series: string | undefined) {
