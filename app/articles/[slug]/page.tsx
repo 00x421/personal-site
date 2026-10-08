@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { CodeBlockEnhancer } from '@/components/site/code-block-enhancer';
+import { ArticleSeal } from '@/components/site/article-seal';
+import { ArticleToc } from '@/components/site/article-toc';
 import { NavBuddy } from '@/components/site/nav-buddy';
 import { ReadingProgress } from '@/components/site/reading-progress';
 import { articles, getAdjacent, getArticle, getBacklinks, getRelated, getSeries } from '@/data/articles';
@@ -87,11 +89,13 @@ export default async function ArticleDetailPage({
           <Link href="/articles" className="back-link">
             <ArrowLeft size={15} /> 所有文章
           </Link>
-          {/* 阅读陪伴：文章页停留 40s 无交互小狗会打盹 */}
+          {/* 阅读陪伴：文章页停留 40s 无交互小信会休眠 */}
           <NavBuddy />
         </div>
-        <article>
-          <header>
+        <div className="article-columns">
+          <article>
+            <ArticleToc entries={article.toc} />
+            <header>
             {series.length > 1 && (
               <p className="article-series">
                 系列 · {article.series}
@@ -120,6 +124,8 @@ export default async function ArticleDetailPage({
             className="article-body"
             dangerouslySetInnerHTML={{ __html: article.html }}
           />
+          {/* 读完仪式：朱印（已读 + 闲章），集邮记录在本地 */}
+          <ArticleSeal slug={slug} />
         </article>
         <CodeBlockEnhancer scope=".article-detail .article-body" />
         <nav className="article-nav" aria-label="文章导航">
@@ -221,6 +227,7 @@ export default async function ArticleDetailPage({
         <Link href="/#top" className="article-end-link">
           回到首页 <ArrowUpRight size={17} />
         </Link>
+        </div>
       </div>
       <script
         type="application/ld+json"

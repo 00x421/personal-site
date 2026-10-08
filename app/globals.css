@@ -272,6 +272,10 @@
   --tone-lime-ink: var(--ink);
   --danger: #b4483c;
   --muted: #63625c;
+  /* 夜间自动模式（data-night，仅自动 dark 生效）：纸色偏冷的微调 */
+  --night-paper: #f0ede5;
+  --night-raised: #ffffff;
+  --seal: #b23b2e;
   /* 语义色：面板/卡片/正文（供暗色主题覆盖） */
   --raised: #eceae2;
   --card-ink: #1c1c20;
@@ -325,6 +329,10 @@
   --danger: #e07a6e;
   --muted: #97968f;
   --raised: #1d1d21;
+  /* 深夜纸色：蓝黑更冷一档（只动纸面与浮层，不动文字/强调色） */
+  --night-paper: #15161c;
+  --night-raised: #1a1c24;
+  --seal: #d95845;
   --card-ink: #232328;
   --card-ink-text: #f0ede5;
   --portrait-bg: #1d1d21;
@@ -337,6 +345,11 @@
   --code-string: #a3c47f;
   --code-func: #8db1e8;
   --code-number: #e0a56e;
+}
+
+[data-theme='dark'][data-night='1'] {
+  --paper: var(--night-paper);
+  --raised: var(--night-raised);
 }
 * {
   box-sizing: border-box;
@@ -406,8 +419,8 @@ button:focus-visible {
 }
 .brand {
   font:
-    700 27px/1 'Noto Serif SC',
-    Georgia,
+    700 27px/1 Georgia,
+    'Noto Serif SC',
     serif;
   /* 字标是纯拉丁的 XWSX，保留强收紧（CJK 标题一律用 --tracking-cjk-*） */
   letter-spacing: -2px;
@@ -661,8 +674,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .cta h2 {
   margin: 0;
   font:
-    500 clamp(54px, 8vw, 112px)/0.93 'Noto Serif SC',
-    Georgia,
+    500 clamp(54px, 8vw, 112px)/0.93 Georgia,
+    'Noto Serif SC',
     serif;
   letter-spacing: var(--tracking-cjk-display);
   /* 窄屏保底：字号不超过「最长行 7 字」能放下的宽度，保证标题恒为两行。
@@ -807,8 +820,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .section-head h2 {
   margin: 0;
   font:
-    500 clamp(35px, 4.5vw, 57px)/1 'Noto Serif SC',
-    Georgia,
+    500 clamp(35px, 4.5vw, 57px)/1 Georgia,
+    'Noto Serif SC',
     serif;
   letter-spacing: var(--tracking-cjk-display);
 }
@@ -1029,8 +1042,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   right: 34px;
   translate: 0 -50%;
   font:
-    500 112px/0.8 'Noto Serif SC',
-    Georgia,
+    500 112px/0.8 Georgia,
+    'Noto Serif SC',
     serif;
   letter-spacing: -0.02em;
   opacity: 0.15;
@@ -1038,8 +1051,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .project-copy h3 {
   margin: 0 0 9px;
   font:
-    500 34px/1.05 'Noto Serif SC',
-    Georgia,
+    500 34px/1.05 Georgia,
+    'Noto Serif SC',
     serif;
   letter-spacing: var(--tracking-cjk-display);
 }
@@ -1141,8 +1154,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .about-statement {
   margin: 40px 0 30px;
   font:
-    500 clamp(26px, 3.4vw, 44px)/1.25 'Noto Serif SC',
-    Georgia,
+    500 clamp(26px, 3.4vw, 44px)/1.25 Georgia,
+    'Noto Serif SC',
     serif;
   letter-spacing: var(--tracking-cjk-display);
 }
@@ -1199,8 +1212,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .capability-list h3 {
   margin: 0 0 9px;
   font:
-    500 24px 'Noto Serif SC',
-    Georgia,
+    500 24px Georgia,
+    'Noto Serif SC',
     serif;
   letter-spacing: var(--tracking-cjk-heading);
 }
@@ -1340,7 +1353,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 }
 /* 品牌行用衬线呼应全站编辑风，作为整页的「刊尾」 */
 .site-footer > span:first-child {
-  font-family: 'Noto Serif SC', Georgia, serif;
+  font-family: Georgia, 'Noto Serif SC', serif;
   letter-spacing: 0.05em;
 }
 .site-footer div {
@@ -1646,8 +1659,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .writing-card h3 {
   margin: 15px 0 10px;
   font:
-    500 26px/1.16 'Noto Serif SC',
-    Georgia,
+    500 26px/1.16 Georgia,
+    'Noto Serif SC',
     serif;
   letter-spacing: var(--tracking-cjk-heading);
 }
@@ -1976,8 +1989,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .article-index-head h1 {
   margin: 20px 0;
   font:
-    500 clamp(50px, 7vw, 86px)/0.98 'Noto Serif SC',
-    Georgia,
+    500 clamp(50px, 7vw, 86px)/0.98 Georgia,
+    'Noto Serif SC',
     serif;
   letter-spacing: var(--tracking-cjk-display);
 }
@@ -2133,8 +2146,8 @@ main {
 .article-row h2 {
   margin: 13px 0 9px;
   font:
-    500 32px/1.15 'Noto Serif SC',
-    Georgia,
+    500 32px/1.15 Georgia,
+    'Noto Serif SC',
     serif;
   letter-spacing: var(--tracking-cjk-heading);
   transition: color 0.2s;
@@ -2179,8 +2192,8 @@ main {
 .book-title-row h2 {
   margin: 0;
   font:
-    500 clamp(24px, 3vw, 32px)/1.2 'Noto Serif SC',
-    Georgia,
+    500 clamp(24px, 3vw, 32px)/1.2 Georgia,
+    'Noto Serif SC',
     serif;
   letter-spacing: var(--tracking-cjk-heading);
 }
@@ -2215,11 +2228,12 @@ main {
   padding-bottom: 45px;
 }
 .article-detail h1 {
+  text-wrap: balance;
   max-width: 760px;
   margin: 22px 0;
   font:
-    500 clamp(44px, 6vw, 76px)/1.04 'Noto Serif SC',
-    Georgia,
+    500 clamp(44px, 6vw, 76px)/1.04 Georgia,
+    'Noto Serif SC',
     serif;
   letter-spacing: var(--tracking-cjk-display);
 }
@@ -2237,17 +2251,20 @@ main {
   margin-top: 0;
 }
 .article-body h2 {
+  /* 锚点跳转/TOC 点击后标题不被顶栏遮住，也落进 TOC 高亮的观察带 */
+  scroll-margin-top: 90px;
   margin: 48px 0 16px;
   font:
-    500 28px 'Noto Serif SC',
-    Georgia,
+    500 28px Georgia,
+    'Noto Serif SC',
     serif;
 }
 .article-body h3 {
+  scroll-margin-top: 90px;
   margin: 34px 0 12px;
   font:
-    500 20px 'Noto Serif SC',
-    Georgia,
+    500 20px Georgia,
+    'Noto Serif SC',
     serif;
 }
 .article-body p {
@@ -2668,8 +2685,8 @@ main {
 .project-case-hero h1 {
   margin: 24px 0 16px;
   font:
-    500 clamp(58px, 10vw, 116px)/0.9 'Noto Serif SC',
-    Georgia,
+    500 clamp(58px, 10vw, 116px)/0.9 Georgia,
+    'Noto Serif SC',
     serif;
   letter-spacing: -0.08em;
 }
@@ -2720,16 +2737,16 @@ main {
   max-width: 650px;
   margin: 28px 0 22px;
   font:
-    500 clamp(32px, 4vw, 50px)/1.1 'Noto Serif SC',
-    Georgia,
+    500 clamp(32px, 4vw, 50px)/1.1 Georgia,
+    'Noto Serif SC',
     serif;
   letter-spacing: var(--tracking-cjk-display);
 }
 .case-body > h4 {
   margin: 36px 0 10px;
   font:
-    500 26px 'Noto Serif SC',
-    Georgia,
+    500 26px Georgia,
+    'Noto Serif SC',
     serif;
   letter-spacing: var(--tracking-cjk-heading);
 }
@@ -3016,5 +3033,222 @@ main {
   }
   .bot-chat-log {
     max-height: 56vh;
+  }
+}
+@font-face {
+  font-family: 'LXGW Seal';
+  src: url('/fonts/seal.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: block;
+}
+
+/* ═══ 长文阅读工具（TOC + 字号）════════════════════════════
+   桌面 ≥1280px：目录 sticky 挂正文右缘外侧（负 margin 悬挂布局，
+   不挤压 650px 正文列）；<1280px 隐藏侧栏、显示 details 折叠。 */
+.article-columns {
+  position: relative;
+}
+.article-toc {
+  display: none;
+}
+.article-toc-list {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.article-toc-list li[data-depth='3'] {
+  padding-left: 14px;
+}
+.article-toc-list a {
+  display: block;
+  padding: 4px 0 4px 10px;
+  color: var(--muted);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+.article-toc-list a:hover {
+  color: var(--ink);
+}
+.article-toc-list a.is-active {
+  color: var(--violet-text);
+  border-left-color: var(--violet);
+}
+.article-reading-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  color: var(--muted);
+}
+.article-reading-tools-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 500 11px/1 'IBM Plex Mono', monospace;
+  letter-spacing: 0.08em;
+}
+.article-font-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.article-font-controls button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+.article-font-controls button:hover:not(:disabled),
+.article-font-controls button:focus-visible {
+  border-color: var(--violet);
+  color: var(--violet-text);
+}
+.article-font-controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.article-font-controls span {
+  min-width: 1em;
+  text-align: center;
+  font-size: 12px;
+}
+.article-toc-mobile {
+  margin: 18px 0 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.article-toc-mobile summary {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 500 12px/1.6 'IBM Plex Mono', monospace;
+  letter-spacing: 0.06em;
+}
+.article-toc-mobile[open] summary {
+  margin-bottom: 8px;
+}
+@media (min-width: 1280px) {
+  .article-toc {
+    display: block;
+    position: sticky;
+    top: 90px;
+    float: right;
+    width: 200px;
+    margin-right: -238px;
+    font-size: 13px;
+  }
+  .article-toc-mobile {
+    display: none;
+  }
+}
+/* 字号三档：挂 .article-detail 的 data-font-scale（localStorage 记忆） */
+.article-detail {
+  --article-scale: 1;
+}
+.article-detail[data-font-scale='s'] {
+  --article-scale: 0.9375;
+}
+.article-detail[data-font-scale='l'] {
+  --article-scale: 1.125;
+}
+.article-detail[data-font-scale] .article-body p,
+.article-detail[data-font-scale] .article-body ul,
+.article-detail[data-font-scale] .article-body ol,
+.article-detail[data-font-scale] .article-body blockquote {
+  font-size: calc(16px * var(--article-scale));
+}
+
+/* ═══ 朱印（读完仪式）══════════════════════════════════════
+   印章字体为 LXGW WenKai Medium 的 6 字子集（seal.woff2，非 Noto 分片）。
+   刀感 = feTurbulence 斑驳遮罩；三阶段盖章动画（悬浮→砸落→回正），
+   prefers-reduced-motion 时直接呈现。闲章常驻作落款，已读章由
+   READ_COMPLETE_EVENT 触发，集邮记录存 localStorage。 */
+.article-seal-zone {
+  margin: 60px 0 0;
+  padding: 26px 0 0;
+  border-top: 1px dashed var(--line);
+}
+.article-seal-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+}
+.stamp-seal {
+  --seal-size: 64px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--seal-size);
+  height: var(--seal-size);
+  border-radius: 10px;
+  background: var(--seal);
+  color: var(--paper);
+  font-family: 'LXGW Seal', serif;
+  user-select: none;
+  /* 印泥斑驳：噪点遮罩让边缘与内部微有不匀 */
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='3'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.92 0.08'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='3'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.92 0.08'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.stamp-seal-text {
+  display: block;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-size: calc(var(--seal-size) * 0.24);
+  line-height: 1.1;
+  letter-spacing: 0.08em;
+  padding: 2px;
+}
+.stamp-seal.is-muted {
+  opacity: 0.38;
+}
+@keyframes seal-slam {
+  0% {
+    opacity: 0;
+    transform: scale(2.1) rotate(-14deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.92) rotate(2.5deg);
+  }
+  80% {
+    transform: scale(1.04) rotate(-1.5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-1deg);
+  }
+}
+.article-seal-zone[data-stamped] .stamp-seal.is-entering {
+  animation: seal-slam 0.44s cubic-bezier(0.18, 0.89, 0.32, 1.28) both;
+}
+.article-seal-note {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.article-seal-note.is-quiet {
+  font-size: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .article-seal-zone[data-stamped] .stamp-seal.is-entering {
+    animation: none;
   }
 }

@@ -8,6 +8,8 @@ export function ThemeToggle() {
     const root = document.documentElement;
     const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
     root.dataset.theme = next;
+    // 手动选择即退出自动模式：夜间色温微调只对「从未手动选择」的访客生效
+    delete root.dataset.night;
     try {
       localStorage.setItem('theme', next);
     } catch {

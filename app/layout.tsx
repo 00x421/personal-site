@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
 };
-const themeInitScript = `(function(){try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.dataset.theme=t;}catch(e){}})();`;
+const themeInitScript = `(function(){try{var t=localStorage.getItem('theme');var auto=!t;var m=window.matchMedia('(prefers-color-scheme: dark)').matches;if(auto){t=m?'dark':'light';}document.documentElement.dataset.theme=t;if(auto&&m){var h=new Date().getHours();if(h>=23||h<7){document.documentElement.dataset.night='1';}}}catch(e){}})();`;
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 const siteJsonLd = {
