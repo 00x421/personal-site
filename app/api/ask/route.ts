@@ -2,6 +2,7 @@ import {
   assertSafeBaseUrl,
   buildMessages,
   chunkPath,
+  embedQuery,
   extractSseDelta,
   retrieve,
   sanitizeQuestion,
@@ -52,22 +53,7 @@ export function GET() {
 }
 
 async function embedQuestion(question: string): Promise<number[] | null> {
-  // 环境变量是部署方配置（非请求输入）；守卫防的是配置手误（http 明文/内网地址）
-  const baseURL = assertSafeBaseUrl(
-    process.env.ASK_EMBED_BASE_URL ?? 'https://api.siliconflow.cn/v1',
-  );
-  const apiKey = process.env.ASK_EMBED_API_KEY;
-  const model = process.env.ASK_EMBED_MODEL ?? askIndex.embedModel;
-  if (!apiKey) return null;
-  const res = await fetch(`${baseURL}/embeddings`, {
-    method: 'POST',
-    headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ model, input: [question] }),
-    signal: AbortSignal.timeout(20_000),
-  });
-  if (!res.ok) return null;
-  const data = (await res.json()) as { data: { embedding: number[] }[] };
-  return data.data[0]?.embedding ?? null;
+  return embedQuery(question, { fallbackModel: askIndex.embedModel });
 }
 
 /** 上游 SSE → 站点自己的 NDJSON 事件流。 */
@@ -92,11 +78,19 @@ export async function POST(request: Request) {
 
   let question = '';
   let previous = '';
+  let focusSlug = '';
   try {
-    const body = (await request.json()) as { question?: string; previous?: string };
+    const body = (await request.json()) as {
+      question?: string;
+      previous?: string;
+      slug?: string;
+    };
     question = sanitizeQuestion(String(body.question ?? ''));
     // 上一问仅用于理解指代（「那第二步呢？」），同样清洗限长
     previous = sanitizeQuestion(String(body.previous ?? ''));
+    // 「只聊这一篇」：文章页带来的 slug，必须是站内真实存在的文章才算数
+    const rawSlug = String(body.slug ?? '');
+    if (/^[a-z0-9-]{1,80}$/.test(rawSlug)) focusSlug = rawSlug;
   } catch {
     return json({ error: 'bad-request' }, 400);
   }
@@ -137,7 +131,14 @@ export async function POST(request: Request) {
     return json({ error: 'embed-failed' }, 502);
   }
 
-  const hits = retrieve(queryEmbedding, askIndex.chunks, { topK: 4 });
+  // slug 校验只验格式（上面），存在性在这里收口：索引里没有这篇文章就不加权
+  const focusIsReal = askIndex.chunks.some(
+    (chunk) => chunk.kind === 'article' && chunk.slug === focusSlug,
+  );
+  const hits = retrieve(queryEmbedding, askIndex.chunks, {
+    topK: 4,
+    focusSlug: focusIsReal ? focusSlug : undefined,
+  });
   if (hits.length === 0) {
     // 检索闸：站里没写过就不劳烦 LLM，诚实作答还省额度
     return new Response(
@@ -169,6 +170,9 @@ export async function POST(request: Request) {
             text: hit.text,
           })),
           previous,
+          focusIsReal
+            ? askIndex.chunks.find((chunk) => chunk.slug === focusSlug)?.title
+            : undefined,
         ),
         stream: true,
         // Qwen3 系是推理模型，思维链会把 max_tokens 吃光导致正文为空；

@@ -14,6 +14,16 @@ import type { SearchEntry } from '@/lib/feed-builders';
  */
 type Entry = SearchEntry;
 
+/** /api/search（语义兜底）的结果子集，形状对齐 Entry 以复用渲染。
+    meta 与 Entry 对齐但恒为空串——语义命中没有日期可标。 */
+type SemanticHit = {
+  title: string;
+  url: string;
+  desc: string;
+  type: Entry['type'];
+  meta: string;
+};
+
 const TYPE_LABEL: Record<Entry['type'], string> = {
   article: '文章',
   project: '项目',
@@ -104,6 +114,8 @@ export function SiteSearch() {
   const [query, setQuery] = useState('');
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [indexError, setIndexError] = useState(false);
+  const [semantic, setSemantic] = useState<SemanticHit[] | null>(null);
+  const semanticAbortRef = useRef<AbortController | null>(null);
   const [active, setActive] = useState(0);
   const [rssCopied, setRssCopied] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -213,8 +225,40 @@ export function SiteSearch() {
       .map((item) => item.entry);
   }, [entries, terms]);
 
+  /** 字面零命中时的语义兜底；有字面命中就不掺行——兜底只补空，不抢位。 */
+  const combined = results.length > 0 ? results : (semantic ?? []);
+
+  // 兜底查询：防抖 400ms（等用户打完词），中断上一轮，失败静默
+  useEffect(() => {
+    semanticAbortRef.current?.abort();
+    if (terms.length === 0 || results.length > 0 || entries === null || indexError) {
+      return;
+    }
+    const controller = new AbortController();
+    semanticAbortRef.current = controller;
+    const timer = window.setTimeout(() => {
+      fetch('/api/search', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ q: query.trim() }),
+        signal: controller.signal,
+      })
+        .then((res) => res.json() as Promise<{ results: SemanticHit[] }>)
+        .then((data) => {
+          setSemantic(data.results);
+        })
+        .catch(() => {
+          /* 静默：兜底本来就是增强 */
+        });
+    }, 400);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query, terms, results, entries, indexError]);
+
   /** 命令与结果合成一条键盘动线：↑↓ 走全局序号，Enter 执行当前项。 */
-  const total = matchedCommands.length + results.length;
+  const total = matchedCommands.length + combined.length;
 
   const ensureIndex = useCallback(() => {
     if (fetchRef.current) return;
@@ -234,6 +278,7 @@ export function SiteSearch() {
   function openDialog() {
     setActive(0);
     setQuery('');
+    setSemantic(null);
     setOpen(true);
     ensureIndex();
     dialogRef.current?.showModal();
@@ -242,6 +287,7 @@ export function SiteSearch() {
   function choose(term: string) {
     setQuery(term);
     setActive(0);
+    setSemantic(null);
   }
 
   useEffect(() => {
@@ -332,6 +378,7 @@ export function SiteSearch() {
             onChange={(event) => {
               setQuery(event.target.value);
               setActive(0);
+              setSemantic(null);
             }}
             onKeyDown={onInputKey}
           />
@@ -377,9 +424,9 @@ export function SiteSearch() {
             );
           })}
 
-          {results.length > 0 && (
+          {combined.length > 0 && (
             <li className="search-group" aria-hidden="true">
-              搜索
+              {results.length > 0 ? '搜索' : '语义相近'}
             </li>
           )}
           {entries === null && !indexError && matchedCommands.length === 0 && (
@@ -408,12 +455,22 @@ export function SiteSearch() {
               )}
             </li>
           )}
-          {entries !== null && terms.length > 0 && results.length === 0 && matchedCommands.length === 0 && (
-            <li className="search-empty">
-              没找到和「{query}」相关的内容。换个词试试？小狗也帮你歪了歪头。
-            </li>
-          )}
-          {results.map((entry, i) => {
+          {entries !== null &&
+            terms.length > 0 &&
+            results.length === 0 &&
+            semantic === null &&
+            matchedCommands.length === 0 && (
+              <li className="search-empty">字面没搜到，正在试试语义相近的…</li>
+            )}
+          {entries !== null &&
+            terms.length > 0 &&
+            combined.length === 0 &&
+            semantic !== null && (
+              <li className="search-empty">
+                没找到和「{query}」相关的内容。换个词试试？小狗也帮你歪了歪头。
+              </li>
+            )}
+          {combined.map((entry, i) => {
             const index = matchedCommands.length + i;
             return (
               <li key={`${entry.type}-${entry.url}-${entry.title}`}>

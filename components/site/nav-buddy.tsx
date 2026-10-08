@@ -83,6 +83,11 @@ export function NavBuddy() {
   const [chatter, setChatter] = useState<string | null>(null);
   /** 「问小机器人」面板与入口开关。开关懒查询：第一次点它才问服务端。 */
   const [chatOpen, setChatOpen] = useState(false);
+  /** 划词即问的预填问题：select-ask 发 xwsx:ask 事件，这里开面板并传下去。
+      nonce 保证同一问题只发一次（面板重开不重发）。 */
+  const [askPrefill, setAskPrefill] = useState<
+    { question: string; nonce: number } | undefined
+  >(undefined);
   const [askEnabled, setAskEnabled] = useState<boolean | null>(null);
   const askStatusRef = useRef<Promise<boolean> | null>(null);
   /** 探测失败后的冷却截止时间：站点抖动时不该每次点击都重发请求。 */
@@ -156,6 +161,21 @@ export function NavBuddy() {
       setMoodIndex((current) => current + 1);
     }, 6200);
     return () => window.clearInterval(timer);
+  }, []);
+
+  // 划词即问：select-ask 把打包好的问题广播过来，这里开面板并预填
+  useEffect(() => {
+    function onAsk(event: Event) {
+      const question = (event as CustomEvent<{ question?: string }>).detail?.question;
+      if (!question) return;
+      setChatOpen(true);
+      setAskPrefill((current) => ({
+        question,
+        nonce: (current?.nonce ?? 0) + 1,
+      }));
+    }
+    window.addEventListener('xwsx:ask', onAsk);
+    return () => window.removeEventListener('xwsx:ask', onAsk);
   }, []);
 
   useEffect(() => {
@@ -285,7 +305,11 @@ export function NavBuddy() {
       {/* 对话面板不能放进 button 里：<dialog> 是交互元素，button 嵌交互元素
           不合法，且 button 的 text-align:center 会被 dialog 继承（实测答案
           全部居中）。放外面做兄弟节点，定位用 fixed 不受影响。 */}
-      <BotChat open={chatOpen} onClose={() => setChatOpen(false)} />
+      <BotChat
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+        prefill={askPrefill}
+      />
     </>
   );
 }

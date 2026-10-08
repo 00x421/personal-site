@@ -8,6 +8,7 @@ import { ArticleToc } from '@/components/site/article-toc';
 import { BackToHome } from '@/components/site/back-to-home';
 import { NavBuddy } from '@/components/site/nav-buddy';
 import { ReadingProgress } from '@/components/site/reading-progress';
+import { SelectAsk } from '@/components/site/select-ask';
 import { articles, getAdjacent, getArticle, getSeries } from '@/data/articles';
 import { siteIdentity } from '@/lib/site-content';
 
@@ -158,6 +159,7 @@ export default async function ArticleDetailPage({
         </div>
       </div>
       <BackToHome />
+      <SelectAsk />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

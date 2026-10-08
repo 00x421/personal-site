@@ -117,13 +117,30 @@ export const MIN_RELEVANCE = 0.48;
 
 type ScoredChunk = IndexedChunk & { score: number };
 
+/** 「只聊这一篇」的加权：读者在文章页提问时，本篇片段天然该排前面。
+    加权幅度 0.05——足够把同分级的本篇片段顶到最前，又不会把纯噪声
+    （实测 ≤0.441）抬过门槛（0.441+0.05=0.491 仍可能在边缘，故另设
+    0.40 的底槛：基础分低于它的本篇片段不值得进上下文）。 */
+export const FOCUS_BONUS = 0.05;
+const FOCUS_FLOOR = 0.4;
+
 export function retrieve(
   queryEmbedding: number[],
   chunks: IndexedChunk[],
-  { topK = 4, minScore = MIN_RELEVANCE }: { topK?: number; minScore?: number } = {},
+  {
+    topK = 4,
+    minScore = MIN_RELEVANCE,
+    focusSlug,
+  }: { topK?: number; minScore?: number; focusSlug?: string } = {},
 ): ScoredChunk[] {
   return chunks
-    .map((chunk) => ({ ...chunk, score: cosineSimilarity(queryEmbedding, chunk.embedding) }))
+    .map((chunk) => {
+      let score = cosineSimilarity(queryEmbedding, chunk.embedding);
+      if (focusSlug && chunk.slug === focusSlug && score >= FOCUS_FLOOR) {
+        score += FOCUS_BONUS;
+      }
+      return { ...chunk, score };
+    })
     .filter((entry) => entry.score >= minScore)
     .sort((a, b) => b.score - a.score)
     .slice(0, topK);
@@ -139,11 +156,14 @@ export const SYSTEM_PROMPT = [
 ].join('\n');
 
 /** 组装 chat/completions 的 messages。片段带 path 供引用；
-    previous 是面板里的上一问，仅用于理解指代（「那第二步呢？」）。 */
+    previous 是面板里的上一问，仅用于理解指代（「那第二步呢？」）；
+    focusTitle 是读者正在读的文章标题——提问场景就在该篇之内，
+    提示模型优先依据本篇（划词即问与文章页提问都带它）。 */
 export function buildMessages(
   question: string,
   contexts: { title: string; path: string; heading: string; text: string }[],
   previous?: string,
+  focusTitle?: string,
 ): { role: 'system' | 'user'; content: string }[] {
   const context = contexts
     .map((c) => `【${c.title} · ${c.heading}】(path: ${c.path})\n${c.text}`)
@@ -151,9 +171,15 @@ export function buildMessages(
   const lead = previous
     ? `【上一问（供理解指代，不要回答它）】\n${previous}\n\n`
     : '';
+  const focus = focusTitle
+    ? `【读者正在读《${focusTitle}》一文】优先依据这一篇回答；本篇没有的，再查其他资料。\n\n`
+    : '';
   return [
     { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'user', content: `${lead}【站内资料】\n${context}\n\n【问题】\n${question}` },
+    {
+      role: 'user',
+      content: `${focus}${lead}【站内资料】\n${context}\n\n【问题】\n${question}`,
+    },
   ];
 }
 
@@ -172,6 +198,31 @@ export function assertSafeBaseUrl(rawUrl: string): string {
     );
   }
   return rawUrl.replace(/\/+$/, '');
+}
+
+/** 查询向量化（服务端运行时，与构建期索引同一模型）。配置缺失或上游
+    抖动返回 null——调用方据此降级（问答闸直接拒答、语义搜索静默返回空），
+    抛错（超时/网络）由调用方捕获。 */
+export async function embedQuery(
+  text: string,
+  { fallbackModel = 'BAAI/bge-m3' }: { fallbackModel?: string } = {},
+): Promise<number[] | null> {
+  // 环境变量是部署方配置（非请求输入）；守卫防的是配置手误（http 明文/内网地址）
+  const baseURL = assertSafeBaseUrl(
+    process.env.ASK_EMBED_BASE_URL ?? 'https://api.siliconflow.cn/v1',
+  );
+  const apiKey = process.env.ASK_EMBED_API_KEY;
+  if (!apiKey) return null;
+  const model = process.env.ASK_EMBED_MODEL ?? fallbackModel;
+  const res = await fetch(`${baseURL}/embeddings`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ model, input: [text] }),
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!res.ok) return null;
+  const data = (await res.json()) as { data: { embedding: number[] }[] };
+  return data.data[0]?.embedding ?? null;
 }
 
 const MAX_QUESTION_CHARS = 300;

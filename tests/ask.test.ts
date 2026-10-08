@@ -127,6 +127,20 @@ test('retrieve 低于 MIN_RELEVANCE 的全部滤掉（宁可不答）', () => {
   assert.deepEqual(none, []);
 });
 
+test('retrieve focusSlug 加权：本篇片段同分级时排到最前', () => {
+  // [1,0,0] 下 a(1.0) 与 c(0.9) 同级；焦点 c 时 c 被顶到第一
+  const plain = retrieve([1, 0, 0], INDEX, { topK: 2 });
+  const focused = retrieve([1, 0, 0], INDEX, { topK: 2, focusSlug: 'c' });
+  assert.deepEqual(plain.map((c) => c.slug), ['a', 'c']);
+  assert.deepEqual(focused.map((c) => c.slug), ['c', 'a']);
+});
+
+test('retrieve focusSlug 不抬底槛之下的噪声：低分本篇片段不进上下文', () => {
+  // b 对 [1,0,0] 的分数远低于 0.40 底槛，focus 也救不回来
+  const out = retrieve([1, 0, 0], INDEX, { topK: 3, focusSlug: 'b' });
+  assert.ok(!out.some((c) => c.slug === 'b'));
+});
+
 test('buildMessages 带上系统条款、来源路径与问题', () => {
   const messages = buildMessages('字体分片是怎么回事？', [
     { title: '字体分片翻车记', path: '/articles/font', heading: '原理', text: '正文……' },

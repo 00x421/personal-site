@@ -42,7 +42,16 @@ function AnswerText({ text }: { text: string }) {
   );
 }
 
-export function BotChat({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function BotChat({
+  open,
+  onClose,
+  prefill,
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** 划词即问的预填问题；nonce 变化即发送一次，面板重开不重发 */
+  prefill?: { question: string; nonce: number };
+}) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -65,6 +74,15 @@ export function BotChat({ open, onClose }: { open: boolean; onClose: () => void 
     };
   }, [open]);
 
+  // 划词即问：面板随预填一起打开，nonce 每变一次发一问。
+  // send 不进依赖——它每次渲染重建，而这里只关心「nonce 变了」这件事。
+  const prefillNonce = prefill?.nonce;
+  const prefillQuestion = prefill?.question;
+  useEffect(() => {
+    if (!open || !prefillNonce || !prefillQuestion) return;
+    send(prefillQuestion);
+  }, [open, prefillNonce]);
+
   function close() {
     dialogRef.current?.close();
   }
@@ -83,7 +101,12 @@ export function BotChat({ open, onClose }: { open: boolean; onClose: () => void 
       const res = await fetch('/api/ask', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ question: q, previous: lastQuestionRef.current ?? undefined }),
+        body: JSON.stringify({
+          question: q,
+          previous: lastQuestionRef.current ?? undefined,
+          // 「只聊这一篇」：文章页里提问时带上本篇 slug，检索优先本篇
+          slug: /^\/articles\/([a-z0-9-]+)/.exec(window.location.pathname)?.[1],
+        }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
