@@ -32,6 +32,10 @@ const SSH_OPTS = [
   'BatchMode=yes',
   '-o',
   'ConnectTimeout=15',
+  // CI 里没有交互输 host key 的机会：TOFU（trust on first use）策略，
+  // 首连自动记录、后续防篡改；本地已有的 known_hosts 不受影响
+  '-o',
+  'StrictHostKeyChecking=accept-new',
 ];
 
 function log(step, message) {

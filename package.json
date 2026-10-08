@@ -7,9 +7,10 @@
   },
   "scripts": {
     "dev": "vinext dev",
-    "check": "npm run check:css && npm run check:glyphs && tsc --noEmit",
+    "check": "npm run check:css && npm run check:glyphs && npm run check:prose && tsc --noEmit",
     "check:css": "node --experimental-strip-types scripts/check-css-integrity.ts",
     "check:glyphs": "node --experimental-strip-types scripts/check-glyph-coverage.ts",
+    "check:prose": "node --experimental-strip-types scripts/check-prose.ts",
     "build": "node scripts/clean-dist.mjs && npm run check && vinext build",
     "prebuild": "node --experimental-strip-types scripts/generate-ask-index.ts",
     "postbuild": "node scripts/fix-standalone.mjs",

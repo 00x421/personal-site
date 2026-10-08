@@ -1,0 +1,54 @@
+# CI 绿了才发布：构建 → 上传 → 原子切换 → 健康检查（失败自动回滚）。
+# 发布逻辑全部复用 scripts/deploy.mjs（本地与 CI 同一条路，参数走环境变量）。
+# DEPLOY_SSH_KEY 未配置时作业自动跳过——push 不会因此红。
+#
+# 需要的仓库 Secrets：
+#   DEPLOY_SSH_KEY      服务器部署私钥（服务器 authorized_keys 已信任的那把）
+#   ASK_EMBED_API_KEY   向量索引构建用（缺失时 AI 问答随构建整体下线）
+
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        # rolldown 1.0.1 lock 传递 peer 在 Linux npm ci 严格校验下误报，
+        # 与 ci.yml 同一条兜底
+        run: npm ci --legacy-peer-deps || npm install --no-audit --no-fund
+      - name: Prepare SSH key
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          if [ -z "$DEPLOY_SSH_KEY" ]; then
+            echo "::notice::DEPLOY_SSH_KEY 未配置，跳过部署"
+            echo "SKIP_DEPLOY=true" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          install -m 600 /dev/null "$HOME/deploy_key"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/deploy_key"
+      - name: Build & deploy
+        if: env.SKIP_DEPLOY != 'true'
+        env:
+          ASK_EMBED_API_KEY: ${{ secrets.ASK_EMBED_API_KEY }}
+          ASK_EMBED_MODEL: BAAI/bge-m3
+        run: DEPLOY_KEY="$HOME/deploy_key" node scripts/deploy.mjs

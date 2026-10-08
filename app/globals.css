@@ -1357,6 +1357,17 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   font-family: Georgia, 'Noto Serif SC', serif;
   letter-spacing: 0.05em;
 }
+/* 构建号：发布自动化的名片——这页纸出自哪一次无人值守的流水线 */
+.build-info {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font:
+    500 10px/1.6 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.08em;
+  opacity: 0.6;
+}
 .site-footer div {
   display: flex;
   gap: 19px;
@@ -3454,4 +3465,28 @@ button.search-item {
   .album-master-text {
     max-width: none;
   }
+}
+
+/* ═══ 划词即问（正文选中浮出的提问按钮） ═══════════════ */
+.select-ask-pop {
+  position: fixed;
+  z-index: 90;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transform: translateX(-50%);
+  box-shadow: 3px 3px 0 var(--violet);
+}
+.select-ask-pop:hover,
+.select-ask-pop:focus-visible {
+  color: var(--violet-text);
+  border-color: var(--violet);
 }

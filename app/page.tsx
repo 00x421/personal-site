@@ -16,6 +16,7 @@ import { SolarTermNote } from '@/components/site/solar-term-note';
 import { ThemeToggle } from '@/components/site/theme-toggle';
 import { articles } from '@/data/articles';
 import { projectCards, projectFilters } from '@/data/projects';
+import { buildInfo } from '@/lib/build-info';
 import { capabilities, siteIdentity, siteNavigation, toolbox } from '@/lib/site-content';
 
 /** hero 标签带关键词；渲染两份供移动端无缝滚动使用 */
@@ -248,6 +249,9 @@ export default function Home() {
       <footer className="site-footer section-wrap">
         <span>
           © 2026 {siteIdentity.brand} · {siteIdentity.motto}
+          <span className="build-info">
+            build {buildInfo.id} · {buildInfo.sha}
+          </span>
         </span>
         <div>
           <Link href="/now">现在</Link>
