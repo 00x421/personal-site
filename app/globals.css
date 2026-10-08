@@ -1569,7 +1569,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
     flex-wrap: wrap;
     gap: 16px;
   }
-  .site-footer > span:last-child {
+  /* 刊尾英文藏起，只留其下的节气时令注（grid 居中一行） */
+  .site-footer-motto > span {
     display: none;
   }
   .project-case-shell {
@@ -3401,26 +3402,18 @@ button.search-item {
   letter-spacing: 0.18em;
 }
 
-/* ═══ 时令注（节气彩蛋：住在每页底部的备案行右端） ═════════ */
-.site-filing {
-  position: relative;
+/* ═══ 时令注（节气彩蛋：首页刊尾，与「Writing is thinking.」居中对齐） ═══
+   grid 两行：英文句在上，节气句在下，互相居中。 */
+.site-footer .site-footer-motto {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
 }
 .solar-note {
-  position: absolute;
-  top: 1px; /* 与备案文字同行同高 */
-  right: 90px; /* 让开右下角悬浮按钮（22+44px）及其呼吸位 */
   margin: 0;
   color: var(--muted);
   font-size: 12px;
   letter-spacing: 0.04em;
-}
-@media (max-width: 720px) {
-  .solar-note {
-    position: static;
-    width: 100%;
-    padding-bottom: 6px;
-    text-align: center;
-  }
 }
 
 /* ═══ 集齐成就：闲章集满，落一枚名章 ═══════════════════ */

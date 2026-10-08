@@ -12,6 +12,7 @@ import { PortraitCard } from '@/components/site/portrait-card';
 import { ProjectExplorer } from '@/components/site/project-explorer';
 import { RailScroller } from '@/components/site/rail-scroller';
 import { Reveal } from '@/components/site/reveal';
+import { SolarTermNote } from '@/components/site/solar-term-note';
 import { ThemeToggle } from '@/components/site/theme-toggle';
 import { articles } from '@/data/articles';
 import { projectCards, projectFilters } from '@/data/projects';
@@ -259,7 +260,10 @@ export default function Home() {
             Email
           </MailLink>
         </div>
-        <span>Writing is thinking.</span>
+        <div className="site-footer-motto">
+          <span>Writing is thinking.</span>
+          <SolarTermNote />
+        </div>
       </footer>
     </main>
   );
