@@ -2571,6 +2571,17 @@ main {
     display: none;
   }
 }
+/* 尾部「顺便看看」链接：books / 标签页 / 项目案例页共用。
+   （文章页已改用右下角回到首页按钮，文末不再有这条链接。） */
+.article-end-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 50px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 4px;
+}
 .project-case-page {
   min-height: 100vh;
   background: var(--paper);
@@ -3105,6 +3116,92 @@ main {
   }
 }
 
+/* ═══ 印谱（/album）：文末印章仪式的集存处 ═══════════════ */
+.article-seal-album-link {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  border-bottom: 1px dashed var(--line);
+  padding-bottom: 2px;
+}
+.article-seal-album-link:hover,
+.article-seal-album-link:focus-visible {
+  color: var(--violet-text);
+  border-color: var(--violet);
+}
+.album-stats {
+  margin: 44px 0 18px;
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+.album-stats strong {
+  color: var(--ink);
+  font-size: 16px;
+}
+.album-empty {
+  color: var(--muted);
+}
+.album-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+}
+.album-cell {
+  min-height: 176px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 18px 10px 14px;
+  border: 1px dashed var(--line);
+  text-align: center;
+}
+.album-cell.is-collected {
+  border: 1px solid var(--line);
+  background: var(--raised);
+}
+/* 钤印少有端正的：奇偶交替微倾，谱面才像手钤而非印刷 */
+.album-cell.is-collected .stamp-seal {
+  rotate: -2deg;
+}
+.album-cell.is-collected:nth-child(even) .stamp-seal {
+  rotate: 2.2deg;
+}
+.album-cell-blank {
+  width: 56px;
+  height: 56px;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+}
+.album-cell-title {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--ink);
+}
+a.album-cell-title:hover,
+a.album-cell-title:focus-visible {
+  color: var(--violet-text);
+}
+.album-cell-title.is-ghost {
+  color: var(--muted);
+  opacity: 0.55;
+  font-weight: 400;
+}
+.album-cell-date {
+  font-size: 11px;
+  color: var(--muted);
+}
+.album-cell-date.is-ghost {
+  opacity: 0.5;
+}
+
 /* ═══ 回到顶部 ═══════════════════════════════════════════
    与搜索按钮同语汇的圆形按钮，纵向叠在其上方；滚动超过一屏后出现。 */
 .back-to-top,
@@ -3171,5 +3268,76 @@ html[data-scrolled='1'] .back-to-home {
   }
   html[data-scrolled='1'] .back-to-home {
     translate: 0 -56px; /* 72 → 128 */
+  }
+}
+
+/* ═══ 打印（Ctrl+P）：纸墨的终局是纸 ═════════════════════
+   文章打印出来是一张干净的文稿：屏幕件全部退场，正文放大、两端对齐，
+   外链脚注化，朱印作落款。暗色主题由 print-theme.tsx 在 beforeprint
+   临时切回浅色，这里不重复任何配色变量。 */
+@media print {
+  @page {
+    margin: 16mm 14mm;
+  }
+  /* 屏幕件：悬浮按钮、搜索、吉祥物、进度条、目录、翻页卡、备案条 */
+  .back-to-top,
+  .back-to-home,
+  .search-fab,
+  .search-modal,
+  .nav-buddy,
+  .nav-buddy-tip,
+  .reading-progress,
+  .article-toc,
+  .article-toc-mobile,
+  .article-nav,
+  .article-seal-note,
+  .article-seal-album-link,
+  .back-link,
+  .site-filing,
+  .code-copy,
+  .code-block-head {
+    display: none !important;
+  }
+  /* reveal 未触发时以 opacity: 0 躺在页面上，打印必须全部显形 */
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  a {
+    text-decoration: none !important;
+    color: inherit;
+  }
+  /* 纸上点不了链接，外链把去向印出来；内链是站内动线，不印 */
+  .article-body a[href^='http']::after {
+    content: '（' attr(href) '）';
+    font-size: 0.82em;
+    color: var(--muted);
+    word-break: break-all;
+  }
+  .article-shell,
+  .article-columns {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+  .article-body {
+    font-size: 12pt;
+    line-height: 2;
+    text-align: justify;
+  }
+  .article-body pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+  pre,
+  blockquote,
+  .article-seal-zone,
+  .stamp-seal {
+    break-inside: avoid;
   }
 }

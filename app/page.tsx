@@ -251,6 +251,7 @@ export default function Home() {
         <div>
           <Link href="/now">现在</Link>
           <Link href="/books">书架</Link>
+          <Link href="/album">印谱</Link>
           <a href={siteIdentity.github} target="_blank" rel="noreferrer">
             GitHub · 00x421
           </a>

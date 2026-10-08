@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { StampSeal } from './stamp-seal';
+import { pickPhrase } from '@/lib/seal-phrases';
 import { READ_COMPLETE_EVENT } from './reading-progress';
 
 /**
@@ -11,32 +13,10 @@ import { READ_COMPLETE_EVENT } from './reading-progress';
  *   动画盖下，并写入 localStorage 集邮；再访时以淡印显示上次阅读日期。
  * - 闲章不固定：按 slug 从闲章池里稳定选一句（同一篇永远同一句，
  *   不同篇各不相同）——书签式，每一枚都可以收藏。纯本地，无追踪。
+ * - 集下的章都收在 /album 印谱；集过至少一枚后，在这里给出入口。
  */
 
 type Stamps = Record<string, number>;
-
-/** 闲章池：四字短语，篆刻闲章「图像内的声音」传统——一句自我的心声。 */
-const SEAL_PHRASES = [
-  '信我所行',
-  '知行合一',
-  '日拱一卒',
-  '事上磨炼',
-  '温故知新',
-  '格物致知',
-  '宁静致远',
-  '澄怀观道',
-  '慢即是快',
-  '把事做透',
-] as const;
-
-/** slug 短哈希 → 池内索引。确定性映射：无 SSR 水合不一致，再访不换句。 */
-function pickPhrase(slug: string): string {
-  let hash = 0;
-  for (let i = 0; i < slug.length; i += 1) {
-    hash = (hash * 31 + slug.charCodeAt(i)) >>> 0;
-  }
-  return SEAL_PHRASES[hash % SEAL_PHRASES.length];
-}
 
 function readStamps(): Stamps {
   try {
@@ -54,12 +34,14 @@ function formatStampDate(ts: number): string {
 export function ArticleSeal({ slug }: { slug: string }) {
   const [stamped, setStamped] = useState(false);
   const [previous, setPrevious] = useState<number | null>(null);
+  const [albumCount, setAlbumCount] = useState(0);
   const phrase = pickPhrase(slug);
 
   useEffect(() => {
     const stamps = readStamps();
     const last = stamps[slug];
     if (last) setPrevious(last);
+    setAlbumCount(Object.keys(stamps).length);
 
     const celebrate = () => {
       const now = Date.now();
@@ -67,6 +49,7 @@ export function ArticleSeal({ slug }: { slug: string }) {
         const current = readStamps();
         current[slug] = now;
         localStorage.setItem('xwsx-read-stamps', JSON.stringify(current));
+        setAlbumCount(Object.keys(current).length);
       } catch {
         /* localStorage 不可用时仪式照常，只是不存档 */
       }
@@ -93,6 +76,11 @@ export function ArticleSeal({ slug }: { slug: string }) {
         <p className="article-seal-note is-quiet">
           你曾在 {formatStampDate(previous)} 读到过这里。
         </p>
+      )}
+      {albumCount > 0 && (
+        <Link href="/album" className="article-seal-album-link">
+          印谱 · 已集 {albumCount} 章
+        </Link>
       )}
     </div>
   );
