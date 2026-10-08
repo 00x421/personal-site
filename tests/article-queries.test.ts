@@ -4,9 +4,8 @@ import { describe, it } from 'node:test';
 import {
   collectTags,
   filterByTag,
-  findAdjacent,
+  findAdjacentLoop,
   findBacklinks,
-  findRelated,
   findSeries,
   sortByNewest,
 } from '../lib/article-queries.ts';
@@ -76,95 +75,36 @@ describe('sortByNewest', () => {
   });
 });
 
-describe('findAdjacent', () => {
+describe('findAdjacentLoop', () => {
   it('中间的文章两头都有', () => {
-    const { newer, older } = findAdjacent(list, 'b');
+    const { newer, older } = findAdjacentLoop(list, 'b');
     assert.equal(newer?.slug, 'a');
     assert.equal(older?.slug, 'c');
   });
 
-  it('第一篇没有更新的一篇', () => {
-    const { newer, older } = findAdjacent(list, 'a');
-    assert.equal(newer, null);
+  it('最新一篇的「下一篇」绕回最早一篇（阅读动线无死胡同）', () => {
+    const { newer, older } = findAdjacentLoop(list, 'a');
+    assert.equal(newer?.slug, 'e');
     assert.equal(older?.slug, 'b');
   });
 
-  it('最后一篇没有更早的一篇', () => {
-    const { newer, older } = findAdjacent(list, 'e');
+  it('最早一篇的「上一篇」绕回最新一篇', () => {
+    const { newer, older } = findAdjacentLoop(list, 'e');
     assert.equal(newer?.slug, 'd');
-    assert.equal(older, null);
+    assert.equal(older?.slug, 'a');
   });
 
   it('单一文章两头都是 null', () => {
     const single = [article({ slug: 'only' })];
-    assert.deepEqual(findAdjacent(single, 'only'), { newer: null, older: null });
+    assert.deepEqual(findAdjacentLoop(single, 'only'), { newer: null, older: null });
   });
 
   it('slug 不存在时返回 null 对，而不是抛错', () => {
-    assert.deepEqual(findAdjacent(list, 'nope'), { newer: null, older: null });
+    assert.deepEqual(findAdjacentLoop(list, 'nope'), { newer: null, older: null });
   });
 
   it('空列表安全', () => {
-    assert.deepEqual(findAdjacent([], 'a'), { newer: null, older: null });
-  });
-});
-
-describe('findRelated', () => {
-  it('标签重叠多的排前面', () => {
-    const related = findRelated(list, 'd'); // tags: 前端
-    // a(前端,字体) b(前端,性能) 各重叠 1；c/e 重叠 0
-    assert.deepEqual(related.map((x) => x.slug).sort(), ['a', 'b']);
-  });
-
-  it('排除自己', () => {
-    assert.ok(!findRelated(list, 'a').some((x) => x.slug === 'a'));
-  });
-
-  it('排除正文里已经链接到本文的文章（否则与“链接到本文”区块重复）', () => {
-    const withLink = [
-      article({ slug: 'me', tags: [] }),
-      article({ slug: 'fan', tags: ['x'], html: '<a href="/articles/me">看这篇</a>' }),
-      article({ slug: 'other', tags: ['x'] }),
-    ];
-    const related = findRelated(withLink, 'me');
-    assert.deepEqual(related.map((x) => x.slug), ['other']);
-  });
-
-  it('无标签重叠时回退为最新的其他文章，区块不会空', () => {
-    const lonely = [
-      article({ slug: 'me', published: '2026-09-17', tags: ['独一份'] }),
-      article({ slug: 'old', published: '2026-01-01', tags: [] }),
-      article({ slug: 'new', published: '2026-08-01', tags: [] }),
-    ];
-    assert.deepEqual(findRelated(lonely, 'me').map((x) => x.slug), ['new', 'old']);
-  });
-
-  it('max 是上限，限制返回条数', () => {
-    assert.equal(findRelated(list, 'a', 1).length, 1);
-  });
-
-  it('有标签重叠时不拿无重叠文章凑数', () => {
-    // 实测发现的行为：只要存在重叠，就只返回重叠的那些，不补齐到 max。
-    // 所以相关阅读可能只显示 1 张卡——这是刻意的“宁缺毋滥”，不是缺陷。
-    assert.equal(findRelated(list, 'a').length, 2);
-    assert.equal(findRelated(list, 'a', 10).length, 2);
-  });
-
-  it('slug 不存在时返回空数组', () => {
-    assert.deepEqual(findRelated(list, 'nope'), []);
-  });
-
-  it('只有一篇文章时返回空数组（没有可推荐的）', () => {
-    assert.deepEqual(findRelated([article({ slug: 'only' })], 'only'), []);
-  });
-
-  it('不修改入参', () => {
-    const input = [...list];
-    findRelated(input, 'a');
-    assert.deepEqual(
-      input.map((x) => x.slug),
-      ['a', 'b', 'c', 'd', 'e'],
-    );
+    assert.deepEqual(findAdjacentLoop([], 'a'), { newer: null, older: null });
   });
 });
 

@@ -26,40 +26,21 @@ export function sortByNewest(articles: Article[]): Article[] {
   );
 }
 
-/** 列表按发布日期倒序：newer 为索引更小的一篇，older 为更早的一篇。 */
-export function findAdjacent(
+/** 循环式相邻：列表按发布日期倒序（newer 为索引更小的一篇），
+    到头就绕回另一端——最新一篇的「下一篇」是最早一篇，阅读动线没有死胡同。
+    单篇时返回双 null。 */
+export function findAdjacentLoop(
   articles: Article[],
   slug: string,
 ): { newer: Article | null; older: Article | null } {
+  const total = articles.length;
+  if (total < 2) return { newer: null, older: null };
   const index = articles.findIndex((article) => article.slug === slug);
   if (index === -1) return { newer: null, older: null };
   return {
-    newer: index > 0 ? articles[index - 1] : null,
-    older: index < articles.length - 1 ? articles[index + 1] : null,
+    newer: articles[(index - 1 + total) % total],
+    older: articles[(index + 1) % total],
   };
-}
-
-/** 标签重叠最多的文章；无重叠时回退为最新的其他文章，避免区块永远为空。
-    已在「链接到本文」区块出现过的文章会被排除，防止同一页重复推荐同一篇。 */
-export function findRelated(articles: Article[], slug: string, max = 2): Article[] {
-  const self = articles.find((article) => article.slug === slug);
-  if (!self) return [];
-
-  const linkedFrom = `href="/articles/${slug}"`;
-  const others = articles.filter(
-    (article) => article.slug !== slug && !article.html.includes(linkedFrom),
-  );
-  const scored = others
-    .map((article) => ({
-      article,
-      score: article.tags.filter((tag) => self.tags.includes(tag)).length,
-    }))
-    .sort(
-      (a, b) => b.score - a.score || b.article.published.localeCompare(a.article.published),
-    );
-
-  const tagged = scored.filter((entry) => entry.score > 0);
-  return (tagged.length > 0 ? tagged : scored).slice(0, max).map((entry) => entry.article);
 }
 
 export function filterByTag(articles: Article[], tag: string): Article[] {

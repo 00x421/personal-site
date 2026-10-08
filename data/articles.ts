@@ -3,8 +3,8 @@ import {
   collectTags,
   filterByTag,
   findAdjacent,
+  findAdjacentLoop,
   findBacklinks,
-  findRelated,
   findSeries,
   sortByNewest,
 } from '@/lib/article-queries';
@@ -33,11 +33,7 @@ export function getArticle(slug: string) {
 }
 
 export function getAdjacent(slug: string) {
-  return findAdjacent(articles, slug);
-}
-
-export function getRelated(slug: string, max = 2) {
-  return findRelated(articles, slug, max);
+  return findAdjacentLoop(articles, slug);
 }
 
 export function getArticlesByTag(tag: string) {

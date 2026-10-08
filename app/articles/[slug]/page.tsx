@@ -7,7 +7,7 @@ import { ArticleSeal } from '@/components/site/article-seal';
 import { ArticleToc } from '@/components/site/article-toc';
 import { NavBuddy } from '@/components/site/nav-buddy';
 import { ReadingProgress } from '@/components/site/reading-progress';
-import { articles, getAdjacent, getArticle, getBacklinks, getRelated, getSeries } from '@/data/articles';
+import { articles, getAdjacent, getArticle, getBacklinks, getSeries } from '@/data/articles';
 import { siteIdentity } from '@/lib/site-content';
 
 export function generateStaticParams() {
@@ -55,7 +55,6 @@ export default async function ArticleDetailPage({
   const article = getArticle(slug);
   if (!article) notFound();
   const { newer, older } = getAdjacent(slug);
-  const related = getRelated(slug);
   const backlinks = getBacklinks(slug);
   const series = getSeries(article.series);
   const seriesIndex = series.findIndex((item) => item.slug === slug);
@@ -156,25 +155,6 @@ export default async function ArticleDetailPage({
             <span className="article-nav-card is-empty" aria-hidden="true" />
           )}
         </nav>
-        {related.length > 0 && (
-          <section className="article-related">
-            <span className="section-index">RELATED / 相关阅读</span>
-            <div className="article-related-grid">
-              {related.map((item) => (
-                <Link
-                  key={item.slug}
-                  href={`/articles/${item.slug}`}
-                  className="article-related-card"
-                >
-                  <strong>{item.title}</strong>
-                  <span className="article-nav-meta">
-                    {item.published} · {item.readTime}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
         {series.length > 1 && (
           <section className="article-series-box" aria-label="系列文章">
             <span className="section-index">SERIES / {article.series}</span>

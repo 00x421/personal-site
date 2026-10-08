@@ -3077,54 +3077,6 @@ main {
   color: var(--violet-text);
   border-left-color: var(--violet);
 }
-.article-reading-tools {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 18px;
-  color: var(--muted);
-}
-.article-reading-tools-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font: 500 11px/1 'IBM Plex Mono', monospace;
-  letter-spacing: 0.08em;
-}
-.article-font-controls {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-.article-font-controls button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: none;
-  color: var(--muted);
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    color 0.2s;
-}
-.article-font-controls button:hover:not(:disabled),
-.article-font-controls button:focus-visible {
-  border-color: var(--violet);
-  color: var(--violet-text);
-}
-.article-font-controls button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-.article-font-controls span {
-  min-width: 1em;
-  text-align: center;
-  font-size: 12px;
-}
 .article-toc-mobile {
   margin: 18px 0 0;
   border: 1px solid var(--line);
@@ -3157,22 +3109,6 @@ main {
   .article-toc-mobile {
     display: none;
   }
-}
-/* 字号三档：挂 .article-detail 的 data-font-scale（localStorage 记忆） */
-.article-detail {
-  --article-scale: 1;
-}
-.article-detail[data-font-scale='s'] {
-  --article-scale: 0.9375;
-}
-.article-detail[data-font-scale='l'] {
-  --article-scale: 1.125;
-}
-.article-detail[data-font-scale] .article-body p,
-.article-detail[data-font-scale] .article-body ul,
-.article-detail[data-font-scale] .article-body ol,
-.article-detail[data-font-scale] .article-body blockquote {
-  font-size: calc(16px * var(--article-scale));
 }
 
 /* ═══ 朱印（读完仪式）══════════════════════════════════════
@@ -3239,12 +3175,10 @@ main {
 .article-seal-zone[data-stamped] .stamp-seal.is-entering {
   animation: seal-slam 0.44s cubic-bezier(0.18, 0.89, 0.32, 1.28) both;
 }
-.article-seal-note {
+/* 仅剩「你曾于 X 日读过」的淡提示（已读确认文案已按反馈移除） */
+.article-seal-note.is-quiet {
   margin: 14px 0 0;
   color: var(--muted);
-  font-size: 13px;
-}
-.article-seal-note.is-quiet {
   font-size: 12px;
 }
 @media (prefers-reduced-motion: reduce) {

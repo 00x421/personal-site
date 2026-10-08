@@ -66,9 +66,6 @@ export function ArticleSeal({ slug }: { slug: string }) {
           size={76}
         />
       </div>
-      {stamped && (
-        <p className="article-seal-note">朱印已落，这篇是你的了。</p>
-      )}
       {!stamped && previous && (
         <p className="article-seal-note is-quiet">
           你曾在 {formatStampDate(previous)} 读到过这里。
