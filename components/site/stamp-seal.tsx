@@ -3,9 +3,9 @@
 /**
  * 单枚朱砂印章。
  *
- * 字体：LXGW WenKai Medium 子集（public/fonts/seal.woff2，仅 6 字，
- * pyftsubset 生成）——印章用楷书是日常认印的正统；GOLIA 印章研究明确
- * 警告「印刷体（宋体）入印等于穿西装去寺庙」。
+ * 字体：LXGW WenKai Medium 子集（public/fonts/seal.woff2，闲章池 +
+ * 「已读」，pyftsubset 生成）——印章用楷书是日常认印的正统；GOLIA 印章
+ * 研究明确警告「印刷体（宋体）入印等于穿西装去寺庙」。
  * 刀感：SVG feTurbulence 斑驳遮罩模拟印泥不匀（data-uri，无外部请求）。
  * 动画：三阶段盖章（悬浮→砸落→弹性回正），prefers-reduced-motion 时
  * 直接呈现；支持触觉反馈的设备伴随 18ms 微震。
@@ -24,9 +24,11 @@ export function StampSeal({
   muted?: boolean;
   /** 首次盖下的动画入场（重渲染不再重播） */
   entering?: boolean;
-  /** 章面边长（px）——闲章 76、已读 64，尺寸差保留「主次章」的传统比例感 */
+  /** 章面边长（px） */
   size?: number;
 }) {
+  // 竖排单列不折行：字数越多字号越小（4 字印 12px / 2 字印 17px）
+  const fontSize = Math.min(17, Math.floor(48 / text.length));
   return (
     <span
       className={`stamp-seal${muted ? ' is-muted' : ''}${entering ? ' is-entering' : ''}`}
@@ -34,7 +36,9 @@ export function StampSeal({
       role="img"
       aria-label={ariaLabel}
     >
-      <span className="stamp-seal-text">{text}</span>
+      <span className="stamp-seal-text" style={{ fontSize: `${fontSize}px` }}>
+        {text}
+      </span>
     </span>
   );
 }

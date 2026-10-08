@@ -3085,8 +3085,8 @@ main {
   display: block;
   writing-mode: vertical-rl;
   text-orientation: upright;
-  font-size: calc(var(--seal-size) * 0.24);
-  line-height: 1.1;
+  white-space: nowrap; /* 竖排单列不折行：折行会让四字印读序变乱 */
+  line-height: 1.15;
   letter-spacing: 0.08em;
   padding: 2px;
 }
@@ -3122,5 +3122,51 @@ main {
 @media (prefers-reduced-motion: reduce) {
   .article-seal-zone[data-stamped] .stamp-seal.is-entering {
     animation: none;
+  }
+}
+
+/* ═══ 回到顶部 ═══════════════════════════════════════════
+   与搜索按钮同语汇的圆形按钮，纵向叠在其上方；滚动超过一屏后出现。 */
+.back-to-top {
+  position: fixed;
+  right: 22px;
+  bottom: 78px; /* 搜索按钮（22+44px）正上方 */
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 6px 24px color-mix(in srgb, var(--ink) 14%, transparent);
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition:
+    opacity 0.25s,
+    transform 0.25s,
+    border-color 0.2s,
+    color 0.2s;
+}
+.back-to-top.is-visible {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.back-to-top:hover,
+.back-to-top:focus-visible {
+  border-color: var(--violet);
+  color: var(--violet-text);
+}
+@media (max-width: 640px) {
+  .back-to-top {
+    right: 16px;
+    bottom: 72px; /* 移动端搜索按钮（16+46px）正上方 */
+    width: 46px;
+    height: 46px;
   }
 }

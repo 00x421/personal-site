@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { preload } from 'react-dom';
 import './globals.css';
 import { SiteSearch } from '@/components/site/site-search';
+import { BackToTop } from '@/components/site/back-to-top';
 import { criticalFontSlices } from '@/lib/font-slices.generated';
 import { siteDescription, siteIdentity, siteTitle } from '@/lib/site-content';
 export const metadata: Metadata = {
@@ -88,6 +89,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {children}
         <SiteSearch />
+        <BackToTop />
         {/* 备案信息，两条。
             ICP（工信部）在前、公安在后——这与多数中文站点的惯例一致，
             也是办理顺序（先 ICP 才能办公安联网备案）。

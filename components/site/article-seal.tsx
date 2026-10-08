@@ -7,13 +7,36 @@ import { READ_COMPLETE_EVENT } from './reading-progress';
 /**
  * 文末朱印区：纸墨站点的「读完仪式」。
  *
- * - 闲章「信我所行」常驻——文人画传统里闲章是作品落款的一部分，不是装饰。
  * - 「已读」章平时隐藏；读者读完全文（READ_COMPLETE_EVENT）时以三阶段
  *   动画盖下，并写入 localStorage 集邮；再访时以淡印显示上次阅读日期。
- * - 集邮记录纯本地（无后端、无追踪），key: xwsx-read-stamps。
+ * - 闲章不固定：按 slug 从闲章池里稳定选一句（同一篇永远同一句，
+ *   不同篇各不相同）——书签式，每一枚都可以收藏。纯本地，无追踪。
  */
 
 type Stamps = Record<string, number>;
+
+/** 闲章池：四字短语，篆刻闲章「图像内的声音」传统——一句自我的心声。 */
+const SEAL_PHRASES = [
+  '信我所行',
+  '知行合一',
+  '日拱一卒',
+  '事上磨炼',
+  '温故知新',
+  '格物致知',
+  '宁静致远',
+  '澄怀观道',
+  '慢即是快',
+  '把事做透',
+] as const;
+
+/** slug 短哈希 → 池内索引。确定性映射：无 SSR 水合不一致，再访不换句。 */
+function pickPhrase(slug: string): string {
+  let hash = 0;
+  for (let i = 0; i < slug.length; i += 1) {
+    hash = (hash * 31 + slug.charCodeAt(i)) >>> 0;
+  }
+  return SEAL_PHRASES[hash % SEAL_PHRASES.length];
+}
 
 function readStamps(): Stamps {
   try {
@@ -31,6 +54,7 @@ function formatStampDate(ts: number): string {
 export function ArticleSeal({ slug }: { slug: string }) {
   const [stamped, setStamped] = useState(false);
   const [previous, setPrevious] = useState<number | null>(null);
+  const phrase = pickPhrase(slug);
 
   useEffect(() => {
     const stamps = readStamps();
@@ -58,7 +82,12 @@ export function ArticleSeal({ slug }: { slug: string }) {
         {stamped && (
           <StampSeal text="已读" ariaLabel="已读完本篇" entering size={64} />
         )}
-        <StampSeal text="小信" ariaLabel="小信的印章" muted={!stamped} size={64} />
+        <StampSeal
+          text={phrase}
+          ariaLabel={`闲章：${phrase}`}
+          muted={!stamped}
+          size={64}
+        />
       </div>
       {!stamped && previous && (
         <p className="article-seal-note is-quiet">
