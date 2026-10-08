@@ -2571,19 +2571,6 @@ main {
     display: none;
   }
 }
-.article-end-link {
-  /* 推到列右缘，与印章区/导航卡同一轴线（2026-10-08 站主定版）；
-     fit-content 让下划线仍然只贴文字宽度，而不是横贯整列 */
-  display: flex;
-  width: fit-content;
-  margin-left: auto;
-  align-items: center;
-  gap: 7px;
-  margin-bottom: 50px;
-  font-weight: 700;
-  border-bottom: 1px solid var(--ink);
-  padding-bottom: 4px;
-}
 .project-case-page {
   min-height: 100vh;
   background: var(--paper);
@@ -3116,10 +3103,10 @@ main {
 
 /* ═══ 回到顶部 ═══════════════════════════════════════════
    与搜索按钮同语汇的圆形按钮，纵向叠在其上方；滚动超过一屏后出现。 */
-.back-to-top {
+.back-to-top,
+.back-to-home {
   position: fixed;
   right: 22px;
-  bottom: 78px; /* 搜索按钮（22+44px）正上方 */
   z-index: 80;
   display: flex;
   align-items: center;
@@ -3136,8 +3123,16 @@ main {
     border-color 0.2s,
     color 0.2s;
 }
+.back-to-top {
+  bottom: 78px; /* 搜索按钮（22+44px）正上方 */
+}
+.back-to-home {
+  bottom: 134px; /* 回到顶部（78+44px）正上方；仅文章页渲染 */
+}
 .back-to-top:hover,
-.back-to-top:focus-visible {
+.back-to-top:focus-visible,
+.back-to-home:hover,
+.back-to-home:focus-visible {
   border-color: var(--violet);
   color: var(--violet-text);
 }
@@ -3145,6 +3140,11 @@ main {
   .back-to-top {
     right: 16px;
     bottom: 72px; /* 移动端搜索按钮（16+46px）正上方 */
+    width: 46px;
+    height: 46px;
+  }
+  .back-to-home {
+    bottom: 128px; /* 移动端回到顶部（72+46px）正上方 */
     width: 46px;
     height: 46px;
   }

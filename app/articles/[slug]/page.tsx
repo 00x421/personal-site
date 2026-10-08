@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { CodeBlockEnhancer } from '@/components/site/code-block-enhancer';
 import { ArticleSeal } from '@/components/site/article-seal';
 import { ArticleToc } from '@/components/site/article-toc';
+import { BackToHome } from '@/components/site/back-to-home';
 import { NavBuddy } from '@/components/site/nav-buddy';
 import { ReadingProgress } from '@/components/site/reading-progress';
 import { articles, getAdjacent, getArticle, getSeries } from '@/data/articles';
@@ -154,11 +155,9 @@ export default async function ArticleDetailPage({
             <span className="article-nav-card is-empty" aria-hidden="true" />
           )}
         </nav>
-        <Link href="/#top" className="article-end-link">
-          回到首页 <ArrowUpRight size={17} />
-        </Link>
         </div>
       </div>
+      <BackToHome />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
