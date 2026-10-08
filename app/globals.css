@@ -2512,6 +2512,8 @@ main {
   gap: 14px;
   padding-bottom: 34px;
   border-bottom: 1px solid var(--line);
+  /* 与正文列同宽：文章内容（正文/印章/导航）统一在 650px 的阅读轴上 */
+  max-width: 650px;
 }
 .article-nav-card {
   display: flex;
@@ -3058,8 +3060,7 @@ main {
   margin: 60px 0 0;
   padding: 26px 0 0;
   border-top: 1px dashed var(--line);
-  /* 不设 max-width：虚线与印章右缘对齐 .article-nav 的右缘
-     （正文列 650px，导航卡更宽——站主定版让文末区块的外缘统一） */
+  max-width: 650px; /* 与正文列/导航卡同一轴线（2026-10-01 站主定版） */
 }
 .article-seal-row {
   display: flex;
