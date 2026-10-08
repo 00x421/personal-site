@@ -71,8 +71,12 @@ async function embedQuestion(question: string): Promise<number[] | null> {
 }
 
 /** 上游 SSE → 站点自己的 NDJSON 事件流。 */
-function ndjsonEvent(event: Record<string, unknown>): Uint8Array {
-  return new TextEncoder().encode(`${JSON.stringify(event)}\n`);
+function ndjsonEvent(event: Record<string, unknown>) {
+  // encode() 的返回带 ArrayBufferLike 泛型，TS 5.9 下不满足 BodyInit 的
+  // BufferSource 约束——收窄为确定的 ArrayBuffer 视图
+  return new TextEncoder().encode(
+    `${JSON.stringify(event)}\n`,
+  ) as Uint8Array<ArrayBuffer>;
 }
 
 export async function POST(request: Request) {
