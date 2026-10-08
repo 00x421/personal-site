@@ -1201,6 +1201,11 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   padding-top: 32px;
   padding-bottom: 32px;
 }
+/* 末条能力的收边交给下方工具条的 border-top：两根线只隔 44px 空白，
+   看起来像渲染事故（2026-10-08 站主反馈「这里怎么两根横线」） */
+.capability-list article:last-child {
+  border-bottom: 0;
+}
 .capability-index {
   color: var(--violet);
   font: 700 11px monospace;
