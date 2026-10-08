@@ -4,6 +4,7 @@ import './globals.css';
 import { SiteSearch } from '@/components/site/site-search';
 import { BackToTop } from '@/components/site/back-to-top';
 import { PrintTheme } from '@/components/site/print-theme';
+import { SolarTermNote } from '@/components/site/solar-term-note';
 import { criticalFontSlices } from '@/lib/font-slices.generated';
 import { siteDescription, siteIdentity, siteTitle } from '@/lib/site-content';
 export const metadata: Metadata = {
@@ -121,6 +122,7 @@ export default function RootLayout({
             <img src="/beian-gongan.png" alt="" width="18" height="20" />
             粤公网安备44180202001182号
           </a>
+          <SolarTermNote />
         </div>
       </body>
     </html>

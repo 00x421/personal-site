@@ -12,7 +12,6 @@ import { PortraitCard } from '@/components/site/portrait-card';
 import { ProjectExplorer } from '@/components/site/project-explorer';
 import { RailScroller } from '@/components/site/rail-scroller';
 import { Reveal } from '@/components/site/reveal';
-import { SolarTermNote } from '@/components/site/solar-term-note';
 import { ThemeToggle } from '@/components/site/theme-toggle';
 import { articles } from '@/data/articles';
 import { projectCards, projectFilters } from '@/data/projects';
@@ -85,7 +84,6 @@ export default function Home() {
               <span>const</span> motto = <b>&quot;{siteIdentity.motto}&quot;</b>
               ;
             </div>
-            <SolarTermNote />
             <a href="#work" className="text-link">
               看看我在做什么 <ArrowDownRight size={17} />
             </a>

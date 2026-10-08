@@ -3401,22 +3401,26 @@ button.search-item {
   letter-spacing: 0.18em;
 }
 
-/* ═══ 时令注（首页节气彩蛋） ═══════════════════════════ */
+/* ═══ 时令注（节气彩蛋：住在每页底部的备案行右端） ═════════ */
+.site-filing {
+  position: relative;
+}
 .solar-note {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin: 16px 0 0;
+  position: absolute;
+  top: 1px; /* 与备案文字同行同高 */
+  right: 90px; /* 让开右下角悬浮按钮（22+44px）及其呼吸位 */
+  margin: 0;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 12px;
   letter-spacing: 0.04em;
 }
-.solar-dot {
-  flex: none;
-  width: 7px;
-  height: 7px;
-  background: var(--seal);
-  rotate: 45deg;
+@media (max-width: 720px) {
+  .solar-note {
+    position: static;
+    width: 100%;
+    padding-bottom: 6px;
+    text-align: center;
+  }
 }
 
 /* ═══ 集齐成就：闲章集满，落一枚名章 ═══════════════════ */
