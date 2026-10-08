@@ -1,5 +1,6 @@
 'use client';
 
+import { Printer, Rss, Shuffle, Stamp, Sun } from 'lucide-react';
 import { Search, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SearchEntry } from '@/lib/feed-builders';
@@ -87,23 +88,121 @@ function Highlight({ text, terms }: { text: string; terms: string[] }) {
   );
 }
 
-/** 全站搜索：右下角入口 + Cmd/Ctrl+K，索引来自 /search.json（首次打开时懒加载）。 */
+type Command = {
+  id: string;
+  label: string;
+  /** 参与过滤的中英文关键词（含拼音常见拼法） */
+  keywords: string;
+  icon: typeof Shuffle;
+  /** 执行动作；是否关闭面板由动作自己决定（复制 RSS 就不该关）。 */
+  run: () => void;
+};
+
+/** 全站命令面板：Cmd/Ctrl+K 呼出——搜索 + 命令同一套键盘动线。 */
 export function SiteSearch() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [indexError, setIndexError] = useState(false);
   const [active, setActive] = useState(0);
+  const [rssCopied, setRssCopied] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const itemRefs = useRef<(HTMLElement | null)[]>([]);
   const fetchRef = useRef<Promise<void> | null>(null);
+
+  const closeDialog = useCallback(() => {
+    dialogRef.current?.close();
+  }, []);
+
+  const commands: Command[] = useMemo(() => {
+    const list: Command[] = [
+      {
+        id: 'theme',
+        label: '切换明暗主题',
+        keywords: 'theme 主题 暗色 亮色 夜间 dark light mode 切换',
+        icon: Sun,
+        run: () => {
+          const root = document.documentElement;
+          const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+          root.dataset.theme = next;
+          // 与 theme-toggle.tsx 同一条纪律：手动选择即退出自动夜间色温
+          delete root.dataset.night;
+          try {
+            localStorage.setItem('theme', next);
+          } catch {
+            /* 隐私模式下 localStorage 不可用，静默降级 */
+          }
+        },
+      },
+      {
+        id: 'album',
+        label: '看印谱',
+        keywords: 'album 印谱 集邮 印章 章 集齐',
+        icon: Stamp,
+        run: () => {
+          closeDialog();
+          window.location.assign('/album');
+        },
+      },
+      {
+        id: 'rss',
+        label: rssCopied ? 'RSS 地址已复制' : '复制 RSS 订阅地址',
+        keywords: 'rss feed 订阅 subscribe 复制',
+        icon: Rss,
+        run: () => {
+          navigator.clipboard
+            ?.writeText(`${window.location.origin}/rss.xml`)
+            .then(() => {
+              setRssCopied(true);
+              window.setTimeout(() => setRssCopied(false), 1600);
+            })
+            .catch(() => {
+              /* 剪贴板不可用（非安全上下文等）：提示留在标签上，不再弹错 */
+            });
+        },
+      },
+      {
+        id: 'print',
+        label: '打印本页',
+        keywords: 'print 打印 纸 导出',
+        icon: Printer,
+        run: () => {
+          closeDialog();
+          // 等面板退场动画走完再唤起系统打印，避免把遮罩印进纸里
+          window.setTimeout(() => window.print(), 140);
+        },
+      },
+    ];
+    const articles = entries?.filter((entry) => entry.type === 'article') ?? [];
+    if (articles.length > 0) {
+      list.unshift({
+        id: 'random',
+        label: '随机读一篇',
+        keywords: 'random 随机 随便 抽一篇 惊喜 shuffle 手气',
+        icon: Shuffle,
+        run: () => {
+          const pick = articles[Math.floor(Math.random() * articles.length)];
+          closeDialog();
+          window.location.assign(pick.url);
+        },
+      });
+    }
+    return list;
+  }, [entries, rssCopied, closeDialog]);
 
   const terms = useMemo(
     () => query.trim().toLowerCase().split(/\s+/).filter(Boolean),
     [query],
   );
   const suggestions = useMemo(() => (entries ? topTags(entries) : []), [entries]);
+  const matchedCommands = useMemo(() => {
+    if (terms.length === 0) return commands;
+    return commands.filter((command) => {
+      const haystack = `${command.label}${command.keywords}`.toLowerCase();
+      return terms.every((term) => haystack.includes(term));
+    });
+  }, [commands, terms]);
   const results = useMemo(() => {
     if (!entries || terms.length === 0) return [];
     return entries
@@ -113,6 +212,9 @@ export function SiteSearch() {
       .slice(0, MAX_RESULTS)
       .map((item) => item.entry);
   }, [entries, terms]);
+
+  /** 命令与结果合成一条键盘动线：↑↓ 走全局序号，Enter 执行当前项。 */
+  const total = matchedCommands.length + results.length;
 
   const ensureIndex = useCallback(() => {
     if (fetchRef.current) return;
@@ -140,10 +242,6 @@ export function SiteSearch() {
   function choose(term: string) {
     setQuery(term);
     setActive(0);
-  }
-
-  function closeDialog() {
-    dialogRef.current?.close();
   }
 
   useEffect(() => {
@@ -175,17 +273,26 @@ export function SiteSearch() {
     if (open) itemRefs.current[active]?.scrollIntoView({ block: 'nearest' });
   }, [active, open]);
 
+  // 过滤条件变化后序号可能越界，收回到有效范围
+  useEffect(() => {
+    setActive((i) => Math.min(i, Math.max(total - 1, 0)));
+  }, [total]);
+
   function onInputKey(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      // 索引未就绪时 results 为空，Math.max 防止 active 被压到 -1
-      setActive((i) => Math.min(Math.max(i, 0) + 1, results.length - 1));
+      // 索引未就绪时列表为空，Math.max 防止 active 被压到 -1
+      setActive((i) => Math.min(Math.max(i, 0) + 1, total - 1));
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
       setActive((i) => Math.max(i - 1, 0));
     } else if (event.key === 'Enter') {
       event.preventDefault();
-      itemRefs.current[active]?.click();
+      if (active < matchedCommands.length) {
+        matchedCommands[active]?.run();
+      } else {
+        itemRefs.current[active]?.click();
+      }
     }
   }
 
@@ -196,8 +303,8 @@ export function SiteSearch() {
           type="button"
           className="search-fab"
           onClick={openDialog}
-          aria-label="搜索本站（快捷键 Ctrl K）"
-          title="搜索本站（Ctrl K）"
+          aria-label="搜索或执行命令（快捷键 Ctrl K）"
+          title="搜索或执行命令（Ctrl K）"
         >
           <Search size={16} aria-hidden="true" />
         </button>
@@ -206,7 +313,7 @@ export function SiteSearch() {
       <dialog
         ref={dialogRef}
         className="search-modal"
-        aria-label="搜索本站"
+        aria-label="搜索或执行命令"
         onClose={() => setOpen(false)}
         onKeyDown={(event) => {
           // 原生 Esc 走 cancel→close；此处兜底个别环境下合成/被拦的 Escape
@@ -220,8 +327,8 @@ export function SiteSearch() {
             className="search-input"
             type="text"
             value={query}
-            placeholder="搜索文章、项目、书架…"
-            aria-label="搜索关键词"
+            placeholder="搜索文章、项目、书架，或执行命令…"
+            aria-label="搜索关键词或命令"
             onChange={(event) => {
               setQuery(event.target.value);
               setActive(0);
@@ -233,14 +340,49 @@ export function SiteSearch() {
             type="button"
             className="search-close"
             onClick={closeDialog}
-            aria-label="关闭搜索"
+            aria-label="关闭"
           >
             <X size={14} aria-hidden="true" />
           </button>
         </div>
 
         <ul className="search-list">
-          {entries === null && !indexError && (
+          {matchedCommands.length > 0 && (
+            <li className="search-group" aria-hidden="true">
+              命令
+            </li>
+          )}
+          {matchedCommands.map((command, i) => {
+            const Icon = command.icon;
+            return (
+              <li key={command.id}>
+                <button
+                  type="button"
+                  ref={(el) => {
+                    itemRefs.current[i] = el;
+                  }}
+                  className={`search-item is-cmd${i === active ? ' is-active' : ''}`}
+                  onMouseEnter={() => setActive(i)}
+                  onClick={() => command.run()}
+                >
+                  <span className="search-item-type is-cmd">命令</span>
+                  <span className="search-item-body">
+                    <strong className="search-cmd-label">
+                      <Icon size={15} aria-hidden="true" />
+                      {command.label}
+                    </strong>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+
+          {results.length > 0 && (
+            <li className="search-group" aria-hidden="true">
+              搜索
+            </li>
+          )}
+          {entries === null && !indexError && matchedCommands.length === 0 && (
             <li className="search-empty">正在准备索引…</li>
           )}
           {entries === null && indexError && (
@@ -266,40 +408,57 @@ export function SiteSearch() {
               )}
             </li>
           )}
-          {entries !== null && terms.length > 0 && results.length === 0 && (
+          {entries !== null && terms.length > 0 && results.length === 0 && matchedCommands.length === 0 && (
             <li className="search-empty">
               没找到和「{query}」相关的内容。换个词试试？小狗也帮你歪了歪头。
             </li>
           )}
-          {results.map((entry, i) => (
-            <li key={`${entry.type}-${entry.url}-${entry.title}`}>
-              <a
-                ref={(el) => {
-                  itemRefs.current[i] = el;
-                }}
-                href={entry.url}
-                className={`search-item${i === active ? ' is-active' : ''}`}
-                onMouseEnter={() => setActive(i)}
-                onClick={closeDialog}
-              >
-                <span className={`search-item-type is-${entry.type}`}>
-                  {TYPE_LABEL[entry.type]}
-                </span>
-                <span className="search-item-body">
-                  <strong>
-                    <Highlight text={entry.title} terms={terms} />
-                  </strong>
-                  {entry.desc ? (
-                    <span className="search-item-desc">
-                      <Highlight text={entry.desc} terms={terms} />
-                    </span>
-                  ) : null}
-                </span>
-                <span className="search-item-meta">{entry.meta}</span>
-              </a>
-            </li>
-          ))}
+          {results.map((entry, i) => {
+            const index = matchedCommands.length + i;
+            return (
+              <li key={`${entry.type}-${entry.url}-${entry.title}`}>
+                <a
+                  ref={(el) => {
+                    itemRefs.current[index] = el;
+                  }}
+                  href={entry.url}
+                  className={`search-item${index === active ? ' is-active' : ''}`}
+                  onMouseEnter={() => setActive(index)}
+                  onClick={closeDialog}
+                >
+                  <span className={`search-item-type is-${entry.type}`}>
+                    {TYPE_LABEL[entry.type]}
+                  </span>
+                  <span className="search-item-body">
+                    <strong>
+                      <Highlight text={entry.title} terms={terms} />
+                    </strong>
+                    {entry.desc ? (
+                      <span className="search-item-desc">
+                        <Highlight text={entry.desc} terms={terms} />
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="search-item-meta">{entry.meta}</span>
+                </a>
+              </li>
+            );
+          })}
         </ul>
+
+        <div className="search-foot" aria-hidden="true">
+          <span>
+            <kbd>↑</kbd>
+            <kbd>↓</kbd> 选择
+          </span>
+          <span>
+            <kbd>Enter</kbd> 执行
+          </span>
+          <span>
+            <kbd>Esc</kbd> 关闭
+          </span>
+          <span className="search-foot-brand">XWSX</span>
+        </div>
       </dialog>
     </>
   );

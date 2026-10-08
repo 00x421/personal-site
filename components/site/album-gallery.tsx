@@ -37,6 +37,8 @@ export function AlbumGallery({ entries }: { entries: AlbumEntry[] }) {
     .sort((a, b) => stamps[b.slug] - stamps[a.slug]);
   const missing = entries.filter((entry) => !stamps[entry.slug]);
   const ordered = [...collected, ...missing];
+  // 集齐成就：新发一篇文章会多出一个空位，成就随之收回——谱是活的。
+  const complete = entries.length > 0 && missing.length === 0;
 
   return (
     <section className="album-section">
@@ -46,6 +48,24 @@ export function AlbumGallery({ entries }: { entries: AlbumEntry[] }) {
           <span className="album-empty">——读完任意一篇，那枚章会自己落进来。</span>
         )}
       </p>
+      {complete && (
+        <div className="album-master">
+          {/* 篆刻传统里印分两类：闲章言志，名章识人。闲章集满，
+              落一枚站名正章——方正的边框区别于闲章的圆角。 */}
+          <StampSeal
+            text="信我所行"
+            ariaLabel="名章：信我所行——印谱集满的落款"
+            size={76}
+          />
+          <div className="album-master-text">
+            <strong>印谱已满</strong>
+            <span>
+              {entries.length} 篇读遍。闲章言志，名章识人——
+              这一枚是站名正章，谢你陪我走完全部。
+            </span>
+          </div>
+        </div>
+      )}
       <ul className="album-grid">
         {ordered.map((entry) => {
           const ts = stamps[entry.slug];

@@ -3114,6 +3114,9 @@ main {
   .article-seal-zone[data-stamped] .stamp-seal.is-entering {
     animation: none;
   }
+  .album-master .stamp-seal {
+    animation: none;
+  }
 }
 
 /* ═══ 印谱（/album）：文末印章仪式的集存处 ═══════════════ */
@@ -3339,5 +3342,114 @@ html[data-scrolled='1'] .back-to-home {
   .article-seal-zone,
   .stamp-seal {
     break-inside: avoid;
+  }
+}
+
+/* ═══ 命令面板（⌘K：搜索 + 命令同一动线） ═══════════════ */
+.search-group {
+  padding: 10px 10px 4px;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+/* 命令行是 <button>：补齐与 <a> 同形的重置 */
+button.search-item {
+  width: 100%;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.search-cmd-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.search-cmd-label svg {
+  flex: none;
+  color: var(--violet-text);
+}
+.search-item-type.is-cmd {
+  border-style: dashed;
+}
+.search-foot {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 9px 16px 2px;
+  border-top: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 11px;
+}
+.search-foot kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font: 10px/1.6 'IBM Plex Mono', monospace;
+}
+.search-foot-brand {
+  margin-left: auto;
+  font:
+    600 10px/1.6 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.18em;
+}
+
+/* ═══ 时令注（首页节气彩蛋） ═══════════════════════════ */
+.solar-note {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+}
+.solar-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  background: var(--seal);
+  rotate: 45deg;
+}
+
+/* ═══ 集齐成就：闲章集满，落一枚名章 ═══════════════════ */
+.album-master {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin: 6px 0 26px;
+  padding: 28px 22px;
+  border: 1px solid var(--line);
+  background: var(--raised);
+}
+.album-master .stamp-seal {
+  flex: none;
+  border-radius: 2px; /* 名章取方正，区别于闲章的圆角 */
+  animation: seal-slam 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.25s both;
+}
+.album-master-text {
+  display: grid;
+  gap: 6px;
+  max-width: 300px;
+}
+.album-master-text strong {
+  font-size: 15px;
+}
+.album-master-text span {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.8;
+}
+@media (max-width: 560px) {
+  .album-master {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  .album-master-text {
+    max-width: none;
   }
 }
