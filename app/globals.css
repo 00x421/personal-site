@@ -3058,10 +3058,13 @@ main {
   margin: 60px 0 0;
   padding: 26px 0 0;
   border-top: 1px dashed var(--line);
+  /* 与 .article-body 同宽：虚线分隔不越过正文列 */
+  max-width: 650px;
 }
 .article-seal-row {
   display: flex;
   align-items: flex-end;
+  justify-content: flex-end;
   gap: 18px;
 }
 .stamp-seal {
@@ -3143,19 +3146,9 @@ main {
   color: var(--ink);
   cursor: pointer;
   box-shadow: 0 6px 24px color-mix(in srgb, var(--ink) 14%, transparent);
-  opacity: 0;
-  transform: translateY(8px);
-  pointer-events: none;
   transition:
-    opacity 0.25s,
-    transform 0.25s,
     border-color 0.2s,
     color 0.2s;
-}
-.back-to-top.is-visible {
-  opacity: 1;
-  transform: none;
-  pointer-events: auto;
 }
 .back-to-top:hover,
 .back-to-top:focus-visible {
