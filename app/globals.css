@@ -2737,6 +2737,10 @@ main {
     transform: none;
     transition: none;
   }
+  .back-to-top,
+  .back-to-home {
+    transition: none;
+  }
 }
 
 /* ═══ 问小机器人（bot-chat）══════════════════════════════════
@@ -3121,13 +3125,29 @@ main {
   box-shadow: 0 6px 24px color-mix(in srgb, var(--ink) 14%, transparent);
   transition:
     border-color 0.2s,
-    color 0.2s;
+    color 0.2s,
+    opacity 0.25s,
+    translate 0.25s,
+    visibility 0.25s;
 }
+/* 顶部的「回顶」没有意义：滚过半屏才出现（data-scrolled 由 back-to-top.tsx
+   写在 <html> 上，JS 不可用时保持隐藏——没有 JS 平滑滚动本来也不存在）。 */
 .back-to-top {
   bottom: 78px; /* 搜索按钮（22+44px）正上方 */
 }
+html:not([data-scrolled='1']) .back-to-top {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  translate: 0 8px;
+}
+/* 回到首页与回到顶部同槽位；滚动后回顶按钮现身，它上移 56px（78→134）让位，
+   竖排栈不留空洞。 */
 .back-to-home {
-  bottom: 134px; /* 回到顶部（78+44px）正上方；仅文章页渲染 */
+  bottom: 78px; /* 仅文章页渲染 */
+}
+html[data-scrolled='1'] .back-to-home {
+  translate: 0 -56px;
 }
 .back-to-top:hover,
 .back-to-top:focus-visible,
@@ -3144,8 +3164,12 @@ main {
     height: 46px;
   }
   .back-to-home {
-    bottom: 128px; /* 移动端回到顶部（72+46px）正上方 */
+    right: 16px;
+    bottom: 72px;
     width: 46px;
     height: 46px;
+  }
+  html[data-scrolled='1'] .back-to-home {
+    translate: 0 -56px; /* 72 → 128 */
   }
 }
