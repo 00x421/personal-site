@@ -2572,7 +2572,11 @@ main {
   }
 }
 .article-end-link {
-  display: inline-flex;
+  /* 推到列右缘，与印章区/导航卡同一轴线（2026-10-08 站主定版）；
+     fit-content 让下划线仍然只贴文字宽度，而不是横贯整列 */
+  display: flex;
+  width: fit-content;
+  margin-left: auto;
   align-items: center;
   gap: 7px;
   margin-bottom: 50px;
