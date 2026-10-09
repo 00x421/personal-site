@@ -299,6 +299,13 @@
      原来的强收紧，那是它们该有的样子。 */
   --tracking-cjk-display: -0.03em;
   --tracking-cjk-heading: -0.02em;
+  /* 字体系统的两个声部：衬线管内容，等宽管机器语气（索引/计数/代码）。
+     小信气泡的无衬线与印章的 LXGW 是刻意的对比声部，不走变量。
+     --font-mono 刻意不引 'IBM Plex Mono'——栈里写过却从未打包，是幽灵
+     字体；ui-monospace / Cascadia / Consolas 让 Windows 的等宽小字
+     告别 Courier New。 */
+  --font-serif: Georgia, 'Noto Serif SC', serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
   /* 代码高亮 token 色（纸墨编辑风） */
   --code-comment: #9a978d;
   --code-keyword: #6355ce;
@@ -418,10 +425,7 @@ button:focus-visible {
   border-bottom: 1px solid var(--line);
 }
 .brand {
-  font:
-    700 27px/1 Georgia,
-    'Noto Serif SC',
-    serif;
+  font: 700 27px/1 var(--font-serif);
   /* 字标是纯拉丁的 XWSX，保留强收紧（CJK 标题一律用 --tracking-cjk-*） */
   letter-spacing: -2px;
 }
@@ -464,7 +468,7 @@ button:focus-visible {
   top: 2px;
   right: 1px;
   color: var(--violet-text);
-  font: italic 700 12px Georgia, serif;
+  font: italic 700 12px var(--font-serif);
   animation: buddy-z 2.6s ease-in-out infinite;
 }
 @keyframes buddy-z {
@@ -674,9 +678,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .cta h2 {
   margin: 0;
   font:
-    500 clamp(54px, 8vw, 112px)/0.93 Georgia,
-    'Noto Serif SC',
-    serif;
+    500 clamp(54px, 8vw, 112px)/0.93 var(--font-serif);
   letter-spacing: var(--tracking-cjk-display);
   /* 窄屏保底：字号不超过「最长行 7 字」能放下的宽度，保证标题恒为两行。
      「7 字」在 -0.03em 字距下实测占 6.79em，所以除数必须大于它——
@@ -765,7 +767,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   white-space: nowrap;
   display: flex;
   align-items: center;
-  font: 700 10px Arial;
+  font: 700 10px 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   letter-spacing: 0.15em;
 }
 /* 跑马灯结构：track 持续平移，两份内容首尾相接实现无缝循环。
@@ -814,15 +816,13 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .section-index {
   display: block;
   color: var(--violet-text);
-  font: 700 11px monospace;
+  font: 700 11px var(--font-mono);
   letter-spacing: 0.06em;
 }
 .section-head h2 {
   margin: 0;
   font:
-    500 clamp(35px, 4.5vw, 57px)/1 Georgia,
-    'Noto Serif SC',
-    serif;
+    500 clamp(35px, 4.5vw, 57px)/1 var(--font-serif);
   letter-spacing: var(--tracking-cjk-display);
 }
 .section-head p {
@@ -877,7 +877,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   align-items: center;
   gap: 18px;
   color: var(--muted);
-  font: 700 10px monospace;
+  font: 700 10px var(--font-mono);
   letter-spacing: 0.05em;
 }
 /* 用 auto 外边距而不是 justify-content: space-between：提示词是条件渲染的
@@ -995,7 +995,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font: 700 11px monospace;
+  font: 700 11px var(--font-mono);
   letter-spacing: 0.06em;
 }
 /* 水印层退到最后：整卡当画布，标记单在右下，不再挤压内容 */
@@ -1038,18 +1038,14 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   right: 34px;
   translate: 0 -50%;
   font:
-    500 112px/0.8 Georgia,
-    'Noto Serif SC',
-    serif;
+    500 112px/0.8 var(--font-serif);
   letter-spacing: -0.02em;
   opacity: 0.15;
 }
 .project-copy h3 {
   margin: 0 0 9px;
   font:
-    500 34px/1.05 Georgia,
-    'Noto Serif SC',
-    serif;
+    500 34px/1.05 var(--font-serif);
   letter-spacing: var(--tracking-cjk-display);
 }
 /* 不限制行宽：`ch` 单位在中文衬线字体下只约 0.5em，68ch 反而把
@@ -1096,7 +1092,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   flex-direction: column;
   gap: 12px;
   color: var(--portrait-ink);
-  font: 700 10px monospace;
+  font: 700 10px var(--font-mono);
   letter-spacing: 0.08em;
   transform: rotateX(var(--portrait-rotate-x, 0deg))
     rotateY(var(--portrait-rotate-y, 0deg));
@@ -1150,9 +1146,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .about-statement {
   margin: 40px 0 30px;
   font:
-    500 clamp(26px, 3.4vw, 44px)/1.25 Georgia,
-    'Noto Serif SC',
-    serif;
+    500 clamp(26px, 3.4vw, 44px)/1.25 var(--font-serif);
   letter-spacing: var(--tracking-cjk-display);
 }
 .about-statement strong {
@@ -1208,14 +1202,12 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 }
 .capability-index {
   color: var(--violet);
-  font: 700 11px monospace;
+  font: 700 11px var(--font-mono);
 }
 .capability-list h3 {
   margin: 0 0 9px;
   font:
-    500 24px Georgia,
-    'Noto Serif SC',
-    serif;
+    500 24px var(--font-serif);
   letter-spacing: var(--tracking-cjk-heading);
 }
 .capability-list article.is-focus h3 {
@@ -1228,7 +1220,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   border: 1px solid var(--violet);
   border-radius: 14px;
   color: var(--violet-text);
-  font: 700 10px monospace;
+  font: 700 10px var(--font-mono);
   letter-spacing: 0.1em;
   vertical-align: 3px;
 }
@@ -1256,7 +1248,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   flex: none;
   width: 46px;
   color: var(--muted);
-  font: 700 11px monospace;
+  font: 700 11px var(--font-mono);
   letter-spacing: 0.08em;
 }
 .toolbox-items {
@@ -1354,7 +1346,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 }
 /* 品牌行用衬线呼应全站编辑风，作为整页的「刊尾」 */
 .site-footer > span:first-child {
-  font-family: Georgia, 'Noto Serif SC', serif;
+  font-family: var(--font-serif);
   letter-spacing: 0.05em;
 }
 .site-footer div {
@@ -1446,7 +1438,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
     overflow-x: auto;
     border-bottom: 1px solid var(--line);
     color: var(--muted);
-    font: 700 12px/1 monospace;
+    font: 700 12px/1 var(--font-mono);
     letter-spacing: 0.08em;
     scrollbar-width: none;
   }
@@ -1646,13 +1638,13 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 }
 .writing-card > .article-number {
   color: var(--violet);
-  font: 700 11px monospace;
+  font: 700 11px var(--font-mono);
 }
 .article-meta {
   display: flex;
   justify-content: space-between;
   color: var(--muted);
-  font: 10px monospace;
+  font: 10px var(--font-mono);
   letter-spacing: 0.04em;
 }
 .writing-card .article-meta {
@@ -1661,9 +1653,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .writing-card h3 {
   margin: 15px 0 10px;
   font:
-    500 26px/1.16 Georgia,
-    'Noto Serif SC',
-    serif;
+    500 26px/1.16 var(--font-serif);
   letter-spacing: var(--tracking-cjk-heading);
 }
 .writing-card p {
@@ -1690,7 +1680,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   border-radius: 18px;
   padding: 3px 9px;
   color: var(--muted);
-  font: 11px/1.3 monospace;
+  font: 11px/1.3 var(--font-mono);
 }
 .article-tags a:hover {
   border-color: var(--violet);
@@ -1718,7 +1708,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 }
 .article-tag-cloud a > span {
   color: var(--muted);
-  font: 10px monospace;
+  font: 10px var(--font-mono);
 }
 .article-tag-cloud a:hover {
   border-color: var(--violet);
@@ -1727,7 +1717,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .code-line {
   margin: 0 0 25px;
   color: var(--muted);
-  font: 12px/1.6 monospace;
+  font: 12px/1.6 var(--font-mono);
 }
 .code-line span {
   color: var(--violet);
@@ -1840,7 +1830,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   border: 1px solid var(--line);
   border-radius: 5px;
   color: var(--muted);
-  font: 500 10px/1.5 'IBM Plex Mono', monospace;
+  font: 500 10px/1.5 var(--font-mono);
 }
 .search-close {
   flex: none;
@@ -1920,7 +1910,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   flex: none;
   margin-top: 3px;
   color: var(--muted);
-  font: 400 11px/1.5 'IBM Plex Mono', monospace;
+  font: 400 11px/1.5 var(--font-mono);
 }
 .search-item mark {
   padding: 0 1px;
@@ -1977,7 +1967,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   align-items: center;
   gap: 7px;
   color: var(--muted);
-  font: 12px monospace;
+  font: 12px var(--font-mono);
 }
 .article-top-row {
   display: flex;
@@ -1991,9 +1981,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .article-index-head h1 {
   margin: 20px 0;
   font:
-    500 clamp(50px, 7vw, 86px)/0.98 Georgia,
-    'Noto Serif SC',
-    serif;
+    500 clamp(50px, 7vw, 86px)/0.98 var(--font-serif);
   letter-spacing: var(--tracking-cjk-display);
 }
 .article-index-head h1 em {
@@ -2031,7 +2019,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   background: none;
   color: var(--ink);
   cursor: pointer;
-  font: 12px monospace;
+  font: 12px var(--font-mono);
   transition:
     color 0.2s ease,
     border-color 0.2s ease;
@@ -2097,7 +2085,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   color: var(--ink);
   border-bottom: 1px solid var(--line);
   padding-bottom: 3px;
-  font: 12px monospace;
+  font: 12px var(--font-mono);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -2143,14 +2131,12 @@ main {
 }
 .article-number {
   color: var(--violet);
-  font: 700 11px monospace;
+  font: 700 11px var(--font-mono);
 }
 .article-row h2 {
   margin: 13px 0 9px;
   font:
-    500 32px/1.15 Georgia,
-    'Noto Serif SC',
-    serif;
+    500 32px/1.15 var(--font-serif);
   letter-spacing: var(--tracking-cjk-heading);
   transition: color 0.2s;
 }
@@ -2173,7 +2159,7 @@ main {
   padding-bottom: 16px;
   border-bottom: 1px solid var(--line);
   color: var(--violet);
-  font: 700 11px monospace;
+  font: 700 11px var(--font-mono);
   letter-spacing: 0.12em;
 }
 .book-group ul {
@@ -2194,14 +2180,12 @@ main {
 .book-title-row h2 {
   margin: 0;
   font:
-    500 clamp(24px, 3vw, 32px)/1.2 Georgia,
-    'Noto Serif SC',
-    serif;
+    500 clamp(24px, 3vw, 32px)/1.2 var(--font-serif);
   letter-spacing: var(--tracking-cjk-heading);
 }
 .book-started {
   color: var(--muted);
-  font: 10px monospace;
+  font: 10px var(--font-mono);
   letter-spacing: 0.1em;
   white-space: nowrap;
 }
@@ -2234,9 +2218,7 @@ main {
   max-width: 760px;
   margin: 22px 0;
   font:
-    500 clamp(44px, 6vw, 76px)/1.04 Georgia,
-    'Noto Serif SC',
-    serif;
+    500 clamp(44px, 6vw, 76px)/1.04 var(--font-serif);
   letter-spacing: var(--tracking-cjk-display);
 }
 .article-lede {
@@ -2257,17 +2239,13 @@ main {
   scroll-margin-top: 90px;
   margin: 48px 0 16px;
   font:
-    500 28px Georgia,
-    'Noto Serif SC',
-    serif;
+    500 28px var(--font-serif);
 }
 .article-body h3 {
   scroll-margin-top: 90px;
   margin: 34px 0 12px;
   font:
-    500 20px Georgia,
-    'Noto Serif SC',
-    serif;
+    500 20px var(--font-serif);
 }
 .article-body p {
   margin: 0 0 15px;
@@ -2344,7 +2322,7 @@ main {
   border: 1px solid var(--line);
   border-radius: 4px;
   background: var(--raised);
-  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.86em;
 }
 .article-body pre {
@@ -2370,7 +2348,7 @@ main {
   padding: 7px 12px 7px 14px;
   border-bottom: 1px solid var(--line);
   color: var(--muted);
-  font: 10px monospace;
+  font: 10px var(--font-mono);
   letter-spacing: 0.08em;
 }
 .code-copy {
@@ -2379,7 +2357,7 @@ main {
   background: none;
   color: var(--muted);
   cursor: pointer;
-  font: 10px monospace;
+  font: 10px var(--font-mono);
   letter-spacing: 0.08em;
   transition: color 0.2s ease;
 }
@@ -2485,7 +2463,7 @@ main {
   padding: 2px 5px;
   background: var(--raised);
   color: var(--body-text);
-  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.86em;
 }
 .case-body pre code {
@@ -2547,11 +2525,7 @@ main {
   align-items: center;
   gap: 5px;
   color: var(--violet);
-  font:
-    700 11px ui-monospace,
-    'SF Mono',
-    Consolas,
-    monospace;
+  font: 700 11px var(--font-mono);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -2564,7 +2538,7 @@ main {
   align-items: baseline;
   gap: 10px;
   color: var(--violet-text);
-  font: 12px monospace;
+  font: 12px var(--font-mono);
   letter-spacing: 0.08em;
   margin-bottom: 14px;
 }
@@ -2606,7 +2580,7 @@ main {
 }
 .case-eyebrow {
   color: var(--violet);
-  font: 700 11px monospace;
+  font: 700 11px var(--font-mono);
   letter-spacing: 0.12em;
 }
 /* 顶部一行：眉标 ↔ 年份。年份跟着眉标走，而不是被 space-between
@@ -2619,15 +2593,13 @@ main {
 }
 .case-year {
   color: var(--muted);
-  font: 700 11px monospace;
+  font: 700 11px var(--font-mono);
   white-space: nowrap;
 }
 .project-case-hero h1 {
   margin: 24px 0 16px;
   font:
-    500 clamp(58px, 10vw, 116px)/0.9 Georgia,
-    'Noto Serif SC',
-    serif;
+    500 clamp(58px, 10vw, 116px)/0.9 var(--font-serif);
   letter-spacing: -0.08em;
 }
 .project-case-hero > p {
@@ -2652,7 +2624,7 @@ main {
   border: 1px solid var(--line);
   border-radius: 20px;
   color: var(--muted);
-  font: 11px monospace;
+  font: 11px var(--font-mono);
 }
 .case-body {
   counter-reset: section;
@@ -2662,7 +2634,7 @@ main {
   padding: 52px 0 28px;
   border-top: 1px solid var(--line);
   color: var(--violet);
-  font: 700 11px monospace;
+  font: 700 11px var(--font-mono);
   letter-spacing: 0.12em;
 }
 .case-body > h2::before {
@@ -2677,17 +2649,13 @@ main {
   max-width: 650px;
   margin: 28px 0 22px;
   font:
-    500 clamp(32px, 4vw, 50px)/1.1 Georgia,
-    'Noto Serif SC',
-    serif;
+    500 clamp(32px, 4vw, 50px)/1.1 var(--font-serif);
   letter-spacing: var(--tracking-cjk-display);
 }
 .case-body > h4 {
   margin: 36px 0 10px;
   font:
-    500 26px Georgia,
-    'Noto Serif SC',
-    serif;
+    500 26px var(--font-serif);
   letter-spacing: var(--tracking-cjk-heading);
 }
 .case-body p {
@@ -2712,7 +2680,7 @@ main {
   content: '✓';
   margin-right: 9px;
   color: var(--violet);
-  font: 700 12px monospace;
+  font: 700 12px var(--font-mono);
 }
 .case-deliverables-section {
   padding: 52px 0 0;
@@ -2720,7 +2688,7 @@ main {
 }
 .case-deliverables-index {
   color: var(--violet);
-  font: 700 11px monospace;
+  font: 700 11px var(--font-mono);
   letter-spacing: 0.12em;
 }
 .case-deliverables-section .case-deliverables {
@@ -3023,7 +2991,7 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font: 500 12px/1.6 'IBM Plex Mono', monospace;
+  font: 500 12px/1.6 var(--font-mono);
   letter-spacing: 0.06em;
 }
 .article-toc-mobile[open] summary {
@@ -3392,13 +3360,11 @@ button.search-item {
   padding: 1px 5px;
   border: 1px solid var(--line);
   border-radius: 5px;
-  font: 10px/1.6 'IBM Plex Mono', monospace;
+  font: 10px/1.6 var(--font-mono);
 }
 .search-foot-brand {
   margin-left: auto;
-  font:
-    600 10px/1.6 'IBM Plex Mono',
-    monospace;
+  font: 600 10px/1.6 var(--font-mono);
   letter-spacing: 0.18em;
 }
 

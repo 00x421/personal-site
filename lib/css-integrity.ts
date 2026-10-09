@@ -40,6 +40,9 @@ const THEME_INDEPENDENT = new Set([
   // 标题字距是排版常量，不随明暗变化。
   '--tracking-cjk-display',
   '--tracking-cjk-heading',
+  // 字体栈与明暗无关：明暗只换墨色，不换字形。
+  '--font-serif',
+  '--font-mono',
   // 画芯是「墨画在真纸上」——纸在暗色主题里仍然是纸，所以这个色刻意不反转。
   // （观感已验证：深色画板 + 纸白画芯，是刻意的物理质感，不是漏写。）
   '--portrait-paper',
