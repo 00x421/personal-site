@@ -12,7 +12,7 @@
     "check:glyphs": "node --experimental-strip-types scripts/check-glyph-coverage.ts",
     "check:prose": "node --experimental-strip-types scripts/check-prose.ts",
     "build": "node scripts/clean-dist.mjs && npm run check && vinext build",
-    "prebuild": "node --experimental-strip-types scripts/generate-ask-index.ts",
+    "prebuild": "node --experimental-strip-types --env-file-if-exists=.env.deploy scripts/generate-ask-index.ts",
     "postbuild": "node scripts/fix-standalone.mjs",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
