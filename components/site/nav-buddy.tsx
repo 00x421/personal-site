@@ -163,16 +163,18 @@ export function NavBuddy() {
     return () => window.clearInterval(timer);
   }, []);
 
-  // 划词即问：select-ask 把打包好的问题广播过来，这里开面板并预填
+  // 划词即问 / 首屏「问问小信」：select-ask 把打包好的问题广播过来
+  // （无 question = 只开面板不预填），这里开面板并预填
   useEffect(() => {
     function onAsk(event: Event) {
       const question = (event as CustomEvent<{ question?: string }>).detail?.question;
-      if (!question) return;
       setChatOpen(true);
-      setAskPrefill((current) => ({
-        question,
-        nonce: (current?.nonce ?? 0) + 1,
-      }));
+      if (question) {
+        setAskPrefill((current) => ({
+          question,
+          nonce: (current?.nonce ?? 0) + 1,
+        }));
+      }
     }
     window.addEventListener('xwsx:ask', onAsk);
     return () => window.removeEventListener('xwsx:ask', onAsk);

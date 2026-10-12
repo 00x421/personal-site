@@ -266,7 +266,10 @@
      成对定义——背景和压在上面的文字必须一起给出，
      只写一半就会在某个主题下变成看不清的组合。 */
   --lime: #b3c46e;
-  --tone-violet: var(--violet);
+  /* 小信专属紫：取自 GrokBot 贴图实测主色 #8756f6（97% 像素）。
+     与站点强调紫（--violet，深一档）分领地：小信周边（气泡投影、
+     Z 标、召唤按钮）一律用这个，两个紫不再接缝处打架。 */
+  --tone-violet: #8756f6;
   --tone-violet-ink: #000;
   --tone-lime: var(--lime);
   --tone-lime-ink: var(--ink);
@@ -329,7 +332,7 @@
      lime 同理——它原本没设文字色，暗色下继承了浅色的 --ink，
      浅字压在亮黄绿上只有 1.70:1，等于隐形。 */
   --lime: #a9bd66;
-  --tone-violet: #4d3fa6;
+  --tone-violet: #5b40d6;
   --tone-violet-ink: #f0ede5;
   --tone-lime: #4a5530;
   --tone-lime-ink: #f0ede5;
@@ -467,7 +470,7 @@ button:focus-visible {
   position: absolute;
   top: 2px;
   right: 1px;
-  color: var(--violet-text);
+  color: var(--tone-violet);
   font: italic 700 12px var(--font-serif);
   animation: buddy-z 2.6s ease-in-out infinite;
 }
@@ -505,7 +508,7 @@ button:focus-visible {
     'Microsoft YaHei',
     sans-serif;
   text-align: left;
-  box-shadow: 5px 5px 0 var(--violet);
+  box-shadow: 5px 5px 0 var(--tone-violet);
 }
 /* 气泡锚在狗狗侧面后，展开方向必须朝视口内侧，按狗狗在各自容器里的位置分别给：
    - 首页狗狗在左端（.nav-brand-group），气泡向右展开（左锚，上面的默认值）
@@ -3148,6 +3151,9 @@ main {
   .album-master .stamp-seal {
     animation: none;
   }
+  .status-dot {
+    animation: none;
+  }
 }
 
 /* ═══ 印谱（/album）：文末印章仪式的集存处 ═══════════════ */
@@ -3495,10 +3501,65 @@ button.search-item {
   font-weight: 700;
   cursor: pointer;
   transform: translateX(-50%);
-  box-shadow: 3px 3px 0 var(--violet);
+  box-shadow: 3px 3px 0 var(--tone-violet);
 }
 .select-ask-pop:hover,
 .select-ask-pop:focus-visible {
+  color: var(--violet-text);
+  border-color: var(--violet);
+}
+
+/* ═══ 首屏「工程在岗」信号条 + 问问小信入口 ═══════════════ */
+.hero-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 16px 0 0;
+}
+.hero-status-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font:
+    500 11.5px var(--font-mono);
+  letter-spacing: 0.06em;
+}
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tone-violet);
+  animation: status-pulse 2.4s ease-in-out infinite;
+}
+@keyframes status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.hero-ask {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 2px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+.hero-ask:hover,
+.hero-ask:focus-visible {
   color: var(--violet-text);
   border-color: var(--violet);
 }
