@@ -177,14 +177,45 @@ export async function createDraft(input: {
 
 // ---- 留言推送：把粉丝消息实时转达给站主 ----
 
-/** 站主通知渠道：飞书群机器人 / 企业微信群机器人（二选一配 webhook）。
-    个人订阅号没有客服消息，站主无法在公众号里回复访客——所以留言的
-    「送达站主」这一段必须靠推送。webhook 未配置时只记日志不报错：
+/** 站主通知渠道：按环境变量依次探测，谁配了用谁（按「直达微信」优先排序）——
+    SERVERCHAN_SENDKEY（Server酱，推送到个人微信，免费额度 5 条/日）、
+    PUSHPLUS_TOKEN（PushPlus，同样进个人微信）、
+    LARK_WEBHOOK（飞书群机器人）、WECOM_WEBHOOK（企业微信群机器人）。
+    个人订阅号没有客服消息，站主无法在公众号里回复访客——留言的
+    「送达站主」这一段必须靠这些推送。webhook 未配置时只记日志不报错：
     回调对访客的确认回复不应该因为站主自己的配置缺失而失败。 */
 export async function pushToOwner(text: string): Promise<boolean> {
+  const serverchan = process.env.SERVERCHAN_SENDKEY;
+  const pushplus = process.env.PUSHPLUS_TOKEN;
   const lark = process.env.LARK_WEBHOOK;
   const wecom = process.env.WECOM_WEBHOOK;
+  const title = text.split('\n')[0].slice(0, 40);
   try {
+    if (serverchan) {
+      // Server酱 Turbo：form 表单，title + desp（markdown 正文）
+      const form = new FormData();
+      form.append('title', title);
+      form.append('desp', text);
+      const res = await fetch(
+        `https://sctapi.ftqq.com/${serverchan}.send`,
+        { method: 'POST', body: form, signal: AbortSignal.timeout(8_000) },
+      );
+      return res.ok;
+    }
+    if (pushplus) {
+      const res = await fetch('https://www.pushplus.plus/send', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          token: pushplus,
+          title,
+          content: text,
+          template: 'txt',
+        }),
+        signal: AbortSignal.timeout(8_000),
+      });
+      return res.ok;
+    }
     if (lark) {
       const res = await fetch(lark, {
         method: 'POST',
