@@ -22,7 +22,8 @@
     "fonts": "python split-fonts.py",
     "mascot": "node scripts/capture-grokbot.mjs",
     "deploy": "node scripts/deploy.mjs",
-    "portrait": "python scripts/optimize-portrait.py"
+    "portrait": "python scripts/optimize-portrait.py",
+    "wechat": "node --experimental-strip-types scripts/wechat-sync.ts"
   },
   "dependencies": {
     "lucide-react": "1.31.0",
