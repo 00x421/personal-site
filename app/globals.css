@@ -562,6 +562,63 @@ button:focus-visible {
   align-items: center;
   gap: 18px;
 }
+/* 「联系我」弹出面板：关注公众号 / 邮箱，两条路并列 */
+.contact-wrap {
+  position: relative;
+}
+.contact-pop {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 60;
+  width: min(300px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid var(--ink);
+  background: var(--raised);
+  box-shadow: 5px 5px 0 var(--violet);
+}
+.contact-pop-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.contact-pop-row + .contact-pop-row {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line);
+}
+.contact-pop-row svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--violet-text);
+}
+.contact-pop-row strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 13.5px;
+}
+.contact-pop-row p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.contact-pop-row p b {
+  color: var(--ink);
+}
+.contact-email {
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--violet-text);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.contact-email:hover {
+  border-color: var(--violet);
+}
 .theme-toggle {
   width: 34px;
   height: 34px;

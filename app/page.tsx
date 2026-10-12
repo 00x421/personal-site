@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Fragment } from 'react';
+import { ContactPopover } from '@/components/site/contact-popover';
 import { MailLink } from '@/components/site/mail-link';
 import { NavBuddy } from '@/components/site/nav-buddy';
 import { PortraitCard } from '@/components/site/portrait-card';
@@ -50,9 +51,7 @@ export default function Home() {
         </div>
         <div className="nav-actions">
           <ThemeToggle />
-          <MailLink className="nav-contact" email={siteIdentity.email}>
-            联系我 <ArrowUpRight size={15} />
-          </MailLink>
+          <ContactPopover />
         </div>
       </nav>
       <nav className="mobile-section-nav section-wrap" aria-label="页面目录">
