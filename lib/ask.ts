@@ -200,6 +200,21 @@ export function assertSafeBaseUrl(rawUrl: string): string {
   return rawUrl.replace(/\/+$/, '');
 }
 
+/** LLM 对话配置（服务端）：三件套齐全才可用；守卫防的是配置手误
+    （http 明文/内网地址），不是请求输入。问答路由与公众号快答共用。 */
+export function getLlmConfig(): {
+  baseURL: string;
+  apiKey: string;
+  model: string;
+} | null {
+  const baseURL = process.env.ASK_LLM_BASE_URL;
+  const apiKey = process.env.ASK_LLM_API_KEY;
+  const model = process.env.ASK_LLM_MODEL;
+  return baseURL && apiKey && model
+    ? { baseURL: assertSafeBaseUrl(baseURL), apiKey, model }
+    : null;
+}
+
 /** 查询向量化（服务端运行时，与构建期索引同一模型）。配置缺失或上游
     抖动返回 null——调用方据此降级（问答闸直接拒答、语义搜索静默返回空），
     抛错（超时/网络）由调用方捕获。 */
