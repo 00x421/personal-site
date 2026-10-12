@@ -62,8 +62,7 @@ export function ContactPopover() {
             <div>
               <strong>关注公众号</strong>
               <p>
-                微信搜索「<b>技术快递柜</b>」，发消息直达站长
-                （他手机会弹通知）。
+                微信搜索「<b>技术快递柜</b>」，发消息直达站长。
               </p>
             </div>
           </div>
