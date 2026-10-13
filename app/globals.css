@@ -1003,8 +1003,9 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
    这里只负责消费——触屏与 prefers-reduced-motion 下变量恒为默认值，
    卡面静态（组件侧还有一次 matchMedia 判定，双保险）。 */
 .project-rail.is-tcg {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(2, minmax(0, 320px));
+  justify-content: center;
+  gap: 24px;
 }
 .project-card.tcg {
   position: relative;
@@ -1585,7 +1586,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
      而 360px 视口下的容器宽是 335px，余量 149px。已删除，提示在所有宽度常显。 */
   /* 窄屏：卡牌回退单列，63:88 比例保留（卡牌感是主角），只收内框间距 */
   .project-rail.is-tcg {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 320px);
+    justify-content: center;
     gap: 16px;
   }
   .project-card.tcg {
