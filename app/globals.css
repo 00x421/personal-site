@@ -1035,6 +1035,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 }
 /* 翻页控制条：复用文章区 rail-footer 的箭头语汇 */
 .deck-controls {
+  justify-content: center;
   margin-top: 18px;
 }
 .rail-footer button:disabled {
@@ -1044,6 +1045,68 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .rail-footer button:disabled:hover {
   border-color: var(--line);
   color: var(--ink);
+}
+/* 翻页箭头：骑在展台两侧的留白上、垂直居中（站主定版）。
+   窄屏留白收窄时逐级内收，最终叠在卡缘上（纸底保证可读）。 */
+.deck-zone {
+  position: relative;
+}
+.deck-arrow {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 6;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.1);
+  transition:
+    border-color 0.2s,
+    opacity 0.2s,
+    scale 0.2s;
+}
+.deck-arrow-prev {
+  left: -64px;
+}
+.deck-arrow-next {
+  right: -64px;
+}
+.deck-arrow:hover:not(:disabled),
+.deck-arrow:focus-visible:not(:disabled) {
+  border-color: var(--ink);
+  scale: 1.06;
+}
+.deck-arrow:disabled {
+  opacity: 0.3;
+  box-shadow: none;
+  cursor: default;
+}
+@media (max-width: 1180px) {
+  .deck-arrow-prev {
+    left: -14px;
+  }
+  .deck-arrow-next {
+    right: -14px;
+  }
+}
+@media (max-width: 760px) {
+  .deck-arrow {
+    width: 40px;
+    height: 40px;
+  }
+  .deck-arrow-prev {
+    left: 6px;
+  }
+  .deck-arrow-next {
+    right: 6px;
+  }
 }
 .project-card.tcg {
   position: relative;

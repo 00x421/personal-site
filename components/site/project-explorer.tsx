@@ -241,24 +241,25 @@ export function ProjectExplorer({ cards, filters }: Props) {
         </Reveal>
       )}
       <Reveal delay={120}>
-        <div
-          className="deck-shell"
-          ref={shellRef}
-          onPointerMove={onShellPointerMove}
-          onPointerDown={onShellPointerDown}
-          onPointerUp={onShellPointerUp}
-          onPointerLeave={() => {
-            if (shellRef.current) shellRef.current.style.transform = '';
-          }}
-          onClickCapture={(event) => {
-            // 拖拽松手后的那次 click 是拖拽的余波，不该触发卡面链接
-            if (suppressClick.current) {
-              event.preventDefault();
-              event.stopPropagation();
-              suppressClick.current = false;
-            }
-          }}
-        >
+        <div className="deck-zone">
+          <div
+            className="deck-shell"
+            ref={shellRef}
+            onPointerMove={onShellPointerMove}
+            onPointerDown={onShellPointerDown}
+            onPointerUp={onShellPointerUp}
+            onPointerLeave={() => {
+              if (shellRef.current) shellRef.current.style.transform = '';
+            }}
+            onClickCapture={(event) => {
+              // 拖拽松手后的那次 click 是拖拽的余波，不该触发卡面链接
+              if (suppressClick.current) {
+                event.preventDefault();
+                event.stopPropagation();
+                suppressClick.current = false;
+              }
+            }}
+          >
           <div
             className="deck-track"
             style={
@@ -337,30 +338,35 @@ export function ProjectExplorer({ cards, filters }: Props) {
               </ul>
             ))}
           </div>
+          </div>
+          {pages.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="deck-arrow deck-arrow-prev"
+                onClick={() => setPage(safePage - 1)}
+                disabled={safePage === 0}
+                aria-label="上一页"
+              >
+                <ArrowLeft size={17} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="deck-arrow deck-arrow-next"
+                onClick={() => setPage(safePage + 1)}
+                disabled={safePage >= pages.length - 1}
+                aria-label="下一页"
+              >
+                <ArrowRight size={17} aria-hidden="true" />
+              </button>
+            </>
+          )}
         </div>
         {pages.length > 1 && (
           <div className="rail-footer deck-controls">
             <span>
               第 {safePage + 1} / {pages.length} 页 · 共 {visibleProjects.length} 张
             </span>
-            <div>
-              <button
-                type="button"
-                onClick={() => setPage(safePage - 1)}
-                disabled={safePage === 0}
-                aria-label="上一页"
-              >
-                <ArrowLeft size={15} aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setPage(safePage + 1)}
-                disabled={safePage >= pages.length - 1}
-                aria-label="下一页"
-              >
-                <ArrowRight size={15} aria-hidden="true" />
-              </button>
-            </div>
           </div>
         )}
       </Reveal>
