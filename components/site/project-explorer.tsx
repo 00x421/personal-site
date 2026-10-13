@@ -50,17 +50,12 @@ const clamp = (value: number, min: number, max: number) =>
 
 /** 项目精选：筛选 + 3D 翻页展台，整块作为交互孤岛。
  *
- * 交互模型（检测鼠标左右移动/互动就触发翻）：
- * 1. 悬停预倾——指针在展台左右边缘 15% 区域时，整排卡牌朝翻页方向
- *    微微旋转（像书页被掀起一角），离开即弹回；
- * 2. 拖拽跟手——按住横向拖，卡牌实时绕 Y 轴转动跟手，越过页宽 12%
- *    松手即翻过去，不足则弹回；
- * 3. 箭头/点击——同一路径，翻页时当前页与目标页绕各自纵轴旋转交割。
- * 实现是一帧函数 applyFrame(pageFloat, dragPx)：输入「当前所处页位的
- * 浮点值」，输出整排卡牌的 rotateY/scale/opacity——拖拽、悬停、翻页
- * 三种输入都汇到它上面，动画交给 CSS transition。
- * 触屏可横向拖（touch-action: pan-y 保留纵向滚动）；
- * prefers-reduced-motion 下全部 3D 关闭，只做瞬时翻页。 */
+ * 交互模型（拖拽/箭头触发翻页）：
+ * 1. 拖拽跟手——按住横拖，卡牌实时绕 Y 轴转动跟手，越过页宽 12%
+ *    松手即翻过去，不足则弹回；越界方向加阻尼；
+ * 2. 箭头/点击——同一路径，翻页时当前页与目标页绕各自纵轴旋转交割。
+ * （曾经的「悬停边缘预倾」已移除：它是频闪、边缘卡拉不动、悬停变大
+ * 三个 bug 的共同根源。） */
 export function ProjectExplorer({ cards, filters }: Props) {
   const [active, setActive] = useState('全部');
   /** 预览模式：/?mock=1 时注入虚拟卡，观察规模效果（仅站主使用） */
@@ -109,19 +104,18 @@ export function ProjectExplorer({ cards, filters }: Props) {
   const pages = chunk(visibleProjects, perPage);
   const safePage = Math.min(page, Math.max(pages.length - 1, 0));
 
-  /** 一帧渲染：pageFloat（含拖拽偏移的当前页位）决定整排卡牌的 3D 姿态。
+  /** 一帧渲染：pageFloat（含拖拽偏移的当前页位）决定整排卡牌的位移。
       位移必须用像素而不是百分比——track 的百分比基准是它自身宽度，
       分数页位混算会反向飞出（频闪的根源）。
-      轨道 transform 末尾串上 --peek-* 两个变量：边缘预倾只写变量，
-      不动展台自身的命中区域（预倾若写在展台上，展台会平移出指针
-      下方，按下去落不到展台子树——「第 4 张拉不动」的根因）。 */
+      曾经这里还有「边缘预倾」（悬停边缘整排旋转 9°），实测它是频闪、
+      边缘卡拉不动、悬停变大三个 bug 的共同根源，已整体移除。 */
   function applyFrame(pageFloat: number, dragPx: number) {
     const shell = shellRef.current;
     if (!shell) return;
     const width = shell.clientWidth || 1;
     const track = shell.querySelector<HTMLElement>('.deck-track');
     if (track) {
-      track.style.transform = `translate3d(${pageFloat * -width + dragPx}px, 0, 0) rotateY(var(--peek-ry, 0deg)) translateX(var(--peek-tx, 0px))`;
+      track.style.transform = `translate3d(${pageFloat * -width + dragPx}px, 0, 0)`;
     }
     shell.querySelectorAll<HTMLElement>('.project-rail.is-tcg').forEach((pageEl, i) => {
       const d = clamp(i - pageFloat, -1.6, 1.6);
@@ -130,12 +124,6 @@ export function ProjectExplorer({ cards, filters }: Props) {
       pageEl.style.transform = `rotateY(${ry}deg) scale(${scale})`;
       pageEl.style.opacity = `${1 - Math.min(Math.abs(d) * 0.5, 0.7)}`;
     });
-  }
-
-  /** 清除边缘预倾（拖拽开始与指针离开展台时） */
-  function clearPeek() {
-    shellRef.current?.style.removeProperty('--peek-ry');
-    shellRef.current?.style.removeProperty('--peek-tx');
   }
 
   // 页位变化 → 从当前姿态动画翻到新页（拖拽松手/箭头/键盘同路径）
@@ -172,37 +160,12 @@ export function ProjectExplorer({ cards, filters }: Props) {
     el.style.setProperty('--py', '50');
   }
 
-  /** 悬停预倾：指针在左右边缘 15% 区域且该方向可翻时，掀起书页一角；
-      其余位置轻微跟随鼠标；移出展台弹回。
-      只写 --peek-* 变量（轨道 transform 消费）——绝不写展台自身的
-      transform，否则展台命中区平移出指针下方，边缘卡就按不到。 */
-  function edgePeek(event: React.PointerEvent) {
-    if (!motionOK || dragRef.current) return;
-    const shell = shellRef.current;
-    if (!shell) return;
-    const rect = shell.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / rect.width;
-    let ry = 0;
-    let tx = 0;
-    if (x > 0.85 && safePage < pages.length - 1) {
-      ry = -9;
-      tx = -26;
-    } else if (x < 0.15 && safePage > 0) {
-      ry = 9;
-      tx = 26;
-    } else {
-      ry = (x - 0.5) * -4;
-    }
-    shell.style.setProperty('--peek-ry', `${ry}deg`);
-    shell.style.setProperty('--peek-tx', `${tx}px`);
-  }
+  /** 悬停预倾：已移除——它是频闪、边缘卡拉不动、悬停变大三个 bug 的
+      共同根源（见 applyFrame 注释）。 */
 
   function onShellPointerMove(event: React.PointerEvent) {
+    if (!dragRef.current) return;
     const drag = dragRef.current;
-    if (!drag) {
-      edgePeek(event);
-      return;
-    }
     drag.dx = event.clientX - drag.startX;
     const width = shellRef.current?.clientWidth || 1;
     const ratio = drag.dx / width;
@@ -220,9 +183,6 @@ export function ProjectExplorer({ cards, filters }: Props) {
     if (!motionOK) return;
     // 箭头按钮有自己的点击语义；链接卡允许拖（跳转见 PointerUp 的手动补发）
     if ((event.target as HTMLElement).closest('button')) return;
-    // 关键：清掉「边缘预倾」——预倾变量虽然不再移动展台命中区，
-    // 但拖拽开始时应从零位起步，否则带着 9° 预倾被拖动观感发飘
-    clearPeek();
     event.preventDefault(); // 防文字选中与原生图片拖拽
     const linkEl = (event.target as HTMLElement).closest('a');
     dragRef.current = {
@@ -286,9 +246,6 @@ export function ProjectExplorer({ cards, filters }: Props) {
             onPointerMove={onShellPointerMove}
             onPointerDown={onShellPointerDown}
             onPointerUp={onShellPointerUp}
-          onPointerLeave={() => {
-            clearPeek();
-          }}
             onClickCapture={(event) => {
               // 拖拽松手后的那次 click 是拖拽的余波，不该触发卡面链接
               if (suppressClick.current) {
