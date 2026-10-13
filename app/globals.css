@@ -1008,6 +1008,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   perspective: 1400px;
   touch-action: pan-y; /* 横向手势归展台，纵向滚动还给页面 */
   cursor: grab;
+  transition: transform 0.3s ease; /* 边缘预倾的倾斜平滑进出，不闪 */
 }
 .deck-shell.is-dragging {
   cursor: grabbing;

@@ -109,14 +109,16 @@ export function ProjectExplorer({ cards, filters }: Props) {
   const pages = chunk(visibleProjects, perPage);
   const safePage = Math.min(page, Math.max(pages.length - 1, 0));
 
-  /** 一帧渲染：pageFloat（含拖拽偏移的当前页位）决定整排卡牌的 3D 姿态。 */
+  /** 一帧渲染：pageFloat（含拖拽偏移的当前页位）决定整排卡牌的 3D 姿态。
+      位移必须用像素而不是百分比——track 的百分比基准是它自身宽度，
+      分数页位混算会反向飞出（频闪的根源）。 */
   function applyFrame(pageFloat: number, dragPx: number) {
     const shell = shellRef.current;
     if (!shell) return;
     const width = shell.clientWidth || 1;
     const track = shell.querySelector<HTMLElement>('.deck-track');
     if (track) {
-      track.style.transform = `translate3d(calc(${pageFloat * -100}% + ${dragPx}px), 0, 0)`;
+      track.style.transform = `translate3d(${pageFloat * -width + dragPx}px, 0, 0)`;
     }
     shell.querySelectorAll<HTMLElement>('.project-rail.is-tcg').forEach((pageEl, i) => {
       const d = clamp(i - pageFloat, -1.6, 1.6);
