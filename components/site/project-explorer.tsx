@@ -70,7 +70,13 @@ export function ProjectExplorer({ cards, filters }: Props) {
   /** 动效可用性：reduced-motion 关闭全部 3D，翻页瞬时完成 */
   const [motionOK, setMotionOK] = useState(false);
   const shellRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{ pointerId: number; startX: number; dx: number } | null>(null);
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    dx: number;
+    /** 按下的若是链接卡，原地点击（未拖动）时手动补一次跳转 */
+    linkEl: HTMLAnchorElement | null;
+  } | null>(null);
   const suppressClick = useRef(false);
   /** null = 还没判定过；惰性缓存，指针高频事件里不做重复的 matchMedia */
   const staticMode = useRef<boolean | null>(null);
@@ -198,8 +204,19 @@ export function ProjectExplorer({ cards, filters }: Props) {
 
   function onShellPointerDown(event: React.PointerEvent) {
     if (!motionOK) return;
-    if ((event.target as HTMLElement).closest('a,button')) return;
-    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, dx: 0 };
+    // 箭头按钮有自己的点击语义；链接卡允许拖（跳转见 PointerUp 的手动补发）
+    if ((event.target as HTMLElement).closest('button')) return;
+    // 关键：清掉「边缘预倾」的倾斜——否则在最左/最右卡上按下时，
+    // 整排还带着 9° 预倾被拖动，观感就是「这张卡拉不动」
+    if (shellRef.current) shellRef.current.style.transform = '';
+    event.preventDefault(); // 防文字选中与原生图片拖拽
+    const linkEl = (event.target as HTMLElement).closest('a');
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      dx: 0,
+      linkEl: linkEl ?? null,
+    };
     shellRef.current?.setPointerCapture(event.pointerId);
     shellRef.current?.classList.add('is-dragging');
   }
@@ -211,6 +228,7 @@ export function ProjectExplorer({ cards, filters }: Props) {
     shellRef.current?.classList.remove('is-dragging');
     const width = shellRef.current?.clientWidth || 1;
     const ratio = drag.dx / width;
+    const moved = Math.abs(drag.dx) > 6;
     if (ratio > 0.12 && safePage > 0) {
       setPage(safePage - 1);
     } else if (ratio < -0.12 && safePage < pages.length - 1) {
@@ -218,7 +236,13 @@ export function ProjectExplorer({ cards, filters }: Props) {
     } else {
       applyFrame(safePage, 0); // 不够阈值：弹回当前页
     }
-    if (Math.abs(drag.dx) > 6) suppressClick.current = true;
+    if (moved) {
+      // 拖拽松手的 click 是余波，拦掉，防止误触卡面链接
+      suppressClick.current = true;
+    } else if (drag.linkEl) {
+      // 指针被 capture 到展台后，原链接收不到 click——未拖动就手动补发
+      drag.linkEl.click();
+    }
   }
 
   return (
