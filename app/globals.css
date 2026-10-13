@@ -1002,6 +1002,29 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
    倾斜与光泽由组件把指针位置写进 CSS 变量（--rx/--ry/--px/--py），
    这里只负责消费——触屏与 prefers-reduced-motion 下变量恒为默认值，
    卡面静态（组件侧还有一次 matchMedia 判定，双保险）。 */
+/* ═══ View Transitions：卡牌「掀牌」进案例页 ═══════════════
+   同源 <a> 导航自动启用跨文档转场；卡面与案例页头共享
+   view-transition-name（project-card-<slug>），点击时卡牌变形飞向
+   案例页头。不支持的浏览器自动降级为普通跳转。 */
+@view-transition {
+  navigation: auto;
+}
+/* 共享元素的几何飞行给足时长（默认 0.25s 偏仓促） */
+::view-transition-group(*) {
+  animation-duration: 0.4s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none; /* 减弱动效：直接跳转，不拍快照不播转场 */
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
 /* 展台：overflow 裁掉非当前页；track 按页横移（一页 = -100%） */
 .deck-shell {
   overflow: hidden;

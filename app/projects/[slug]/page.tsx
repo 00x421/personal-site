@@ -53,7 +53,12 @@ export default async function ProjectCasePage({
           <ArrowLeft size={15} /> 所有项目
         </Link>
         <article className="project-case">
-          <header className="project-case-hero">
+          <header
+            className="project-case-hero"
+            // View Transitions 共享元素：首页卡牌「掀牌」后落到这里。
+            // 名字与 project-explorer.tsx 的卡面一一对应（project-card-<slug>）。
+            style={{ viewTransitionName: `project-card-${project.slug}` }}
+          >
             <div className="case-hero-top">
               <span className="case-eyebrow">{project.eyebrow}</span>
               <span className="case-year">{project.year}</span>

@@ -276,6 +276,9 @@ export function ProjectExplorer({ cards, filters }: Props) {
                       className={`project-card tcg ${project.tone}`}
                       onPointerMove={tiltVars}
                       onPointerLeave={tiltReset}
+                      // View Transitions 共享元素：点击后整卡飞向案例页头。
+                      // 名字与案例页 hero 一一对应（project-card-<slug>）。
+                      style={{ viewTransitionName: `project-card-${project.slug}` }}
                     >
                       <div className="tcg-inner">
                         <header className="tcg-head">
