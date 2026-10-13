@@ -298,7 +298,7 @@
   /* 标题字距策略：拉丁字形自带侧边空白（side bearing），收紧才显得整齐；
      汉字是满 em 方框，同样的负值会先让字形相撞，再吃掉全角标点的呼吸感——
      而标点留白正是中文排版的节奏来源。所以 CJK 只做很轻的收紧。
-     例外：纯拉丁标题（.brand / .project-copy h3）保持
+     例外：纯拉丁标题（.brand / .tcg-copy h3）保持
      原来的强收紧，那是它们该有的样子。 */
   --tracking-cjk-display: -0.03em;
   --tracking-cjk-heading: -0.02em;
@@ -998,25 +998,36 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 .writing-rail-shell:not([data-at-end])::after {
   opacity: 1;
 }
-/* 横向条目：左侧一列排「类型/年份 → 标题 → 简介 → 标签」，右侧留给水印。
-   改前是 450px 高的纵向卡，其中 130px 几何图形 + 165px 巨型水印
-   占掉约 60% 面积却不承载任何信息，水印还因 overflow:hidden 被裁掉。
-   现在卡片 450→174px、项目区 812→669px，水印也从「被裁切的填充物」
-   变成完整可见的版式元素。 */
-.project-card {
+/* 竖版卡牌（TCG 63:88）：两列网格，窄屏回退单列。
+   倾斜与光泽由组件把指针位置写进 CSS 变量（--rx/--ry/--px/--py），
+   这里只负责消费——触屏与 prefers-reduced-motion 下变量恒为默认值，
+   卡面静态（组件侧还有一次 matchMedia 判定，双保险）。 */
+.project-rail.is-tcg {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.project-card.tcg {
   position: relative;
-  min-height: 0;
-  padding: 22px 30px;
-  border-radius: 4px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas:
-    'top'
-    'copy'
-    'foot';
-  align-items: start;
-  gap: 13px;
+  aspect-ratio: 63 / 88;
+  display: flex;
+  border-radius: 12px;
   overflow: hidden;
+  transform:
+    perspective(900px)
+    rotateX(var(--rx, 0deg))
+    rotateY(var(--ry, 0deg));
+  transition:
+    transform 0.25s cubic-bezier(0.2, 0.65, 0.3, 1),
+    box-shadow 0.25s ease;
+  box-shadow:
+    0 1px 0 rgb(0 0 0 / 0.06),
+    0 14px 26px -18px rgb(0 0 0 / 0.5);
+}
+.project-card.tcg:hover,
+.project-card.tcg:focus-within {
+  box-shadow:
+    0 2px 0 rgb(0 0 0 / 0.08),
+    0 26px 46px -20px rgb(0 0 0 / 0.55);
 }
 .project-link {
   display: block;
@@ -1025,18 +1036,31 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 }
 .project-link .project-card {
   height: 100%;
-  transition:
-    transform 220ms ease,
-    box-shadow 220ms ease;
 }
-.project-link:hover .project-card {
-  transform: translateY(-5px);
-  box-shadow: 0 16px 26px rgb(0 0 0 / 0.16);
+/* 光泽层：单色绸缎反光（纸色），不用彩虹——彩色 holo 会和四色系统打架。
+   soft-light 让纸色光「烫」进卡面；位置随指针流动。 */
+.project-card.tcg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background-image: linear-gradient(
+    115deg,
+    transparent 30%,
+    color-mix(in srgb, var(--paper) 42%, transparent) 45%,
+    color-mix(in srgb, var(--paper) 14%, transparent) 52%,
+    transparent 68%
+  );
+  background-size: 240% 240%;
+  background-position: calc(var(--px, 50) * 1%) calc(var(--py, 50) * 1%);
+  mix-blend-mode: soft-light;
 }
-.project-link .project-status {
+.project-card.tcg:hover::after,
+.project-card.tcg:focus-within::after {
   opacity: 1;
-  text-decoration: underline;
-  text-underline-offset: 4px;
 }
 .project-card.ink {
   color: var(--card-ink-text);
@@ -1050,85 +1074,88 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   background: var(--tone-lime);
   color: var(--tone-lime-ink);
 }
-.project-top,
-.project-foot {
+/* 卡牌内框：一圈 currentColor 细线，TCG 卡的「框中框」 */
+.tcg-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  border-radius: 7px;
+  min-height: 0;
+}
+.tcg-head,
+.tcg-foot {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font: 700 11px var(--font-mono);
-  letter-spacing: 0.06em;
+  color: inherit;
+  font: 700 10px var(--font-mono);
+  letter-spacing: 0.08em;
 }
-/* 水印层退到最后：整卡当画布，标记单在右下，不再挤压内容 */
-.project-top,
-.project-copy,
-.project-foot {
+/* 卡图位：巨型水印字母当卡面插画，居中完整可见 */
+.tcg-art {
   position: relative;
-  z-index: 1;
-  min-width: 0;
+  flex: 1;
+  min-height: 80px;
 }
-.project-top {
-  grid-area: top;
-}
-.project-copy {
-  grid-area: copy;
-}
-/* 标签与状态同行靠左。不用 space-between：那样状态会被推到卡片右端、
-   正好叠在水印上（水印是卡片级的背景层，躲不开） */
-.project-foot {
-  grid-area: foot;
-  justify-content: flex-start;
-  gap: 20px;
-}
-.project-symbol {
+.tcg-mark {
   position: absolute;
   inset: 0;
-  width: auto;
-  height: auto;
-  margin: 0;
-  overflow: hidden;
   pointer-events: none;
-  z-index: 0;
 }
-/* 水印竖直居中、完整可见。126px 是在 174px 卡高下不裁切的上限附近，
-   字号再大就会顶到上下边缘，显得像渲染事故而不是装饰 */
-.project-symbol::after {
+.tcg-mark::after {
   content: attr(data-mark);
   position: absolute;
   top: 50%;
-  right: 34px;
-  translate: 0 -50%;
+  left: 50%;
+  translate: -50% -50%;
   font:
-    500 112px/0.8 var(--font-serif);
+    500 clamp(88px, 11vw, 128px) / 0.8 var(--font-serif);
   letter-spacing: -0.02em;
-  opacity: 0.15;
+  opacity: 0.16;
+  white-space: nowrap;
 }
-.project-copy h3 {
-  margin: 0 0 9px;
+.tcg-copy h3 {
+  margin: 0 0 8px;
   font:
-    500 34px/1.05 var(--font-serif);
+    500 26px/1.1 var(--font-serif);
   letter-spacing: var(--tracking-cjk-display);
 }
-/* 不限制行宽：`ch` 单位在中文衬线字体下只约 0.5em，68ch 反而把
-   一句话的简介拆成两行，白白多出一行高度 */
-.project-copy p {
+.tcg-copy p {
   margin: 0;
-  font-size: 13.5px;
-  line-height: 1.62;
+  font-size: 12.5px;
+  line-height: 1.7;
 }
-.project-foot > div {
+.tcg-tags {
   display: flex;
-  gap: 5px;
+  gap: 4px;
   flex-wrap: wrap;
 }
-.project-foot span {
-  padding: 5px 8px;
-  border: 1px solid currentColor;
+.tcg-tags span,
+.tcg-status {
+  padding: 3px 7px;
+  border: 1px solid color-mix(in srgb, currentColor 55%, transparent);
   border-radius: 20px;
 }
-.project-status {
-  border: 0 !important;
-  padding: 0 !important;
-  opacity: 0.8;
+.tcg-status {
+  border: 0;
+}
+.project-link .tcg-status {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.tcg-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+.tcg-num {
+  color: inherit;
+  opacity: 0.7;
 }
 .about-section {
   display: grid;
@@ -1556,26 +1583,20 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   /* 这里原本有一条 .rail-footer > span { display: none }，把提示文字在窄屏
      藏掉。实测没必要：提示 94px + 间距 18px + 按钮 74px = 186px，
      而 360px 视口下的容器宽是 335px，余量 149px。已删除，提示在所有宽度常显。 */
-  /* 窄屏：内容与布局不变，只收间距、缩字号 */
-  .project-card {
-    gap: 11px;
-    padding: 18px 20px;
+  /* 窄屏：卡牌回退单列，63:88 比例保留（卡牌感是主角），只收内框间距 */
+  .project-rail.is-tcg {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
   }
-  .project-foot {
-    flex-wrap: wrap;
-    gap: 12px;
+  .project-card.tcg {
+    border-radius: 10px;
   }
-  .project-copy h3 {
-    font-size: 27px;
+  .tcg-inner {
+    margin: 8px;
+    padding: 10px 12px;
   }
-  .project-copy p {
-    font-size: 13px;
-  }
-  /* 水印在窄屏直接去掉。卡片只有 335px 宽，内容几乎占满，
-     水印无处可去——实测「查看案例」右缘 278px 会压到字形左缘 240px。
-     装饰让位给内容：色块本身已经承担了识别作用。 */
-  .project-symbol::after {
-    display: none;
+  .tcg-copy h3 {
+    font-size: 24px;
   }
   .about-section {
     padding-top: 70px;
