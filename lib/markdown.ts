@@ -71,8 +71,10 @@ export type Project = {
   tags: string[];
   /** 卡片配色变体：ink / violet / lime */
   tone: 'ink' | 'violet' | 'lime';
-  /** 卡片右下角装饰符号 */
+  /** 卡片右下角装饰符号（无封面图时的卡图位水印） */
   mark: string;
+  /** 卡面封面图（public 下的路径）；缺省回退到 mark 水印 */
+  cover: string | null;
   /** 首页排序权重，小者在前 */
   order: number;
   status: string;
@@ -129,6 +131,7 @@ export function buildProject(slug: string, raw: string): Project {
     tags: unique(parseList(data.tags)),
     tone: tone === 'violet' || tone === 'lime' ? tone : 'ink',
     mark: readString(data, 'mark') ?? '00',
+    cover: readString(data, 'cover') ?? null,
     order: Number(readString(data, 'order') ?? NaN) || 99,
     status: readString(data, 'status') ?? (hasCase ? '查看案例' : '案例整理中'),
     eyebrow: readString(data, 'eyebrow') ?? 'CASE STUDY',

@@ -39,6 +39,7 @@ export const projectCards = projects.map((project) => ({
   tags: project.tags,
   tone: project.tone,
   mark: project.mark,
+  cover: project.cover,
   status: project.status,
   hasCase: project.hasCase,
 }));

@@ -22,6 +22,8 @@ type ProjectCard = {
   tags: string[];
   tone: 'ink' | 'violet' | 'lime';
   mark: string;
+  /** 卡面封面图（public 下的路径）；缺省回退到 mark 水印 */
+  cover?: string | null;
   status: string;
   hasCase: boolean;
 };
@@ -105,8 +107,18 @@ export function ProjectExplorer({ cards, filters }: Props) {
                     <span>{project.type}</span>
                     <span>{project.year}</span>
                   </header>
-                  <div className="tcg-art" aria-hidden="true">
-                    <span className="tcg-mark" data-mark={project.mark} />
+                  <div className="tcg-art">
+                    {project.cover ? (
+                      // oxlint-disable-next-line next/no-img-element -- 卡面封面，本地静态资源
+                      <img
+                        className="tcg-cover"
+                        src={project.cover}
+                        alt=""
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="tcg-mark" data-mark={project.mark} />
+                    )}
                   </div>
                   <div className="tcg-copy">
                     <h3>{project.title}</h3>

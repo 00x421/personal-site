@@ -1114,6 +1114,14 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   inset: 0;
   pointer-events: none;
 }
+/* 封面图模式：图占满卡图位（object-fit 裁切对齐），水印自动退场 */
+.tcg-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .tcg-mark::after {
   content: attr(data-mark);
   position: absolute;
