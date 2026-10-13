@@ -1,8 +1,9 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Reveal } from '@/components/site/reveal';
+import { MOCK_CARDS } from './mock-cards';
 
 /**
  * 卡片需要的字段。
@@ -33,6 +34,8 @@ type Props = {
   filters: string[];
 };
 
+export type { ProjectCard };
+
 /** 项目精选：筛选状态需要客户端，整块作为交互孤岛。
  *
  * 曾经这里还有一套横向轨道（scrollBy + 两端渐隐）——项目只有 2 个时
@@ -44,8 +47,23 @@ type Props = {
  * 打架最小化。触屏与 prefers-reduced-motion 一次判定后静态呈现。 */
 export function ProjectExplorer({ cards, filters }: Props) {
   const [active, setActive] = useState('全部');
+  /** 预览模式：/?mock=1 时注入虚拟卡，观察规模效果（仅站主使用） */
+  const [mockMode, setMockMode] = useState(false);
   /** null = 还没判定过；惰性缓存，指针高频事件里不做重复的 matchMedia */
   const staticMode = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    setMockMode(new URLSearchParams(window.location.search).has('mock'));
+  }, []);
+
+  const pool = mockMode ? [...cards, ...MOCK_CARDS] : cards;
+  // 预览模式下筛选维度从虚拟卡实时推导（服务端传来的 filters 不含虚拟类型）
+  const effectiveFilters = mockMode
+    ? ['全部', ...Array.from(new Set(pool.map((card) => card.type)))]
+    : filters;
+
+  const visibleProjects =
+    active === '全部' ? pool : pool.filter((project) => project.type === active);
 
   function tiltVars(event: React.PointerEvent<HTMLElement>) {
     staticMode.current ??=
@@ -71,16 +89,13 @@ export function ProjectExplorer({ cards, filters }: Props) {
     el.style.setProperty('--py', '50');
   }
 
-  const visibleProjects =
-    active === '全部' ? cards : cards.filter((project) => project.type === active);
-
   return (
     <>
       {/* 只有一种类型时「全部」与它结果完全相同，整行隐藏 */}
-      {filters.length > 2 && (
+      {effectiveFilters.length > 2 && (
         <Reveal delay={60}>
           <div className="filters" aria-label="项目筛选">
-            {filters.map((filter) => (
+            {effectiveFilters.map((filter) => (
               <button
                 key={filter}
                 onClick={() => setActive(filter)}
