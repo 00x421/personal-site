@@ -7,7 +7,6 @@ import {
 import Link from 'next/link';
 import { Fragment } from 'react';
 import { ContactPopover } from '@/components/site/contact-popover';
-import { HeroStatus } from '@/components/site/hero-status';
 import { MailLink } from '@/components/site/mail-link';
 import { NavBuddy } from '@/components/site/nav-buddy';
 import { PortraitCard } from '@/components/site/portrait-card';
@@ -85,7 +84,6 @@ export default function Home() {
               <span>const</span> motto = <b>&quot;{siteIdentity.motto}&quot;</b>
               ;
             </div>
-            <HeroStatus />
             <a href="#work" className="text-link">
               看看我在做什么 <ArrowDownRight size={17} />
             </a>

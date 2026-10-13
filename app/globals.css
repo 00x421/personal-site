@@ -3151,9 +3151,6 @@ main {
   .album-master .stamp-seal {
     animation: none;
   }
-  .status-dot {
-    animation: none;
-  }
 }
 
 /* ═══ 印谱（/album）：文末印章仪式的集存处 ═══════════════ */
@@ -3505,61 +3502,6 @@ button.search-item {
 }
 .select-ask-pop:hover,
 .select-ask-pop:focus-visible {
-  color: var(--violet-text);
-  border-color: var(--violet);
-}
-
-/* ═══ 首屏「工程在岗」信号条 + 问问小信入口 ═══════════════ */
-.hero-status {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin: 16px 0 0;
-}
-.hero-status-live {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--muted);
-  font:
-    500 11.5px var(--font-mono);
-  letter-spacing: 0.06em;
-}
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--tone-violet);
-  animation: status-pulse 2.4s ease-in-out infinite;
-}
-@keyframes status-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.35;
-  }
-}
-.hero-ask {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 700;
-  border-bottom: 1px solid var(--ink);
-  padding-bottom: 2px;
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    color 0.2s;
-}
-.hero-ask:hover,
-.hero-ask:focus-visible {
   color: var(--violet-text);
   border-color: var(--violet);
 }
