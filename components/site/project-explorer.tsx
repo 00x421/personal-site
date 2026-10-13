@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Reveal } from '@/components/site/reveal';
 import { MOCK_CARDS } from './mock-cards';
@@ -183,6 +182,11 @@ export function ProjectExplorer({ cards, filters }: Props) {
     if (!motionOK) return;
     // 箭头按钮有自己的点击语义；链接卡允许拖（跳转见 PointerUp 的手动补发）
     if ((event.target as HTMLElement).closest('button')) return;
+    // 非主键/带修饰键的点击放行：中键与 Ctrl/Meta+点击链接卡要能
+    // 「新标签打开」，拖拽捕获会吞掉它们，所以不参与拖拽
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+      return;
+    }
     event.preventDefault(); // 防文字选中与原生图片拖拽
     const linkEl = (event.target as HTMLElement).closest('a');
     dragRef.current = {
@@ -321,12 +325,11 @@ export function ProjectExplorer({ cards, filters }: Props) {
                   return (
                     <li key={project.slug}>
                       {project.hasCase ? (
-                        <Link
-                          className="project-link"
-                          href={`/projects/${project.slug}`}
-                        >
+                        // 原生 <a> 而非 next/link：跨文档 View Transitions
+                        // 只在真实文档跳转时触发，软导航会让掀牌失效
+                        <a className="project-link" href={`/projects/${project.slug}`}>
                           {card}
-                        </Link>
+                        </a>
                       ) : (
                         card
                       )}

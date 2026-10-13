@@ -1,9 +1,9 @@
 import {
-  assertSafeBaseUrl,
   buildMessages,
   chunkPath,
   embedQuery,
   extractSseDelta,
+  getLlmConfig,
   retrieve,
   sanitizeQuestion,
   SlidingWindowLimiter,
@@ -31,13 +31,7 @@ const perIpLimiter = new SlidingWindowLimiter(PER_IP_LIMIT, PER_IP_WINDOW_MS);
 const globalLimiter = new SlidingWindowLimiter(GLOBAL_DAILY_LIMIT, 24 * 60 * 60 * 1000);
 
 function llmConfig() {
-  const baseURL = process.env.ASK_LLM_BASE_URL;
-  const apiKey = process.env.ASK_LLM_API_KEY;
-  const model = process.env.ASK_LLM_MODEL;
-  // 守卫防的是部署配置手误（http 明文/内网地址），非请求输入（见 assertSafeBaseUrl）
-  return baseURL && apiKey && model
-    ? { baseURL: assertSafeBaseUrl(baseURL), apiKey, model }
-    : null;
+  return getLlmConfig();
 }
 
 function json(data: unknown, status = 200, headers: Record<string, string> = {}) {
