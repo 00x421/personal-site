@@ -45,26 +45,39 @@ function chunk<T>(list: T[], size: number): T[][] {
   return out;
 }
 
-/** 项目精选：筛选 + 翻页都需要客户端，整块作为交互孤岛。
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
+
+/** 项目精选：筛选 + 3D 翻页展台，整块作为交互孤岛。
  *
- * 卡牌展台：区块高度恒定（一行 4 张，窄屏 2 张），多出来的卡靠
- * 「翻页」看——track 按页横移（旋转门），箭头禁用态明确页尾；
- * 筛选变化即回第一页。曾经这里先是横向轨道（2 个项目时是空承诺）、
- * 后是竖版网格长列表（把整页拉长），最终定版为定高展台。
- *
- * 倾斜与光泽靠 CSS 变量（--rx/--ry/--px/--py），指针事件只写变量，
- * 不引 tilt 库；触屏与 prefers-reduced-motion 一次判定后静态呈现。 */
+ * 交互模型（检测鼠标左右移动/互动就触发翻）：
+ * 1. 悬停预倾——指针在展台左右边缘 15% 区域时，整排卡牌朝翻页方向
+ *    微微旋转（像书页被掀起一角），离开即弹回；
+ * 2. 拖拽跟手——按住横向拖，卡牌实时绕 Y 轴转动跟手，越过页宽 12%
+ *    松手即翻过去，不足则弹回；
+ * 3. 箭头/点击——同一路径，翻页时当前页与目标页绕各自纵轴旋转交割。
+ * 实现是一帧函数 applyFrame(pageFloat, dragPx)：输入「当前所处页位的
+ * 浮点值」，输出整排卡牌的 rotateY/scale/opacity——拖拽、悬停、翻页
+ * 三种输入都汇到它上面，动画交给 CSS transition。
+ * 触屏可横向拖（touch-action: pan-y 保留纵向滚动）；
+ * prefers-reduced-motion 下全部 3D 关闭，只做瞬时翻页。 */
 export function ProjectExplorer({ cards, filters }: Props) {
   const [active, setActive] = useState('全部');
   /** 预览模式：/?mock=1 时注入虚拟卡，观察规模效果（仅站主使用） */
   const [mockMode, setMockMode] = useState(false);
   const [perPage, setPerPage] = useState(4);
   const [page, setPage] = useState(0);
+  /** 动效可用性：reduced-motion 关闭全部 3D，翻页瞬时完成 */
+  const [motionOK, setMotionOK] = useState(false);
+  const shellRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ pointerId: number; startX: number; dx: number } | null>(null);
+  const suppressClick = useRef(false);
   /** null = 还没判定过；惰性缓存，指针高频事件里不做重复的 matchMedia */
   const staticMode = useRef<boolean | null>(null);
 
   useEffect(() => {
     setMockMode(new URLSearchParams(window.location.search).has('mock'));
+    setMotionOK(!window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }, []);
 
   // 每页张数随断点（4 ↔ 2），断点变化时回到第一页
@@ -89,6 +102,29 @@ export function ProjectExplorer({ cards, filters }: Props) {
     active === '全部' ? pool : pool.filter((project) => project.type === active);
   const pages = chunk(visibleProjects, perPage);
   const safePage = Math.min(page, Math.max(pages.length - 1, 0));
+
+  /** 一帧渲染：pageFloat（含拖拽偏移的当前页位）决定整排卡牌的 3D 姿态。 */
+  function applyFrame(pageFloat: number, dragPx: number) {
+    const shell = shellRef.current;
+    if (!shell) return;
+    const width = shell.clientWidth || 1;
+    const track = shell.querySelector<HTMLElement>('.deck-track');
+    if (track) {
+      track.style.transform = `translate3d(calc(${pageFloat * -100}% + ${dragPx}px), 0, 0)`;
+    }
+    shell.querySelectorAll<HTMLElement>('.project-rail.is-tcg').forEach((pageEl, i) => {
+      const d = clamp(i - pageFloat, -1.6, 1.6);
+      const ry = clamp(-d * 24, -32, 32);
+      const scale = 1 - Math.min(Math.abs(d) * 0.1, 0.18);
+      pageEl.style.transform = `rotateY(${ry}deg) scale(${scale})`;
+      pageEl.style.opacity = `${1 - Math.min(Math.abs(d) * 0.5, 0.7)}`;
+    });
+  }
+
+  // 页位变化 → 从当前姿态动画翻到新页（拖拽松手/箭头/键盘同路径）
+  useEffect(() => {
+    if (motionOK) applyFrame(safePage, 0);
+  }, [safePage, perPage, motionOK, pages.length]);
 
   function onFilter(filter: string) {
     setActive(filter);
@@ -119,6 +155,72 @@ export function ProjectExplorer({ cards, filters }: Props) {
     el.style.setProperty('--py', '50');
   }
 
+  /** 悬停预倾：指针在左右边缘 15% 区域且该方向可翻时，掀起书页一角；
+      其余位置轻微跟随鼠标；移出展台弹回。 */
+  function edgePeek(event: React.PointerEvent) {
+    if (!motionOK || dragRef.current) return;
+    const shell = shellRef.current;
+    if (!shell) return;
+    const rect = shell.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width;
+    let ry = 0;
+    let tx = 0;
+    if (x > 0.85 && safePage < pages.length - 1) {
+      ry = -9;
+      tx = -26;
+    } else if (x < 0.15 && safePage > 0) {
+      ry = 9;
+      tx = 26;
+    } else {
+      ry = (x - 0.5) * -4;
+    }
+    shell.style.transform = `rotateY(${ry}deg) translateX(${tx}px)`;
+  }
+
+  function onShellPointerMove(event: React.PointerEvent) {
+    const drag = dragRef.current;
+    if (!drag) {
+      edgePeek(event);
+      return;
+    }
+    drag.dx = event.clientX - drag.startX;
+    const width = shellRef.current?.clientWidth || 1;
+    const ratio = drag.dx / width;
+    const atEdge =
+      (safePage === 0 && drag.dx > 0) || (safePage >= pages.length - 1 && drag.dx < 0);
+    // 越过第一页/最后一页的拖拽加阻尼：拖得动但费劲，暗示到头了
+    if (atEdge) {
+      applyFrame(safePage - ratio * 0.25, drag.dx * 0.25);
+    } else {
+      applyFrame(safePage - ratio, drag.dx);
+    }
+  }
+
+  function onShellPointerDown(event: React.PointerEvent) {
+    if (!motionOK) return;
+    if ((event.target as HTMLElement).closest('a,button')) return;
+    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, dx: 0 };
+    shellRef.current?.setPointerCapture(event.pointerId);
+    shellRef.current?.classList.add('is-dragging');
+  }
+
+  function onShellPointerUp() {
+    const drag = dragRef.current;
+    if (!drag) return;
+    dragRef.current = null;
+    shellRef.current?.classList.remove('is-dragging');
+    const width = shellRef.current?.clientWidth || 1;
+    const ratio = drag.dx / width;
+    if (ratio > 0.12 && safePage > 0) {
+      setPage(safePage - 1);
+    } else if (ratio < -0.12 && safePage < pages.length - 1) {
+      setPage(safePage + 1);
+    } else {
+      applyFrame(safePage, 0); // 不够阈值：弹回当前页
+    }
+    if (Math.abs(drag.dx) > 6) suppressClick.current = true;
+  }
+
   return (
     <>
       {/* 只有一种类型时「全部」与它结果完全相同，整行隐藏 */}
@@ -139,10 +241,31 @@ export function ProjectExplorer({ cards, filters }: Props) {
         </Reveal>
       )}
       <Reveal delay={120}>
-        <div className="deck-shell">
+        <div
+          className="deck-shell"
+          ref={shellRef}
+          onPointerMove={onShellPointerMove}
+          onPointerDown={onShellPointerDown}
+          onPointerUp={onShellPointerUp}
+          onPointerLeave={() => {
+            if (shellRef.current) shellRef.current.style.transform = '';
+          }}
+          onClickCapture={(event) => {
+            // 拖拽松手后的那次 click 是拖拽的余波，不该触发卡面链接
+            if (suppressClick.current) {
+              event.preventDefault();
+              event.stopPropagation();
+              suppressClick.current = false;
+            }
+          }}
+        >
           <div
             className="deck-track"
-            style={{ transform: `translateX(-${safePage * 100}%)` }}
+            style={
+              motionOK
+                ? undefined
+                : { transform: `translateX(-${safePage * 100}%)` }
+            }
           >
             {pages.map((chunkCards, pageIndex) => (
               <ul
