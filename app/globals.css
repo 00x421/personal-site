@@ -367,6 +367,11 @@
 html {
   scroll-behavior: smooth;
   color-scheme: light;
+  /* 横向溢出的防御兜底：每个超宽组件（跑马灯、展台、代码块）各自有
+     overflow 防护，这里保证未来任何新元素意外超宽时出裁切而不是
+     出横向滚动条。用 clip 不用 hidden——clip 不产生滚动容器，
+     scroll-behavior 与 sticky 定位不受影响。 */
+  overflow-x: clip;
 }
 [data-theme='dark'] html,
 html[data-theme='dark'] {
@@ -374,6 +379,8 @@ html[data-theme='dark'] {
 }
 body {
   margin: 0;
+  /* 与 html 同款兜底，两层都要——只设 html 时 body 自身的滚动仍可能漏出 */
+  overflow-x: clip;
   background: var(--paper);
   color: var(--ink);
   font-family:
@@ -2491,6 +2498,9 @@ main {
   color: var(--body-text);
   font-size: 16px;
   line-height: 2;
+  /* 两端对齐下长英文串/URL 无法断行会拉出巨大词距（河流）甚至撑破
+     measure；CJK 本身处处可断，这条只对拉丁长串生效。 */
+  overflow-wrap: break-word;
 }
 .article-body ul,
 .article-body ol {
