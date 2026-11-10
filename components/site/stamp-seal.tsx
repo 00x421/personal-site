@@ -29,6 +29,10 @@ export function StampSeal({
 }) {
   // 竖排单列不折行：字数越多字号越小（4 字印 12px / 2 字印 17px）
   const fontSize = Math.min(17, Math.floor(48 / text.length));
+  /* 印章是「文字 + 印泥纹理」渲染出来的方寸图形，没有位图可以交给 <img>；
+     role="img" 让读屏把它当作一枚图章整体朗读，而不是逐字念章面。
+     这条 a11y 规则在此不适用，按元素范围关闭。 */
+  /* oxlint-disable jsx-a11y/prefer-tag-over-role */
   return (
     <span
       className={`stamp-seal${muted ? ' is-muted' : ''}${entering ? ' is-entering' : ''}`}

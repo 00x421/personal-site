@@ -1,7 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import {
+  formatStampDate,
+  getEmptyStampsSnapshot,
+  getStampsSnapshot,
+  subscribeStamps,
+  writeStamp,
+} from './read-stamps';
 import { StampSeal } from './stamp-seal';
 import { pickPhrase } from '@/lib/seal-phrases';
 import { READ_COMPLETE_EVENT } from './reading-progress';
@@ -14,42 +21,27 @@ import { READ_COMPLETE_EVENT } from './reading-progress';
  * - 闲章不固定：按 slug 从闲章池里稳定选一句（同一篇永远同一句，
  *   不同篇各不相同）——书签式，每一枚都可以收藏。纯本地，无追踪。
  * - 集下的章都收在 /album 印谱；集过至少一枚后，在这里给出入口。
+ *
+ * 集章记录走 useSyncExternalStore（见 read-stamps.ts）：服务端与首帧
+ * 渲染空谱，水合后换成真值，SSR 输出不会因为读不到 localStorage 而漂移。
  */
-
-type Stamps = Record<string, number>;
-
-function readStamps(): Stamps {
-  try {
-    return JSON.parse(localStorage.getItem('xwsx-read-stamps') ?? '{}') as Stamps;
-  } catch {
-    return {};
-  }
-}
-
-function formatStampDate(ts: number): string {
-  const d = new Date(ts);
-  return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`;
-}
 
 export function ArticleSeal({ slug }: { slug: string }) {
   const [stamped, setStamped] = useState(false);
-  const [previous, setPrevious] = useState<number | null>(null);
-  const [albumCount, setAlbumCount] = useState(0);
+  const stamps = useSyncExternalStore(
+    subscribeStamps,
+    getStampsSnapshot,
+    getEmptyStampsSnapshot,
+  );
+  const previous = stamps[slug] ?? null;
+  const albumCount = Object.keys(stamps).length;
   const phrase = pickPhrase(slug);
 
+  // 读完 → 记一枚章。setState 只发生在事件回调里，不在 effect 体内。
   useEffect(() => {
-    const stamps = readStamps();
-    const last = stamps[slug];
-    if (last) setPrevious(last);
-    setAlbumCount(Object.keys(stamps).length);
-
     const celebrate = () => {
-      const now = Date.now();
       try {
-        const current = readStamps();
-        current[slug] = now;
-        localStorage.setItem('xwsx-read-stamps', JSON.stringify(current));
-        setAlbumCount(Object.keys(current).length);
+        writeStamp(slug, Date.now());
       } catch {
         /* localStorage 不可用时仪式照常，只是不存档 */
       }

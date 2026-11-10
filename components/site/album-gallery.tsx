@@ -1,36 +1,30 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
+import {
+  formatStampDate,
+  getEmptyStampsSnapshot,
+  getStampsSnapshot,
+  subscribeStamps,
+} from './read-stamps';
 import { StampSeal } from './stamp-seal';
 
 export type AlbumEntry = { slug: string; title: string; phrase: string };
-type Stamps = Record<string, number>;
-
-function readStamps(): Stamps {
-  try {
-    return JSON.parse(localStorage.getItem('xwsx-read-stamps') ?? '{}') as Stamps;
-  } catch {
-    return {};
-  }
-}
-
-function formatStampDate(ts: number): string {
-  const d = new Date(ts);
-  return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`;
-}
 
 /**
  * 印谱主体：集下的章排成印屏（钤印少有端正的，交替微倾），
  * 未集的是虚位空格——谱的另一半本身就是「还差哪些」的清单。
- * 初始空表与 SSR 一致，挂载后再读 localStorage，避免水合不一致。
+ *
+ * 集章记录来自 useSyncExternalStore：服务端与首帧渲染空谱（读不到
+ * localStorage），水合后换成浏览器里的真值，与 SSR 输出始终一致。
  */
 export function AlbumGallery({ entries }: { entries: AlbumEntry[] }) {
-  const [stamps, setStamps] = useState<Stamps>({});
-
-  useEffect(() => {
-    setStamps(readStamps());
-  }, []);
+  const stamps = useSyncExternalStore(
+    subscribeStamps,
+    getStampsSnapshot,
+    getEmptyStampsSnapshot,
+  );
 
   const collected = entries
     .filter((entry) => stamps[entry.slug])

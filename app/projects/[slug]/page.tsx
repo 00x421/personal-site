@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { CodeBlockEnhancer } from '@/components/site/code-block-enhancer';
@@ -48,9 +49,9 @@ export default async function ProjectCasePage({
   return (
     <main className="project-case-page">
       <div className="project-case-shell">
-        <a href="/#work" className="back-link">
+        <Link href="/#work" className="back-link">
           <ArrowLeft size={15} /> 所有项目
-        </a>
+        </Link>
         <article className="project-case">
           <header
             className="project-case-hero"
@@ -89,9 +90,9 @@ export default async function ProjectCasePage({
             </section>
           )}
         </article>
-        <a href="/#work" className="article-end-link">
+        <Link href="/#work" className="article-end-link">
           回到项目 <ArrowUpRight size={17} />
-        </a>
+        </Link>
       </div>
     </main>
   );

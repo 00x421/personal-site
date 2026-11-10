@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Reveal } from '@/components/site/reveal';
 import { MOCK_CARDS } from './mock-cards';
@@ -47,6 +47,28 @@ function chunk<T>(list: T[], size: number): T[][] {
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
 
+/**
+ * 只在浏览器里才有答案的两个开关，用 useSyncExternalStore 取：
+ * 服务端快照固定 false，水合后才换成真值，SSR 输出不会与首帧打架。
+ *
+ * - 预览模式：/?mock=1（只读一次地址栏，无需订阅）
+ * - reduced-motion：订阅媒体查询变化
+ */
+function hasMockParam(): boolean {
+  return new URLSearchParams(window.location.search).has('mock');
+}
+function subscribeNever(): () => void {
+  return () => {};
+}
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+function subscribeReducedMotion(onChange: () => void): () => void {
+  const query = window.matchMedia('(prefers-reduced-motion: reduce)');
+  query.addEventListener('change', onChange);
+  return () => query.removeEventListener('change', onChange);
+}
+
 /** 项目精选：筛选 + 3D 翻页展台，整块作为交互孤岛。
  *
  * 交互模型（拖拽/箭头触发翻页）：
@@ -57,12 +79,16 @@ const clamp = (value: number, min: number, max: number) =>
  * 三个 bug 的共同根源。） */
 export function ProjectExplorer({ cards, filters }: Props) {
   const [active, setActive] = useState('全部');
-  /** 预览模式：/?mock=1 时注入虚拟卡，观察规模效果（仅站主使用） */
-  const [mockMode, setMockMode] = useState(false);
   const [perPage, setPerPage] = useState(4);
   const [page, setPage] = useState(0);
+  /** 预览模式：/?mock=1 时注入虚拟卡，观察规模效果（仅站主使用） */
+  const mockMode = useSyncExternalStore(subscribeNever, hasMockParam, () => false);
   /** 动效可用性：reduced-motion 关闭全部 3D，翻页瞬时完成 */
-  const [motionOK, setMotionOK] = useState(false);
+  const motionOK = !useSyncExternalStore(
+    subscribeReducedMotion,
+    prefersReducedMotion,
+    () => false,
+  );
   const shellRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{
     pointerId: number;
@@ -74,11 +100,6 @@ export function ProjectExplorer({ cards, filters }: Props) {
   const suppressClick = useRef(false);
   /** null = 还没判定过；惰性缓存，指针高频事件里不做重复的 matchMedia */
   const staticMode = useRef<boolean | null>(null);
-
-  useEffect(() => {
-    setMockMode(new URLSearchParams(window.location.search).has('mock'));
-    setMotionOK(!window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  }, []);
 
   // 每页张数随断点（4 ↔ 2），断点变化时回到第一页
   useEffect(() => {

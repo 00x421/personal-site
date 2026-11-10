@@ -1,4 +1,3 @@
-import { assertSafeBaseUrl } from '@/lib/ask';
 import { askIndex } from '@/lib/ask-index.generated';
 import { embedQuery, retrieve, sanitizeQuestion, SlidingWindowLimiter } from '@/lib/ask';
 

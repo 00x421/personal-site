@@ -44,6 +44,11 @@ export function ContactPopover() {
       });
   }
 
+  /* 这是锚定在导航按钮下方的非模态浮层，不是 <dialog>：原生 <dialog>
+     会带来 top-layer / backdrop / 居中布局与 showModal 语义，与这里的
+     定位和「点外面即收起」冲突。role="dialog" 只借用「一组相关信息」
+     这层含义，a11y 规则在此不适用。 */
+  /* oxlint-disable jsx-a11y/prefer-tag-over-role */
   return (
     <span className="contact-wrap" ref={wrapRef}>
       <button

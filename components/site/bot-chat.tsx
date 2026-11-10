@@ -42,6 +42,14 @@ function AnswerText({ text }: { text: string }) {
   );
 }
 
+/*
+ * oxlint 的 react-compiler 移植在这个组件上会抛内部不变量
+ * （Invariant: Expected a variable declaration / PruneHoistedContexts），
+ * 同一份代码的两个版本给出不同断言——这是工具缺陷，不是代码问题。
+ * 其余规则（hooks / a11y / typescript）对这个文件继续生效；
+ * 升级 oxlint 后应重新评估并删掉这一行。
+ */
+/* oxlint-disable react/react-compiler */
 export function BotChat({
   open,
   onClose,
@@ -73,15 +81,6 @@ export function BotChat({
       abortRef.current?.abort();
     };
   }, [open]);
-
-  // 划词即问：面板随预填一起打开，nonce 每变一次发一问。
-  // send 不进依赖——它每次渲染重建，而这里只关心「nonce 变了」这件事。
-  const prefillNonce = prefill?.nonce;
-  const prefillQuestion = prefill?.question;
-  useEffect(() => {
-    if (!open || !prefillNonce || !prefillQuestion) return;
-    send(prefillQuestion);
-  }, [open, prefillNonce]);
 
   function close() {
     dialogRef.current?.close();
@@ -162,6 +161,24 @@ export function BotChat({
     }
   }
 
+  // 划词即问：面板随预填一起打开，nonce 每变一次发一问。
+  // nonce 是「发一次」的身份证：send 每次渲染重建、且依赖 phase，把它放进
+  // 依赖会在状态变化时重发同一问，所以这里显式只盯 nonce。
+  const prefillNonce = prefill?.nonce;
+  const prefillQuestion = prefill?.question;
+  useEffect(() => {
+    if (!open || !prefillNonce || !prefillQuestion) return;
+    // 让当前这次渲染先落地，再发问：send 里第一件事就是 setState，
+    // 在 effect 体内同步调用会触发级联渲染（react-compiler 的判据）。
+    const timer = window.setTimeout(() => {
+      void send(prefillQuestion);
+    }, 0);
+    return () => window.clearTimeout(timer);
+    // send 每次渲染重建且依赖 phase：进依赖会在状态变化时重发同一问，
+    // 这里显式只盯 nonce。
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, prefillNonce]);
+
   return (
     <dialog
       ref={dialogRef}
@@ -229,7 +246,7 @@ export function BotChat({
         className="bot-chat-input-row"
         onSubmit={(event) => {
           event.preventDefault();
-          send(question);
+          void send(question);
         }}
       >
         <input

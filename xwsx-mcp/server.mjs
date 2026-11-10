@@ -399,8 +399,9 @@ async function runHttp() {
           enableJsonResponse: true,
         });
         res.on('close', () => {
-          transport.close();
-          server.close();
+          // 连接随响应体一起结束；关闭失败的噪音对请求方没有意义，吞掉即可
+          void transport.close();
+          void server.close();
         });
         await server.connect(transport);
         await transport.handleRequest(req, res, parsed);

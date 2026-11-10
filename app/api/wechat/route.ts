@@ -4,7 +4,6 @@ import { projects } from '@/data/projects';
 import { buildSearchEntries, type SearchEntry } from '@/lib/feed-builders';
 import { askIndex } from '@/lib/ask-index.generated';
 import {
-  buildMessages,
   embedQuery,
   getLlmConfig,
   retrieve,

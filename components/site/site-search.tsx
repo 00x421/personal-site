@@ -98,14 +98,30 @@ function Highlight({ text, terms }: { text: string; terms: string[] }) {
   );
 }
 
+/** 命令行切换主题：与 theme-toggle.tsx 同一条纪律——手动选择即退出自动夜间色温。 */
+function toggleTheme() {
+  const root = document.documentElement;
+  const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+  root.dataset.theme = next;
+  delete root.dataset.night;
+  try {
+    localStorage.setItem('theme', next);
+  } catch {
+    /* 隐私模式下 localStorage 不可用，静默降级 */
+  }
+}
+
+/** 随机取一条：只在事件路径上调用（渲染期不碰 Math.random）。 */
+function pickRandom<T>(list: readonly T[]): T | undefined {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
 type Command = {
   id: string;
   label: string;
   /** 参与过滤的中英文关键词（含拼音常见拼法） */
   keywords: string;
   icon: typeof Shuffle;
-  /** 执行动作；是否关闭面板由动作自己决定（复制 RSS 就不该关）。 */
-  run: () => void;
 };
 
 /** 全站命令面板：Cmd/Ctrl+K 呼出——搜索 + 命令同一套键盘动线。 */
@@ -120,13 +136,18 @@ export function SiteSearch() {
   const [rssCopied, setRssCopied] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const itemRefs = useRef<(HTMLElement | null)[]>([]);
   const fetchRef = useRef<Promise<void> | null>(null);
 
   const closeDialog = useCallback(() => {
     dialogRef.current?.close();
   }, []);
 
+  const articleEntries = useMemo(
+    () => entries?.filter((entry) => entry.type === 'article') ?? [],
+    [entries],
+  );
+
+  /** 命令表只放数据：动作统一走 runCommand，渲染期不创建带副作用的闭包。 */
   const commands: Command[] = useMemo(() => {
     const list: Command[] = [
       {
@@ -134,74 +155,74 @@ export function SiteSearch() {
         label: '切换明暗主题',
         keywords: 'theme 主题 暗色 亮色 夜间 dark light mode 切换',
         icon: Sun,
-        run: () => {
-          const root = document.documentElement;
-          const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
-          root.dataset.theme = next;
-          // 与 theme-toggle.tsx 同一条纪律：手动选择即退出自动夜间色温
-          delete root.dataset.night;
-          try {
-            localStorage.setItem('theme', next);
-          } catch {
-            /* 隐私模式下 localStorage 不可用，静默降级 */
-          }
-        },
       },
       {
         id: 'album',
         label: '看印谱',
         keywords: 'album 印谱 集邮 印章 章 集齐',
         icon: Stamp,
-        run: () => {
-          closeDialog();
-          window.location.assign('/album');
-        },
       },
       {
         id: 'rss',
         label: rssCopied ? 'RSS 地址已复制' : '复制 RSS 订阅地址',
         keywords: 'rss feed 订阅 subscribe 复制',
         icon: Rss,
-        run: () => {
-          navigator.clipboard
-            ?.writeText(`${window.location.origin}/rss.xml`)
-            .then(() => {
-              setRssCopied(true);
-              window.setTimeout(() => setRssCopied(false), 1600);
-            })
-            .catch(() => {
-              /* 剪贴板不可用（非安全上下文等）：提示留在标签上，不再弹错 */
-            });
-        },
       },
       {
         id: 'print',
         label: '打印本页',
         keywords: 'print 打印 纸 导出',
         icon: Printer,
-        run: () => {
-          closeDialog();
-          // 等面板退场动画走完再唤起系统打印，避免把遮罩印进纸里
-          window.setTimeout(() => window.print(), 140);
-        },
       },
     ];
-    const articles = entries?.filter((entry) => entry.type === 'article') ?? [];
-    if (articles.length > 0) {
-      list.unshift({
+    if (articleEntries.length === 0) return list;
+    return [
+      {
         id: 'random',
         label: '随机读一篇',
         keywords: 'random 随机 随便 抽一篇 惊喜 shuffle 手气',
         icon: Shuffle,
-        run: () => {
-          const pick = articles[Math.floor(Math.random() * articles.length)];
-          closeDialog();
-          window.location.assign(pick.url);
-        },
-      });
+      },
+      ...list,
+    ];
+  }, [articleEntries, rssCopied]);
+
+  /** 命令动作：全部在事件路径上执行，不参与渲染。 */
+  function runCommand(id: string) {
+    if (id === 'theme') {
+      toggleTheme();
+      return;
     }
-    return list;
-  }, [entries, rssCopied, closeDialog]);
+    if (id === 'rss') {
+      navigator.clipboard
+        ?.writeText(`${window.location.origin}/rss.xml`)
+        .then(() => {
+          setRssCopied(true);
+          window.setTimeout(() => setRssCopied(false), 1600);
+        })
+        .catch(() => {
+          /* 剪贴板不可用（非安全上下文等）：提示留在标签上，不再弹错 */
+        });
+      return;
+    }
+    if (id === 'album') {
+      closeDialog();
+      window.location.assign('/album');
+      return;
+    }
+    if (id === 'print') {
+      closeDialog();
+      // 等面板退场动画走完再唤起系统打印，避免把遮罩印进纸里
+      window.setTimeout(() => window.print(), 140);
+      return;
+    }
+    if (id === 'random') {
+      const pick = pickRandom(articleEntries);
+      if (!pick) return;
+      closeDialog();
+      window.location.assign(pick.url);
+    }
+  }
 
   const terms = useMemo(
     () => query.trim().toLowerCase().split(/\s+/).filter(Boolean),
@@ -315,30 +336,37 @@ export function SiteSearch() {
     };
   }, [open, ensureIndex]);
 
-  useEffect(() => {
-    if (open) itemRefs.current[active]?.scrollIntoView({ block: 'nearest' });
-  }, [active, open]);
+  // 序号越界不靠 effect 回收：渲染时派生成有效值（在 effect 里 setState
+  // 会多一轮渲染，也是 react-compiler 明确不建议的写法）。
+  const activeIndex = Math.min(active, Math.max(total - 1, 0));
 
-  // 过滤条件变化后序号可能越界，收回到有效范围
   useEffect(() => {
-    setActive((i) => Math.min(i, Math.max(total - 1, 0)));
-  }, [total]);
+    if (!open) return;
+    // 列表项统一是 .search-item：命令在前、结果在后，DOM 顺序即全局序号
+    dialogRef.current
+      ?.querySelectorAll<HTMLElement>('.search-item')
+      ?.[activeIndex]?.scrollIntoView({ block: 'nearest' });
+  }, [activeIndex, open]);
 
   function onInputKey(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      // 索引未就绪时列表为空，Math.max 防止 active 被压到 -1
-      setActive((i) => Math.min(Math.max(i, 0) + 1, total - 1));
+      // 索引未就绪时列表为空，Math.max 防止序号被压到 -1
+      setActive(Math.min(activeIndex + 1, Math.max(total - 1, 0)));
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
-      setActive((i) => Math.max(i - 1, 0));
+      setActive(Math.max(activeIndex - 1, 0));
     } else if (event.key === 'Enter') {
       event.preventDefault();
-      if (active < matchedCommands.length) {
-        matchedCommands[active]?.run();
-      } else {
-        itemRefs.current[active]?.click();
+      if (activeIndex < matchedCommands.length) {
+        const command = matchedCommands[activeIndex];
+        if (command) runCommand(command.id);
+        return;
       }
+      const entry = combined[activeIndex - matchedCommands.length];
+      if (!entry) return;
+      closeDialog();
+      window.location.assign(entry.url);
     }
   }
 
@@ -405,12 +433,9 @@ export function SiteSearch() {
               <li key={command.id}>
                 <button
                   type="button"
-                  ref={(el) => {
-                    itemRefs.current[i] = el;
-                  }}
-                  className={`search-item is-cmd${i === active ? ' is-active' : ''}`}
+                  className={`search-item is-cmd${i === activeIndex ? ' is-active' : ''}`}
                   onMouseEnter={() => setActive(i)}
-                  onClick={() => command.run()}
+                  onClick={() => runCommand(command.id)}
                 >
                   <span className="search-item-type is-cmd">命令</span>
                   <span className="search-item-body">
@@ -475,11 +500,8 @@ export function SiteSearch() {
             return (
               <li key={`${entry.type}-${entry.url}-${entry.title}`}>
                 <a
-                  ref={(el) => {
-                    itemRefs.current[index] = el;
-                  }}
                   href={entry.url}
-                  className={`search-item${index === active ? ' is-active' : ''}`}
+                  className={`search-item${index === activeIndex ? ' is-active' : ''}`}
                   onMouseEnter={() => setActive(index)}
                   onClick={closeDialog}
                 >
