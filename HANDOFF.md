@@ -28,7 +28,7 @@
   ```bash
   sudo systemctl stop xwsx && rm -rf ~/xwsx-site/standalone && tar -xzf ~/xwsx-standalone.tar.gz -C ~/xwsx-site && sudo systemctl start xwsx
   ```
-- **CI 自动部署**：`main` 的 CI 通过后，`.github/workflows/deploy.yml` 自动跑同一条 `scripts/deploy.mjs`（Secrets：`DEPLOY_SSH_KEY`、`ASK_EMBED_API_KEY`；前者缺失时作业跳过）。**push 到 main 即上线**。
+- **CI 自动部署**：`main` 的 CI 通过后，`.github/workflows/deploy.yml` 执行同一条 `scripts/deploy.mjs`（Secrets：`DEPLOY_SSH_KEY`、`ASK_EMBED_API_KEY`）。⚠️ **缺 `DEPLOY_SSH_KEY` 时作业会成功空转**（只打 notice，不上传）——2026-11-10 发现线上一直停在旧构建就是这个原因；发布要本地 `npm run deploy`。
 - **公众号回调与留言存储**：`/api/wechat` 由主站进程处理，`WECHAT_*` 与 `ASK_LLM_*` 一起注入 systemd 环境（`/home/xwsx/xwsx-site/ask.env`，600 权限）。留言 JSON 必须用 `WECHAT_STORE_PATH` 指到 `standalone` 之外的固定路径，否则每次部署替换目录后会「看起来清空」（旧数据留在 `standalone.bak` 里）。
 - **回滚**：`deploy.mjs` 每次部署前把旧产物留在 `~/xwsx-site/standalone.bak`（保留上一版），出问题执行：
   `sudo systemctl stop xwsx && rm -rf ~/xwsx-site/standalone && mv ~/xwsx-site/standalone.bak ~/xwsx-site/standalone && sudo systemctl start xwsx`

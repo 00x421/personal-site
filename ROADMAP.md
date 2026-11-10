@@ -1123,6 +1123,13 @@ README / HANDOFF 补上 10 月这批功能（公众号、印谱、卡牌展台�
 - `npm run lint` 0 / `npm test` 196 passed / `npm run check` 通过 / `npm run build` 通过
 - 触屏规则在桌面 Chrome（`pointer: fine`）下不生效，只能用 CSSOM 核对规则已写入；**未在真机/移动模拟器上验证**（工具不支持 `Emulation.setEmulatedMedia`）
 
+### 六、部署链路核对（2026-11-10）
+
+- **现象**：`fa74bdd` 的 CI 成功、`Deploy` 也显示 success，但线上 CSS 仍是旧构建（`--card-ink` 还是 #232328、卡内摘要还是 10.5px）。
+- **原因**：`DEPLOY_SSH_KEY` 未配置，`deploy.yml` 只打一条 notice 就成功结束（20 秒完成、没有上传）。绿色的 Deploy 不代表发版。
+- **处理**：本地 `npm run deploy` 发布——`HEALTH_OK`，线上复核 390px：h1 行高 = 字号（1.0）、卡内摘要 11.5px / 脚注 10px、卡面不再被长标签撑破、无横向滚动。
+- **文档**：README / HANDOFF 已把「push 即上线」改成「缺 secret 时是成功空转，发布走本地 deploy」。
+
 ## 待办
 
 ### 小修正（已于 2026-09-23 全部交付）

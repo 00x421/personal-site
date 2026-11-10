@@ -93,7 +93,9 @@ npm run deploy
 
 ### CI 自动部署
 
-`.github/workflows/deploy.yml` 在 `main` 的 CI 通过后自动执行同一条 `scripts/deploy.mjs`。仓库 Secrets 需要 `DEPLOY_SSH_KEY`（服务器部署私钥）与 `ASK_EMBED_API_KEY`（构建向量索引）；`DEPLOY_SSH_KEY` 缺失时作业自动跳过并在日志里提示。**推到 main 就等于上线**——本地没验完的改动别推。
+`.github/workflows/deploy.yml` 在 `main` 的 CI 通过后执行同一条 `scripts/deploy.mjs`。仓库 Secrets 需要 `DEPLOY_SSH_KEY`（服务器部署私钥）与 `ASK_EMBED_API_KEY`（构建向量索引）。
+
+⚠️ **`DEPLOY_SSH_KEY` 缺失时作业会「成功」地空转**：只打一条 notice 就结束，日志是绿的，但什么也没上传（当前仓库就是这个状态）。所以**上线要本地跑 `npm run deploy`**；只有配上该 secret，push 才真的会发版。
 
 向量索引 `lib/ask-index.generated.ts` 是构建产物：仓库里存的是 `enabled: false` 的空索引占位，构建时由 prebuild 按 key 重新生成。**不要把带真实 embedding 的版本提交**（体积巨大且随内容变化），oxlint 也已忽略该文件。
 
