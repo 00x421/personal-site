@@ -87,7 +87,10 @@ export function ArticleTocMobile({ entries }: { entries: TocEntry[] }) {
   if (entries.length === 0) return null;
   return (
     <details className="article-toc-mobile">
-      <summary>目录</summary>
+      <summary>
+        <span>目录</span>
+        <span className="article-toc-mobile-count">{entries.length} 节</span>
+      </summary>
       <TocList entries={entries} activeId={activeId} />
     </details>
   );
