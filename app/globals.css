@@ -343,7 +343,7 @@
   --night-paper: #15161c;
   --night-raised: #1a1c24;
   --seal: #d95845;
-  --card-ink: #232328;
+  --card-ink: #2b2b33;
   --card-ink-text: #f0ede5;
   --portrait-bg: #1d1d21;
   --portrait-ink: #8f8f8a;
@@ -699,7 +699,17 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   .code-copy::after {
     content: '';
     position: absolute;
-    inset: -11px -8px;
+    /* 命中区补到 44px：返回链接高 15px、复制按钮 16px，外扩 28px 后
+       分别为 43 / 44；文字基线与下划线都不动。 */
+    inset: -14px -10px;
+  }
+  /* 触屏上把「目录项」与「目录抽屉」抬到 32px 以上：它们原本是 28 / 19px，
+     手指点起来是在赌（WCAG 2.5.8 的 24px 只是底线，不是舒适线）。
+     标签已有 44px 的触屏规则，别在这里重复声明、更别把它压小。 */
+  .article-toc-list a,
+  .article-toc-mobile summary {
+    min-height: 32px;
+    padding-block: 8px;
   }
 }
 .hero {
@@ -804,6 +814,21 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   font-weight: inherit;
   font-style: italic;
   color: var(--violet);
+}
+/* 窄屏的标题行高：桌面 0.93 的海报紧排保留不动；390px 下 48.9px 字号配
+   0.93 只剩 1px 余量，两行之间的全角「，」「。」会贴到下一行。
+   只在 ≤560px 抬到 1.00 / 0.98，紧排的观感在手机上也还成立。 */
+@media (max-width: 560px) {
+  .hero h1 {
+    line-height: 1;
+  }
+  .cta h2 {
+    line-height: 0.98;
+  }
+  /* 坐标纸底纹与大标题、标签带同屏时偏吵，窄屏减到一半。 */
+  .hero::before {
+    opacity: 0.5;
+  }
 }
 .hero-note {
   border-left: 1px solid var(--ink);
@@ -1198,6 +1223,12 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   color: var(--card-ink-text);
   background: var(--card-ink);
 }
+/* 暗色下 ink 卡与页面纸只差一档，卡边几乎看不见；补一道内描边让卡片有实体边缘。
+   用 outline 而不是 border/box-shadow：不占布局，也不会被 hover 的阴影覆盖。 */
+[data-theme='dark'] .project-card.ink {
+  outline: 1px solid rgb(255 255 255 / 0.07);
+  outline-offset: -1px;
+}
 .project-card.violet {
   background: var(--tone-violet);
   color: var(--tone-violet-ink);
@@ -1217,6 +1248,13 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
   border-radius: 7px;
   min-height: 0;
+  /* flex 子项默认 min-width:auto：一个长标签（React Server Components）
+     就能把内框撑得比卡面还宽，然后被卡片的 overflow: hidden 切掉半个词。
+     允许收缩，配合下面的省略号，长标签才会自己截断。 */
+  min-width: 0;
+}
+.tcg-inner > * {
+  min-width: 0;
 }
 .tcg-head,
 .tcg-foot {
@@ -1224,7 +1262,8 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   justify-content: space-between;
   align-items: center;
   color: inherit;
-  font: 700 9px var(--font-mono);
+  /* 9px 在 320–390px 的卡上只剩「纹理」，10px 是等宽小字的下限。 */
+  font: 700 10px var(--font-mono);
   letter-spacing: 0.08em;
 }
 /* 脚注改两行：标签在上（自由折行），状态 + 卡号在下（各占一端）。
@@ -1276,7 +1315,7 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   display: -webkit-box;
   margin: 0;
   overflow: hidden;
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.65;
   opacity: 0.92;
   -webkit-box-orient: vertical;
@@ -1379,6 +1418,18 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
   /* 保留完整手绘肖像，留白作为相框的一部分，而不是裁成头像。 */
   object-position: center;
   display: block;
+}
+/* 暗色下画芯仍是纸（--portrait-paper 刻意不反转，见 :root 注释与
+   css-integrity 的例外登记），但一整块纸白在深色页面里会变成眩光：
+   压一点亮度、加一圈暖色内阴影，让它像灯下的纸而不是发光的屏幕。 */
+[data-theme='dark'] .portrait-media img {
+  filter: brightness(0.92) saturate(0.98);
+}
+[data-theme='dark'] .portrait-media {
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    inset 0 0 64px rgb(0 0 0 / 0.3),
+    0 12px 20px rgb(0 0 0 / 0.4);
 }
 /* 左栏内容（444px）天然比右侧肖像（642px）矮，结尾的 CTA 会悬在半空。
    用 flex 把链接锚到栏底，两栏同时收尾。 */
@@ -1754,11 +1805,21 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
     padding: 7px 9px;
   }
   .tcg-copy h3 {
-    font-size: 14px;
+    font-size: 15px;
   }
+  /* 390px 下卡宽约 170px：摘要 11.5px 是这条尺寸上的可读下限，
+     行数同时收到 2 行，否则卡面会被一段说明文字填满。 */
   .tcg-copy p {
-    font-size: 10.5px;
-    -webkit-line-clamp: 3;
+    font-size: 11.5px;
+    -webkit-line-clamp: 2;
+  }
+  /* 字号抬到 10px 后，「React Server Components」这类长标签会在 170px 的卡上
+     顶破内框（卡是 overflow: hidden，视觉上等于被切掉半个词）。
+     单行省略，不在卡里折成两行 pill。 */
+  .tcg-tags span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .tcg-mark::after {
     font-size: 44px;
@@ -2466,6 +2527,12 @@ main {
   font:
     500 clamp(44px, 6vw, 76px)/1.04 var(--font-serif);
   letter-spacing: var(--tracking-cjk-display);
+}
+@media (max-width: 720px) {
+  /* 三行标题时 1.04 会让全角标点贴住下一行；窄屏抬到 1.06，宽屏不动。 */
+  .article-detail h1 {
+    line-height: 1.06;
+  }
 }
 .article-lede {
   max-width: 600px;
@@ -3252,6 +3319,11 @@ main {
     position: sticky;
     top: 90px;
     float: right;
+    /* 目录贴在正文区右侧：这里的目标不是「离 650px 正文列多远」，而是
+       「离 760px 的标题右缘多远」——h1 比正文宽 110px，按正文列拉近会让
+       标题压到目录上（实测 -128 时与 h1 重叠 50px）。原来的 -238/200
+       相对标题右缘留 40px、相对正文 170px，1280/1366/1440 三档都不溢出，
+       所以保持原值。 */
     width: 200px;
     margin-right: -238px;
     font-size: 13px;
