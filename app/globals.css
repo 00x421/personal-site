@@ -3298,7 +3298,8 @@ main {
   border-left-color: var(--violet);
 }
 .article-toc-mobile {
-  margin: 18px 0 0;
+  /* 位置在标题块末尾：上边距与 tags 拉开，下边距交给 header 的 padding-bottom */
+  margin: 22px 0 0;
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 10px 14px;

@@ -4,7 +4,10 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { CodeBlockEnhancer } from '@/components/site/code-block-enhancer';
 import { ArticleSeal } from '@/components/site/article-seal';
-import { ArticleToc } from '@/components/site/article-toc';
+import {
+  ArticleTocMobile,
+  ArticleTocRail,
+} from '@/components/site/article-toc';
 import { BackToHome } from '@/components/site/back-to-home';
 import { NavBuddy } from '@/components/site/nav-buddy';
 import { ReadingProgress } from '@/components/site/reading-progress';
@@ -94,7 +97,7 @@ export default async function ArticleDetailPage({
         </div>
         <div className="article-columns">
           <article>
-            <ArticleToc entries={article.toc} />
+            <ArticleTocRail entries={article.toc} />
             <header>
             {series.length > 1 && (
               <p className="article-series">
@@ -119,6 +122,8 @@ export default async function ArticleDetailPage({
                 </Link>
               ))}
             </div>
+            {/* 目录放在标题之后：先看到标题，再看到导航（原位置在标题之前） */}
+            <ArticleTocMobile entries={article.toc} />
           </header>
           <div
             className="article-body"
