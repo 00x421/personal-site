@@ -38,6 +38,23 @@ describe('wechat-store', () => {
     assert.equal(ids[0], 'oNew');
   });
 
+  it('同一毫秒内连发两条，最新一条仍排在前面', () => {
+    // 冻结时钟制造同一个毫秒：时间戳必须自行递增，否则排序退化成插入顺序
+    const realNow = Date.now;
+    Date.now = () => 1_800_000_000_000;
+    try {
+      appendMessage('oTieA', 'in', '先');
+      appendMessage('oTieB', 'in', '后');
+    } finally {
+      Date.now = realNow;
+    }
+    const ids = listThreads().map((t) => t.id);
+    assert.ok(
+      ids.indexOf('oTieB') < ids.indexOf('oTieA'),
+      `后发的应排在前面，实际顺序：${ids.join(' → ')}`,
+    );
+  });
+
   it('留言超长截断到 500 字', () => {
     appendMessage('oC', 'in', '长'.repeat(800));
     const thread = listThreads().find((t) => t.id === 'oC');

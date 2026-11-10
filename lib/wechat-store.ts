@@ -41,10 +41,23 @@ function save() {
   }
 }
 
+/**
+ * 消息时间戳：同一毫秒内连发两条时必须严格递增。
+ * 否则两条 ts 相同，「最新在前」的排序退化成插入顺序（稳定排序），
+ * 线上表现为对话顺序偶尔颠倒、测试表现为偶发失败（CI 的 tmpfs 上更快，
+ * 命中同一毫秒的概率更高）。
+ */
+let lastTs = 0;
+function nextTimestamp(): number {
+  const now = Date.now();
+  lastTs = now > lastTs ? now : lastTs + 1;
+  return lastTs;
+}
+
 export function appendMessage(id: string, dir: 'in' | 'out', text: string): void {
   const db = load();
   const thread = db[id] ?? { id, messages: [], queuedReply: null };
-  thread.messages.push({ dir, text: text.slice(0, 500), ts: Date.now() });
+  thread.messages.push({ dir, text: text.slice(0, 500), ts: nextTimestamp() });
   if (thread.messages.length > 50) thread.messages = thread.messages.slice(-50);
   db[id] = thread;
   save();
