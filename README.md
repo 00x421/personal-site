@@ -20,6 +20,7 @@ npm run mascot     # 从 GrokBot 开源项目的矢量数据重出吉祥物四�
 npm run portrait   # 肖像图 → 5 档响应式 WebP（换图后跑，母版放 images-src/）
 npm run deploy     # 构建并部署到线上服务器（见「部署」一节）
 npm run wechat     # 把站内文章推进公众号草稿箱（需 WECHAT_APP_ID / WECHAT_APP_SECRET）
+npm run shot -- <地址> [选项]   # 截图取证（元素级 / 交互状态 / 动效帧），产物在 .oil-shots/
 ```
 
 预览生产构建的完整命令：

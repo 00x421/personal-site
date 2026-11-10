@@ -1959,8 +1959,11 @@ html[data-theme='dark'] .theme-toggle .theme-icon-moon {
 }
 .writing-card h3 {
   margin: 15px 0 10px;
+  /* 26px 的标题在窄栏里常断成 3 行：1.16 的行距只剩 4px，
+     中文的上下伸展与全角标点会互相贴住。判据取 CJK 多行正文的 1.4
+     （oil-ui 的可读性检查同口径），视觉上仍是紧凑的卡片标题。 */
   font:
-    500 26px/1.16 var(--font-serif);
+    500 26px/1.4 var(--font-serif);
   letter-spacing: var(--tracking-cjk-heading);
 }
 .writing-card p {

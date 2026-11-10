@@ -233,7 +233,15 @@ npm test            # node --test（解析 / 查询 / 机器接口 / 样式表�
 npm run check       # 静态断言：globals.css 结构 + 字形覆盖（build 第一步就跑）
 npm run build       # 必须过，CI 同款
 npm run start       # wrangler dev :8787 预览构建产物
+npm run shot -- http://localhost:3000/ --selector ".cta"   # 截图取证（元素级/状态/动效帧）
 ```
+
+**截图取证用 `npm run shot`**（转发到 oil-ui skill 的 `shoot.mjs`，只需本机 Chrome）：
+`--selector` 元素级、`--steps` 交互状态、`--frames/--motion` 动效帧、`--mask` 遮字版看结构、`--mark` 标注问题；
+它同时跑 console 错误 / 横向溢出 / 图片加载 / 可读性检查。两条口径要记住：
+- **对比度是按截图像素取样**，细字抗锯齿会低估——实测 `.section-index` 的 CSS 对比度是 5.04:1，被报成 2.56:1，需人工核对；
+- **行高规则按 CJK 多行正文 1.4**，对大号标题偏严，但它给了固定数字，`writing-card h3` 就是按这条从 1.16 调到 1.4 的。
+skill 装在 `~/.claude/skills/oil-ui`（`npx skills add oil-oil/oil-ui --agent pi -g -y`），CI 不依赖它。
 
 **工作流：先本地、后部署。** 改完在 `npm run dev` 的本地站上验好（含明暗主题、窄屏、交互状态），确认没问题再 `npm run deploy` 一次上去。不要每改一点就部署——线上是给人看的，不是调试台。
 

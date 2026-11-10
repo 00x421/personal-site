@@ -1130,6 +1130,39 @@ README / HANDOFF 补上 10 月这批功能（公众号、印谱、卡牌展台�
 - **处理**：本地 `npm run deploy` 发布——`HEALTH_OK`，线上复核 390px：h1 行高 = 字号（1.0）、卡内摘要 11.5px / 脚注 10px、卡面不再被长标签撑破、无横向滚动。
 - **文档**：README / HANDOFF 已把「push 即上线」改成「缺 secret 时是成功空转，发布走本地 deploy」。
 
+## 已交付：第 9 批（2026-11-10，文章页评审 + 截图取证 + 卡片标题行高）
+
+### 一、文章页只读评审（oil-ui 口径；未独立评审）
+
+对象 `/articles/how-this-site-is-built`，1440 / 390 两档。证据：`shoot.mjs` 的实心 + 遮字截图与 report.json。**没有能看图的隔离评审者，因此是主 Agent 自检，不是独立评审。**
+
+按影响排序：
+
+1. **移动端目录排在标题之前**（390px 实测：目录框 top 210、高 42；h1 top 314）。阅读顺序上标题应先出现，带边框的目录盒还抢了视觉优先。建议把 `<details class="article-toc-mobile">` 移到 `<header>` 之后，或去框只留一行「目录 ⌄」。
+2. **桌面 h1 行高 1.04**（76px / 79.04，3 行），工具标 tightLeading。窄屏已 1.06；桌面属签名式紧排，**留给站主决定**，本轮未改。
+3. **未读态闲章 1.94:1**（纸色字压朱色再降透明）。它是装饰图形且有 aria-label，WCAG 不强制；若希望读者扫一眼就能读，把不透明度提到 ~0.55–0.6。
+4. **桌面目录项 28px**（触屏 32px，本轮已补）。桌面鼠标可接受，不紧急。
+5. **390 下正文 307px ≈ 19 字/行**，低于中文长文的舒适区间；属版面偏好，未动。
+
+正面证据：焦点样式 `outline: solid 1.6px / offset 4px` 全站一致；console 无错误、无横向溢出（360 / 390 / 1440）、图片全部加载成功。
+
+工具口径提醒：它的**对比度按截图像素取样**，细字抗锯齿会低估——`.section-index` 的 CSS 对比度实测 5.04:1，被报成 2.56:1。这类提示要人工复核，不能直接当结论。
+
+### 二、截图取证能力进仓库
+
+- 新增 `scripts/shot.mjs`：转发到 oil-ui 的 `shoot.mjs`，补默认值（`--root` = 仓库根、`--out` = `.oil-shots/`），找不到 skill 时直接给出安装命令；入口 `npm run shot -- <地址> [选项]`
+- `.oil-shots/` 进 `.gitignore`；README「本地开发」与 HANDOFF「本地验证工作流」写明用法与两条口径
+- 解决的具体问题：内置 CDP 截图拿不到元素级图、CTA 整页截图会超时；`--selector` 现在能直接截到 `.cta`
+
+### 三、`writing-card h3` 行高
+
+26px/1.16 → **26px/1.4**：三行标题的行距从 4px 到 10px，`shoot.mjs` 的 tightLeading 归零；卡片高度 370px（四张等高），360 / 390 / 1440 无横向溢出。
+
+### 验证
+
+- `npm run lint` 0 / `npm test` 196 / `npm run check` / `npm run build` 全过
+- `npm run shot -- http://localhost:3000/ --selector ".writing-card"` → report.json 的 `lint` 为空
+
 ## 待办
 
 ### 小修正（已于 2026-09-23 全部交付）
