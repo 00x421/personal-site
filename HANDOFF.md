@@ -2,14 +2,15 @@
 
 > 面向接手人：现状、设计决策、踩坑记录、待办路线。日常操作（本地开发、写文章、部署）见 [README.md](./README.md)。
 
-## 当前状态（2026-09-18）
+## 当前状态（2026-10-27）
 
-- **站点功能完整**：首页、文章（含标签聚合/系列/反向链接）、项目案例、书架、/now、RSS、站内搜索、OG 图、JSON-LD，全部可用。
+- **站点功能完整**：首页、文章（标签聚合 / 系列 / 反向链接 / 读完朱印）、项目案例（卡牌展台 + View Transitions）、书架、/now、/album 印谱、RSS、站内搜索（⌘K + 语义兜底）、站内问答、公众号「技术快递柜」、OG 图、JSON-LD，全部可用。
 - **质量基线**（2026-09-20 Lighthouse 13.4.1 实测）：无障碍 / 最佳实践 / SEO **全 100**；性能移动端 **93–97**（连跑 3 次有 ±4 波动）、桌面端（1350×940）**77**；TBT 0 ms、CLS 0。移动端 Performance 曾为 66，明细见 [ROADMAP.md](./ROADMAP.md)。
-- **首屏传输**（Lighthouse 移动端口径）：**~473 KB**（脚本 175 + 图片 129 + 字体 96 + CSS 18 + 文档 12）。图片已从 159 KB 降到 129 KB（移动）/ 45 KB（桌面），靠肖像图改响应式。
+- **首屏传输**（Lighthouse 移动端口径）：**~473 KB**（脚本 175 + 图片 129 + 字体 96 + CSS 18 + 文档 12）。
 - **已上线（2026-09-13）**：https://xwsx.top ，自托管 Node（vinext standalone 路径），未走 Cloudflare。部署架构见下节。
-- **测试**：`npm test` **174 个用例**（`node --test`，零新依赖）覆盖五层纯函数层：内容解析、Markdown 渲染管线、集合查询、机器接口序列化（RSS / search.json / sitemap）、AI 问答（切片 / 检索 / 提示词 / 限流 / SSE 解析），以及 globals.css 结构断言与字形覆盖。为此把查询逻辑从 `data/articles.ts` 抽到了 `lib/article-queries.ts`、把序列化从三个 route 抽到了 `lib/feed-builders.ts`，见下「三层结构」。
-- **CI**：GitHub Actions 每次 push/PR 跑 oxlint + build（node 24）。曾连续 5 次失败：rolldown 1.0.1 自身声明矛盾（deps 钉死 @emnapi/* 1.10.0 + 传递 peer ^1.7.1），Linux npm ci 严格校验误报 Missing 1.11.3，Windows 不装 wasm32 子树无法复现。改 `npm ci --legacy-peer-deps` + `npm install` 兜底后恢复绿；根治需升级 rolldown/vite。
+- **测试**：`npm test` **195 个用例**（`node --test`，零新依赖）覆盖六层：内容解析、Markdown 渲染管线、集合查询、机器接口序列化（RSS / search.json / sitemap）、AI 问答（切片 / 检索 / 提示词 / 限流 / SSE 解析）、公众号（签名 / XML / 正文转 HTML / 留言仓库），以及 globals.css 结构断言、字形覆盖与中文文案门禁。
+- **静态门禁**：`npm run lint`（oxlint，0 error / 0 warning）、`npm run check`（CSS 结构 + 字形覆盖 + 文案门禁 + `tsc`）、`npm test`、`npm run build` 全绿；CI 跑 lint + test + check + build 四步。
+- **CI 依赖坑**：曾连续 5 次失败：rolldown 1.0.1 自身声明矛盾（deps 钉死 @emnapi/* 1.10.0 + 传递 peer ^1.7.1），Linux `npm ci` 严格校验误报 Missing 1.11.3，Windows 不装 wasm32 子树无法复现。改 `npm ci --legacy-peer-deps` + `npm install` 兜底后恢复绿；根治需升级 rolldown / vite。
 
 ## 部署架构（2026-09-13 起，静态资源直服 2026-09-18 加入）
 
@@ -27,6 +28,8 @@
   ```bash
   sudo systemctl stop xwsx && rm -rf ~/xwsx-site/standalone && tar -xzf ~/xwsx-standalone.tar.gz -C ~/xwsx-site && sudo systemctl start xwsx
   ```
+- **CI 自动部署**：`main` 的 CI 通过后，`.github/workflows/deploy.yml` 自动跑同一条 `scripts/deploy.mjs`（Secrets：`DEPLOY_SSH_KEY`、`ASK_EMBED_API_KEY`；前者缺失时作业跳过）。**push 到 main 即上线**。
+- **公众号回调与留言存储**：`/api/wechat` 由主站进程处理，`WECHAT_*` 与 `ASK_LLM_*` 一起注入 systemd 环境（`/home/xwsx/xwsx-site/ask.env`，600 权限）。留言 JSON 必须用 `WECHAT_STORE_PATH` 指到 `standalone` 之外的固定路径，否则每次部署替换目录后会「看起来清空」（旧数据留在 `standalone.bak` 里）。
 - **回滚**：`deploy.mjs` 每次部署前把旧产物留在 `~/xwsx-site/standalone.bak`（保留上一版），出问题执行：
   `sudo systemctl stop xwsx && rm -rf ~/xwsx-site/standalone && mv ~/xwsx-site/standalone.bak ~/xwsx-site/standalone && sudo systemctl start xwsx`
 - **SSH**：`ssh -i ~/.ssh/id_ed25519 xwsx@43.139.214.236`（免密 sudo 已验证可用；若连不上多半是服务器侧 IP 封禁）。
@@ -40,12 +43,23 @@ app/                    路由（RSC 服务端组件为主）
   articles|projects|books|now/   内容页
   api/ask/route.ts      站内 AI 问答：POST 流式作答（NDJSON）+ GET 开关状态；检索构建期向量索引
   api/content/route.ts  站点内容机器可读全文出口（MCP 数据源；draft 同源过滤；1h 缓存）
+  api/search/route.ts   语义搜索兜底（与问答同一份向量索引；未启用/抖动返回空）
+  api/wechat/route.ts   公众号回调：四档处理，卡 5 秒被动回复预算
+  api/wechat/inbox/    私有留言管理台（密钥即全部防线，noindex）
+  album/page.tsx        印谱：把本地集章排成印屏（不索引）
   rss.xml|search.json|robots.ts|sitemap.ts   机器接口
 components/site/        客户端组件（'use client'，渐进增强）
   nav-buddy.tsx         导航栏 GrokBot 小机器人（四态轮播 / 主动搭话 / **两连点开 AI 问答**）
   bot-chat.tsx          「问小机器人」面板（原生 <dialog>，NDJSON 流式渲染，镜像 site-search 交互）
-  project-explorer.tsx  项目筛选与横滚（**卡片数据由服务端传入**，别 import data/*）
-  site-search.tsx       Cmd/Ctrl+K 命令面板（原生 <dialog>）
+  project-explorer.tsx  项目筛选 + 卡牌 3D 展台（**卡片数据由服务端传入**，别 import data/*）
+  site-search.tsx       Cmd/Ctrl+K 命令面板（原生 <dialog>，字面零命中时语义兜底）
+  article-seal.tsx      文末朱印 + 集章（写 localStorage）
+  album-gallery.tsx     印谱主体（读集章快照）
+  stamp-seal.tsx        单枚印章（文字 + 印泥纹理，role="img"）
+  read-stamps.ts        集章快照源（useSyncExternalStore + storage 事件）
+  solar-term-note.tsx   首页时令注（服务端固定 null，水合后取当天节气）
+  select-ask.tsx        划词即问（带本篇 slug 发给 /api/ask）
+  contact-popover.tsx   「联系我」浮层（公众号 / 邮箱）
   theme-toggle / rail-scroller / reveal / reading-progress / ...
 lib/                    解析与聚合（构建期+运行时共享）
   content-parse.ts      frontmatter 解析 / 阅读时长 / XML 转义（**零依赖，可直接测**）
@@ -57,6 +71,13 @@ lib/                    解析与聚合（构建期+运行时共享）
   glyph-coverage.ts     字形覆盖断言（内容用字 ⊆ 分片 unicode-range 并集）
   markdown.ts           marked 配置 + buildArticle / buildProject
   highlight.ts          Prism 高亮
+  site-content.ts       站点身份 / 导航 / 能力 / 工具清单（改品牌只改这一处）
+  seal-phrases.ts       闲章池与 slug 确定性映射（文章页与印谱共用）
+  solar-terms.ts        二十四节气与当天时令（首页时令注）
+  wechat.ts             公众号客户端：签名 / XML / access_token / 素材 / 草稿 / 推送
+  wechat-html.ts        Markdown → 公众号内联样式 HTML
+  wechat-store.ts       留言与待回复队列（JSON 文件，路径可配）
+  prose-lint.ts         中文文案门禁规则（中英空格 / 全角标点）
   font-slices.generated.ts  关键片清单（split-fonts.py 生成，勿手改）
 data/                   文章/项目/书架的 TS 数据层（import.meta.glob 内联，并转发到 article-queries）
 content/                Markdown 内容源（articles/projects/books + frontmatter）
@@ -133,6 +154,11 @@ public/personal-portrait-scribble-{320,480,640,800,1024}.webp  肖像图响应�
    - nginx 的图片规则会直服它（实测 `200 / image/png / 1403 bytes / max-age=604800`）。
    - 窄屏需要 `padding-bottom: 74px`：右下角固定搜索按钮（`bottom: 16px`、高 46px）占着离底 16–62px 这条带，而两条备案号并排约 342px 几乎铺满 390px 视口，无论怎么对齐都会从按钮底下穿过。
 
+9. **只在浏览器里成立的快照一律用 `useSyncExternalStore`，不在 effect 里 setState**：时令注（今天哪个节气）、集章（localStorage）、`?mock=1` 预览、reduced-motion 判定都属于「服务端没有答案、首帧又必须与 SSR 一致」的值。
+   - 服务端快照给固定值（`null` / 空谱 / `false`），水合后才切到真值；`getSnapshot` 按 raw 字符串或「日」缓存，同一输入必须返回同一个对象，否则会无限重渲染。
+   - 替代了原来的「挂载后 setState」写法：那种写法在 React Compiler 的判据里属于级联渲染，也会让 `npm run lint` 变红。
+   - 集章写入后派发 `xwsx-stamp` 事件（`storage` 事件只在别的标签页触发），文章页朱印与 `/album` 印谱共用同一份快照源（`components/site/read-stamps.ts`）。
+
 ## 性能现状与瓶颈
 
 **首屏传输**（2026-09-20，Lighthouse 移动端口径）：
@@ -188,6 +214,11 @@ Lighthouse 13.4.1 实测（模拟限速，同口径）：
 - 构建产物预览必须用 `npm run start`（wrangler dev 跑 `dist/server/wrangler.json`），改代码后要重新 build。
 - wrangler dev 偶发缓存旧资产：停进程 → 删 `.wrangler/state/v3/cache` → 重启。
 
+### oxlint / React Compiler
+- `react/react-compiler` 在 `components/site/bot-chat.tsx` 上会抛内部不变量：同一文件的两个版本分别报 `Invariant: Expected a variable declaration` 与 `PruneHoistedContexts: Unexpected hoisted function`，说明是移植自身的缺陷。该文件按范围关掉了这一条规则并写明原因，**升级 oxlint 后应重试并删除**。
+- `lib/ask-index.generated.ts` 是构建产物（带真实 embedding，1.3 MB），已在 `.oxlintrc.json` 忽略：`no-loss-of-precision` 会把向量字面量当精度错误。**也不要提交它**（见 README 部署一节）。
+- `site-search` 的命令表从「带 `run` 闭包」改成「只存数据 + `runCommand`」：闭包会在渲染期间接捕获 `dialogRef`，触发 compiler 的 refs-during-render 判据；动作统一走事件路径后问题消失，也让命令表本身可读。
+
 ### nginx / 静态资源
 - **HTML 的缓存头靠 `map $upstream_http_cache_control` 判断**，不是无条件 `add_header`：后者会与接口自带的 `Cache-Control` 并存，两个头叠加后 `no-cache` 会默默把 `/rss.xml`、`/search.json` 的缓存关掉。
 - **静态文件的 location 用 `try_files $uri @app` 回落**，不能写 `=404`：`/robots.txt` 是应用动态生成的，不在 `public/` 里。
@@ -221,6 +252,7 @@ npm run start       # wrangler dev :8787 预览构建产物
 3. **已交付**：中文排版字距、可读性与触控目标、版面构图、错误页面、内容治理、04 区能力范围、CTA 渐变、首屏传输优化（1038 → 476 KB）、测试与结构、以及**两条静态断言门禁**（样式表结构 / 字形覆盖，见 ROADMAP 第 5 批）。逐条记录与实测数字在 ROADMAP。
 4. **待确认的小修正**（行为变更，需你点头）：阅读时长把换行算作字数、标签重复计数、同日文章排序不稳。三条都在 ROADMAP「待办 · 小修正」。
 5. **公安备案已上线**（2026-09-20）：粤公网安备44180202001182号，在 `layout.tsx` 里做成全站底部一行（`.site-filing`），图标在编号之前。为什么要全站而不是只放首页页脚，见「关键设计决策」第 8 条。
+6. **公众号留言存储路径待上服务器确认**：`WECHAT_STORE_PATH` 是否已指到 `standalone` 之外的固定路径；默认值是进程工作目录，每次部署替换 `standalone` 后会「看起来清空」。同时确认 nginx 把 `/api/wechat` 放行进主站代理（微信回调需公网可达），`WECHAT_*` 已写进 systemd 环境。
 
 ## 近期变更里程碑（git log 摘要）
 

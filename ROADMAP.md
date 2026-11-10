@@ -1050,6 +1050,47 @@ RSS / `search.json` / sitemap 此前**零测试覆盖**——因为「取数据 
 
 ---
 
+## 已交付：第 7 批（2026-10-27，质量门禁恢复与文档同步）
+
+### 一、`npm run lint` 从 36 error 回到 0
+
+10 月这批功能（公众号、印谱、语义兜底、卡牌展台）上线时没跟上 lint，CI 的 Lint 步一直是红的——而 `deploy.yml` 只在 CI 成功后触发，所以那段时间推 main 实际不会自动部署。逐条处理：
+
+| 类别 | 数量 | 做法 |
+| --- | --- | --- |
+| 未使用导入 / `no-explicit-any` / floating promise | 11 | 删除或补类型；公众号渲染器整体标注 marked 的 `RendererObject`，`this.parser` 不再需要 `(this as any)`；`void` 显式忽略 |
+| `no-loss-of-precision` | 1 | `lib/ask-index.generated.ts` 是构建产物（带真实 embedding），加入 oxlint `ignorePatterns` |
+| `jsx-a11y/prefer-tag-over-role` | 2 | 印章是文字渲染的方寸图形、联系浮层是锚定面板，都不是 `<img>` / `<dialog>` 能替代的场景，按元素范围豁免并写原因 |
+| 挂载后 setState | 4 | 改成 `useSyncExternalStore`（时令注 / 集章 / `?mock=1` / reduced-motion）：服务端快照固定，水合后换真值 |
+| refs-during-render（命令面板） | 10 | 命令表从「带 `run` 闭包」改成「只存数据 + `runCommand`」；删掉 `itemRefs`，滚动改用 `querySelectorAll`，Enter 直接执行当前项 |
+| react-compiler 内部不变量 | 1 | `bot-chat.tsx` 上该规则抛断言（同一文件两个版本报不同 invariant），属工具缺陷，按文件范围豁免并在文件头写明升级后重试 |
+
+顺带的结构收益：集章逻辑抽出 `components/site/read-stamps.ts`（文章页与印谱共用一份快照源，`storage` + `xwsx-stamp` 两个事件），命令面板的「数据 / 动作」分开后，命令表本身可读也可测。
+
+### 二、交互回归（本地 dev，真实浏览器）
+
+- **⌘K**：打开面板 → 键入「字体」得到 4 条结果并高亮命中 → ↑↓ 换项 → Enter 进入 `/projects/xwsx-site`；「切换明暗主题」命令生效后 `data-theme` 由 dark 变 light，且面板保持打开（设计如此）
+- **集章**：文章页滚到底 → 写入 `xwsx-read-stamps`、`data-stamped="true"`、出现「印谱 · 已集 1 章」；`/album` 显示「已集 1 / 4 章」与盖印日期
+- **时令注 / 预览模式**：首页水合后显示「今日立冬——水始冰，地始冻」；`/?mock=1` 得到 14 张卡、4 页（4 / 4 / 4 / 2），筛选维度由虚拟卡推导
+- **console**：无 error、无 hydration 警告（只有 React DevTools 与 Vite 的 info）
+
+### 三、文档同步
+
+README / HANDOFF 补上 10 月这批功能（公众号、印谱、卡牌展台、语义兜底、划词即问）、`WECHAT_*` 等 9 个环境变量、CI 自动部署与所需 Secrets、向量索引不提交的约定；测试数 174 → 195；HANDOFF 架构地图、决策（客户端快照）与坑（oxlint 移植、命令表闭包）同步更新。
+
+### 验证
+
+- `npm run lint`：**0 error / 0 warning**
+- `npm test`：**195 passed / 0 failed**
+- `npm run check`：CSS 结构、字形覆盖（8 文件 / 31 片 / 1113 码位）、文案门禁、`tsc` 全通过
+- `npm run build`：通过（standalone 产出 + postbuild 补 6 个运行时依赖）
+
+### 诚实的边界
+
+- `bot-chat.tsx` 的 react-compiler 豁免是**工具缺陷**的临时处理，不等于「检查通过」；升级 oxlint 后应删掉重试。
+- 公众号链路（真实微信回调、草稿箱、推送渠道）没有凭证无法本地验证，只覆盖了纯函数层（签名 / XML / HTML / 留言仓库）。
+- 本轮没有重跑 Lighthouse：改动集中在客户端交互与门禁，首屏传输量级不变。
+
 ## 待办
 
 ### 小修正（已于 2026-09-23 全部交付）
@@ -1074,7 +1115,7 @@ RSS / `search.json` / sitemap 此前**零测试覆盖**——因为「取数据 
 
 改完代码后按 HANDOFF 的「本地验证工作流」执行，并确认：
 
-- [ ] `npm run lint` 零告警（`components/ui` 的 shadcn 模板既有告警除外）
+- [ ] `npm run lint` 零告警（`components/ui`、`hooks/use-mobile.ts` 与生成文件 `lib/ask-index.generated.ts` 在 `ignorePatterns` 里）
 - [ ] `npm test` 全绿
 - [ ] `npm run check` 通过（样式表结构 + 字形覆盖；`build` 里已包含，单跑用于快速定位）
 - [ ] `npm run build` 通过（CI 同款）

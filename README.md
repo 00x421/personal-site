@@ -19,6 +19,7 @@ npm run fonts      # 重建字体分片（新增文章用字后跑；会直接�
 npm run mascot     # 从 GrokBot 开源项目的矢量数据重出吉祥物四态贴图（换吉祥物后跑）
 npm run portrait   # 肖像图 → 5 档响应式 WebP（换图后跑，母版放 images-src/）
 npm run deploy     # 构建并部署到线上服务器（见「部署」一节）
+npm run wechat     # 把站内文章推进公众号草稿箱（需 WECHAT_APP_ID / WECHAT_APP_SECRET）
 ```
 
 预览生产构建的完整命令：
@@ -42,6 +43,10 @@ npm run start
 - **RSS**：`app/rss.xml/route.ts` 输出 RSS 2.0，已加入 `<link rel="alternate">` 自动发现。
 - **站内搜索**：`app/search.json/route.ts` 聚合文章 / 项目 / 书架输出全文索引（缓存 1 小时），`components/site/site-search.tsx` 原生 `<dialog>` 命令面板（右下角入口 + Cmd/Ctrl+K），首次打开才懒加载索引，多关键词 AND 加权评分，标题 / 摘要命中片段实时高亮。
 - **站内 AI 问答**：点 GrokBot 两下（气泡里有提示）打开提问面板，`app/api/ask/route.ts` 把问题向量化和构建期生成的片段索引做余弦检索，取 top-4 交给 LLM 流式作答，附来源链接。检索低于相关度门槛时直接承认「站里没写」，不劳烦 LLM。系统提示强制「只依据站内内容、绝不编造」。风控：单 IP 每小时 8 问 + 全站每天 1000 问（内存滑动窗口）+ 问题 300 字截断 + max_tokens 1500 + 上游 60s 超时。纯函数层在 `lib/ask.ts`（切片 / 检索 / 提示词 / 限流，`npm test` 覆盖）；向量索引由 prebuild 的 `scripts/generate-ask-index.ts` 生成（无 key 时优雅关闭，CI 不受影响；**deploy 时记得带 `ASK_EMBED_*`，否则问答会随部署一起下线**——deploy 脚本会在缺 key 时警告）。本地无 key 调试可起任意 OpenAI 兼容 mock。
+- **公众号「技术快递柜」**：个人订阅号的消息回调在 `app/api/wechat/route.ts`，按「站主待回复 → 留言给站长 → 关键词检索 → 小信 AI 快答」四档处理，全程卡在 5 秒被动回复预算内（超时自动落回检索）。留言经 Server酱 / PushPlus / 飞书 / 企微 webhook 推给站主；`/api/wechat/inbox?key=<WECHAT_ADMIN_KEY>` 是私有留言管理台（noindex、页内 30 秒轮询），`npm run wechat` 把站内文章推进公众号草稿箱。凭据只从服务器环境变量读，微信 IP 白名单需含服务器出口 IP。
+- **阅读仪式与印谱**：读完文章触发文末朱印，按 slug 从闲章池稳定取一句；集章记录只存在浏览器 localStorage，`/album` 把集到的章排成印谱（无账号、无追踪）。集章、时令注、`?mock=1` 预览与 reduced-motion 判定统一走 `useSyncExternalStore`：服务端给固定快照，水合后才换真值，SSR 输出与水合首帧始终一致。
+- **项目卡牌展台**：首页项目区是 TCG 竖版卡牌 + 3D 翻页（桌面一行 4 张 / 窄屏 2 张），拖拽跟手、箭头翻页、`prefers-reduced-motion` 直接降级；点开案例走 View Transitions 共享元素「掀牌」。`/?mock=1` 注入 12 张虚拟卡预览规模。
+- **⌘K 命令面板**：搜索与命令共用一条键盘动线；字面零命中时用与问答同一份向量索引做语义兜底（`app/api/search/route.ts`，索引未启用或上游抖动一律返回空）。文章页支持划词即问，`/api/ask` 会带上本篇 slug 优先检索本篇。
 - **MCP server**：站点内容作为 MCP 工具暴露给任何 AI 客户端（`xwsx-mcp/`，独立依赖不进网站 bundle）。五个只读工具：`search_site`（关键词检索，与站内搜索同评分语汇）/ `get_article`（markdown 全文）/ `list_articles` / `list_projects` / `get_site_stats`，外加在读书目资源。零 LLM 调用、draft 同源过滤、HTTP 模式带 per-IP 限流。数据源是 `/api/content`（公开全文端点，1h 缓存）。两种用法：
   - **本地 stdio**（推荐先试）：`cd xwsx-mcp && npm install`，Claude Desktop/Claude Code 配置里加
     `{"mcpServers": {"xwsx": {"command": "node", "args": ["/绝对路径/xwsx-mcp/server.mjs"], "env": {"XWSX_SITE_URL": "https://xwsx.top"}}}}`
@@ -59,6 +64,11 @@ npm run start
 | `NOTO_SRC_DIR` | 可选。OG 脚本读取源字体的目录，默认 `%TEMP%/noto-src`。 |
 | `ASK_EMBED_BASE_URL` / `ASK_EMBED_API_KEY` / `ASK_EMBED_MODEL` | 可选。站内 AI 问答的向量 API（**构建期**读，prebuild 生成向量索引；缺 key 时功能整体关闭、构建照常通过）。默认硅基流动 `BAAI/bge-m3`（免费档）。 |
 | `ASK_LLM_BASE_URL` / `ASK_LLM_API_KEY` / `ASK_LLM_MODEL` | 可选。回答问题的 chat API（**运行期**读，需配到服务器 systemd 环境）。默认硅基流动 `Qwen/Qwen2.5-7B-Instruct`（免费档）。任何 OpenAI 兼容服务均可。 |
+| `WECHAT_VERIFY_TOKEN` | 公众号「服务器配置」里的 Token，回调签名校验用；不配则公众号接口一律 403。 |
+| `WECHAT_APP_ID` / `WECHAT_APP_SECRET` | 可选。只有「推草稿箱」用到；微信 IP 白名单必须包含服务器出口 IP，否则取 token 报 40164。 |
+| `WECHAT_ADMIN_KEY` | 可选。`/api/wechat/inbox` 留言管理台的访问密钥；不配则管理台不可用（接口返回提示页）。 |
+| `WECHAT_STORE_PATH` | 可选。留言 JSON 落盘路径，默认 `process.cwd()/wechat-inbox.json`。**生产环境应指到部署目录之外**（如 `/home/xwsx/xwsx-site/wechat-inbox.json`）——默认值是进程工作目录，而部署会整目录替换。 |
+| `SERVERCHAN_SENDKEY` / `PUSHPLUS_TOKEN` / `LARK_WEBHOOK` / `WECOM_WEBHOOK` | 可选。公众号留言推给站主的渠道，按此顺序探测、配了哪个用哪个；都没配则只记日志、不影响给访客的回执。 |
 
 ## 部署（自托管 Node）
 
@@ -80,6 +90,12 @@ npm run deploy
   ```
 - **前提**：本地 `~/.ssh/id_ed25519` 已加入服务器 `xwsx` 用户的 `authorized_keys`（免密 sudo 已配置）。
 - **手动等价命令**：`tar -czf` 打包 `dist/standalone` → `scp` 上传 → 服务器解包到 `~/xwsx-site` → `sudo systemctl restart xwsx`。
+
+### CI 自动部署
+
+`.github/workflows/deploy.yml` 在 `main` 的 CI 通过后自动执行同一条 `scripts/deploy.mjs`。仓库 Secrets 需要 `DEPLOY_SSH_KEY`（服务器部署私钥）与 `ASK_EMBED_API_KEY`（构建向量索引）；`DEPLOY_SSH_KEY` 缺失时作业自动跳过并在日志里提示。**推到 main 就等于上线**——本地没验完的改动别推。
+
+向量索引 `lib/ask-index.generated.ts` 是构建产物：仓库里存的是 `enabled: false` 的空索引占位，构建时由 prebuild 按 key 重新生成。**不要把带真实 embedding 的版本提交**（体积巨大且随内容变化），oxlint 也已忽略该文件。
 
 ### 备选：Cloudflare Workers（当前未使用）
 
