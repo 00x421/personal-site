@@ -2894,6 +2894,8 @@ main {
   padding: 90px 0 80px;
 }
 .project-case-hero {
+  /* 工序指针的定位基准（子元素 .hand-stage 是 inset:0 的装饰层） */
+  position: relative;
   padding-bottom: 56px;
   border-bottom: 1px solid var(--ink);
 }
@@ -2944,6 +2946,100 @@ main {
   border-radius: 20px;
   color: var(--muted);
   font: 11px var(--font-mono);
+}
+/* ═══ 工序指针（案例页 hero 上的笔迹）═══════════════════════════════
+   参考 delineate 的 hands：借「协作光标」的语法，标签写的是工序而非人名。
+   三条纪律见 components/site/process-pointers.tsx 的文件头：
+   不跟随鼠标、不拦事件、笔尖而非系统光标。
+
+   颜色只取站点已有的语义色（--seal / --violet / --ink），不新增变量，
+   因此不需要在暗色主题里成对覆盖，也不会触发裸色值断言。 */
+.hand-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  /* 纯装饰：不吃点击、不吃选字 */
+  pointer-events: none;
+}
+.hand {
+  position: absolute;
+  display: block;
+  opacity: 0;
+  transform: translate3d(var(--hand-dx, 0), var(--hand-dy, 0), 0) scale(0.94);
+  transition:
+    transform 760ms cubic-bezier(0.22, 0.68, 0.24, 1),
+    opacity 420ms ease-out;
+  transition-delay: var(--hand-delay, 0ms), var(--hand-delay, 0ms);
+  will-change: transform, opacity;
+}
+.hand-stage[data-armed] .hand {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+.hand--seal {
+  color: var(--seal);
+}
+.hand--violet {
+  color: var(--violet);
+}
+.hand--ink {
+  color: var(--ink);
+}
+/* 笔尖自己倾斜，标签保持水平：整枚一起转会让 10.5px 的等宽小字跟着歪，
+   读起来像贴纸而不是标注。旋转原点取笔尖（viewBox 里的 0,0 = 14px 4px）。 */
+.hand-glyph {
+  position: absolute;
+  left: -14px;
+  top: -4px;
+  overflow: visible;
+  transform: rotate(var(--hand-rotate, 0deg));
+  transform-origin: 14px 4px;
+  fill: var(--paper);
+  stroke: currentColor;
+  stroke-width: 1.1;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.18));
+}
+/* 标签做成制图标注而不是聊天气泡：细等宽、左侧一道竖线、四角不对称。
+   高度写死 20px 用 flex 居中：中英混排时 CJK 回退字体的行盒与大写字母不同高，
+   auto 高度会让三枚标签的基线各自偏一点，并排看就歪了。 */
+.hand-tag {
+  position: absolute;
+  left: 14px;
+  top: 18px;
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px 0 7px;
+  border-left: 3px solid currentColor;
+  border-radius: 1px 2px 2px 1px;
+  background: var(--paper);
+  color: currentColor;
+  font: 500 10.5px/1 var(--font-mono);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  opacity: 0;
+  translate: -5px 0;
+  transition:
+    opacity 380ms ease-out,
+    translate 380ms ease-out;
+  transition-delay: calc(var(--hand-delay, 0ms) + 240ms);
+}
+.hand-stage[data-armed] .hand-tag {
+  opacity: 1;
+  translate: 0 0;
+}
+/* 窄屏没有横向留白可躲，整层退场（它只是注释，不该压到标题上） */
+@media (max-width: 860px) {
+  .hand-stage {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hand,
+  .hand-tag {
+    transition: none;
+  }
 }
 .case-body {
   counter-reset: section;
