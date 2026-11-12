@@ -2985,8 +2985,12 @@ main {
 .hand--ink {
   color: var(--ink);
 }
-/* 笔尖自己倾斜，标签保持水平：整枚一起转会让 10.5px 的等宽小字跟着歪，
-   读起来像贴纸而不是标注。旋转原点取笔尖（viewBox 里的 0,0 = 14px 4px）。 */
+/* 笔尖自己倾斜，标签保持水平：整一枚一起转会让 10.5px 的等宽小字跟着歪，
+   读起来像贴纸而不是标注。旋转原点取笔尖（viewBox 里的 0,0 = 14px 4px）。
+
+   填充用 currentColor 而不是纸色：纸色 + 1px 细描边等于"画在纸上"，
+   实测在浅色主题下几乎看不见（上一版的反馈）。改成实色笔尖 + 纸色描边，
+   既能在正文旁读出来，又不至于像贴纸。 */
 .hand-glyph {
   position: absolute;
   left: -14px;
@@ -2994,11 +2998,11 @@ main {
   overflow: visible;
   transform: rotate(var(--hand-rotate, 0deg));
   transform-origin: 14px 4px;
-  fill: var(--paper);
-  stroke: currentColor;
-  stroke-width: 1.1;
+  fill: currentColor;
+  stroke: var(--paper);
+  stroke-width: 1.2;
   stroke-linejoin: round;
-  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.18));
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.22));
 }
 /* 标签做成制图标注而不是聊天气泡：细等宽、左侧一道竖线、四角不对称。
    高度写死 20px 用 flex 居中：中英混排时 CJK 回退字体的行盒与大写字母不同高，
@@ -3029,8 +3033,11 @@ main {
   opacity: 1;
   translate: 0 0;
 }
-/* 窄屏没有横向留白可躲，整层退场（它只是注释，不该压到标题上） */
-@media (max-width: 860px) {
+/* 窄屏没有横向留白可躲，整层退场。
+   阈值不是 860：正文列固定 660px，而 shell 在 ≥980px 视口时才稳定给到
+   912px 内容宽（980 - 68 padding），右侧才有 252px 空带。861–979 之间
+   指针会压到导语上（74% × 793 = 587 < 660），所以门槛按内容宽而不是手感定。 */
+@media (max-width: 979px) {
   .hand-stage {
     display: none;
   }
