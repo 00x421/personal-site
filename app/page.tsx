@@ -1,9 +1,4 @@
-import {
-  ArrowDownRight,
-  ArrowUpRight,
-  Mail,
-  Sparkles,
-} from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Mail, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Fragment } from 'react';
 import { ContactPopover } from '@/components/site/contact-popover';
@@ -14,10 +9,16 @@ import { ProjectExplorer } from '@/components/site/project-explorer';
 import { RailScroller } from '@/components/site/rail-scroller';
 import { Reveal } from '@/components/site/reveal';
 import { SolarTermNote } from '@/components/site/solar-term-note';
+import { SwarmSection } from '@/components/site/swarm-section';
 import { ThemeToggle } from '@/components/site/theme-toggle';
 import { articles } from '@/data/articles';
 import { projectCards, projectFilters } from '@/data/projects';
-import { capabilities, siteIdentity, siteNavigation, toolbox } from '@/lib/site-content';
+import {
+  capabilities,
+  siteIdentity,
+  siteNavigation,
+  toolbox,
+} from '@/lib/site-content';
 
 /** hero 标签带关键词；渲染两份供移动端无缝滚动使用 */
 const heroTags = [
@@ -77,8 +78,7 @@ export default function Home() {
           <div className="hero-note">
             <p>
               你好，我是 <strong>{siteIdentity.name}</strong>。
-              这里记录我的产品、代码与思考；我在设计、代码与 AI
-              的交界处工作。
+              这里记录我的产品、代码与思考；我在设计、代码与 AI 的交界处工作。
             </p>
             <div className="code-line">
               <span>const</span> motto = <b>&quot;{siteIdentity.motto}&quot;</b>
@@ -158,74 +158,93 @@ export default function Home() {
           </RailScroller>
         </Reveal>
       </section>
-      <section id="about" className="about-section section-wrap">
-        <Reveal className="about-copy">
-          <div className="section-head">
-            <div>
-              <span className="section-index">03 /</span>
-              <h2>关于</h2>
-            </div>
-          </div>
-          <p className="about-statement">
-            我相信好的数字产品，
-            <br />
-            应该既<strong>聪明</strong>，也<strong>有人味</strong>。
-          </p>
-          <p>
-            我喜欢拆解模糊的问题：先理解人在什么情境下行动，再用可靠的系统和克制的界面，让每一步都自然发生。
-          </p>
-          <p>
-            这里不仅收录最终产出，也记录问题、取舍与思考。因为真正有价值的工作，通常发生在“看起来简单”之前。
-          </p>
-          <MailLink className="text-link" email={siteIdentity.email}>
-            聊聊一个想法 <ArrowUpRight size={17} />
-          </MailLink>
-        </Reveal>
-        <Reveal className="portrait-reveal" delay={100}>
-          <PortraitCard />
-        </Reveal>
-      </section>
-      <section id="stack" className="section-wrap stack-section">
-        <Reveal>
-          <div className="section-head">
-            <div>
-              <span className="section-index">04 /</span>
-              <h2>能做什么</h2>
-            </div>
-            <p>四条能力范围，前两条是主攻方向。</p>
-          </div>
-        </Reveal>
-        <Reveal delay={100}>
-          <div className="capability-list">
-            {capabilities.map((item, index) => (
-              <article key={item.name} className={item.focus ? 'is-focus' : undefined}>
-                <span className="capability-index">0{index + 1}</span>
-                <div>
-                  <h3>
-                    {item.name}
-                    {item.focus && <span className="capability-focus">主攻</span>}
-                  </h3>
-                  <p>{item.detail}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </Reveal>
-        <Reveal delay={160}>
-          <div className="toolbox">
-            {toolbox.map(([label, items]) => (
-              <div className="toolbox-row" key={label}>
-                <span className="toolbox-label">{label}</span>
-                <div className="toolbox-items">
-                  {items.map((item) => (
-                    <span key={item}>{item}</span>
-                  ))}
-                </div>
+      <SwarmSection>
+        <section
+          id="about"
+          className="about-section section-wrap"
+          data-rv-section
+        >
+          <Reveal className="about-copy">
+            <div className="section-head">
+              <div>
+                <span className="section-index">03 /</span>
+                <h2>关于</h2>
               </div>
-            ))}
-          </div>
-        </Reveal>
-      </section>
+            </div>
+            <p className="about-statement" data-rv="text">
+              我相信好的数字产品，
+              <br />
+              应该既<strong>聪明</strong>，也<strong>有人味</strong>。
+            </p>
+            <p>
+              我喜欢拆解模糊的问题：先理解人在什么情境下行动，再用可靠的系统和克制的界面，让每一步都自然发生。
+            </p>
+            <p>
+              这里不仅收录最终产出，也记录问题、取舍与思考。因为真正有价值的工作，通常发生在“看起来简单”之前。
+            </p>
+            <MailLink className="text-link" email={siteIdentity.email}>
+              聊聊一个想法 <ArrowUpRight size={17} />
+            </MailLink>
+          </Reveal>
+          <Reveal className="portrait-reveal" delay={100}>
+            {/* Reveal 不转发 data-* 属性，所以「跳过逐字」要套在这层 */}
+            <div data-instant>
+              <PortraitCard />
+            </div>
+          </Reveal>
+        </section>
+        <section
+          id="stack"
+          className="section-wrap stack-section"
+          data-rv-section
+        >
+          <Reveal>
+            <div className="section-head" data-instant>
+              <div>
+                <span className="section-index">04 /</span>
+                <h2>能做什么</h2>
+              </div>
+              <p>四条能力范围，前两条是主攻方向。</p>
+            </div>
+          </Reveal>
+          <Reveal delay={100}>
+            <div className="capability-list">
+              {capabilities.map((item, index) => (
+                <article
+                  key={item.name}
+                  className={item.focus ? 'is-focus' : undefined}
+                  data-rv="frame"
+                >
+                  <span className="capability-index">0{index + 1}</span>
+                  <div>
+                    <h3>
+                      {item.name}
+                      {item.focus && (
+                        <span className="capability-focus">主攻</span>
+                      )}
+                    </h3>
+                    <p>{item.detail}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </Reveal>
+          <Reveal delay={160}>
+            <div className="toolbox" data-instant>
+              {toolbox.map(([label, items]) => (
+                <div className="toolbox-row" key={label}>
+                  <span className="toolbox-label">{label}</span>
+                  <div className="toolbox-items">
+                    {items.map((item) => (
+                      <span key={item}>{item}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+        </section>
+      </SwarmSection>
       <section className="cta section-wrap">
         <div className="cta-copy">
           <span className="eyebrow">有一个值得解决的问题？</span>

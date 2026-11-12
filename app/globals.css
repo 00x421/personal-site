@@ -327,6 +327,19 @@
   --rv-hand-3: var(--code-func);
   --rv-hand-4: var(--code-string);
   --rv-hand-5: var(--code-number);
+  /* 光标蜂群的 11 色：取印刷油墨的色域（蓝红绿赭紫粉锈松深蓝橄榄栗）。
+     刻意不复用站内的 --violet / --seal——那是品牌色，蜂群要的是随机分配。 */
+  --sw-blue: #2f4fb8;
+  --sw-red: #cf3f2c;
+  --sw-green: #4c7e37;
+  --sw-ochre: #c08a15;
+  --sw-violet: #6b55b3;
+  --sw-pink: #c25d78;
+  --sw-rust: #b5652a;
+  --sw-pine: #2f5a2e;
+  --sw-deep: #3d4a7a;
+  --sw-olive: #6b7434;
+  --sw-maroon: #8f3448;
 }
 
 /* 墨黑纸感的暗色主题 */
@@ -376,6 +389,18 @@
   --rv-hand-3: var(--code-func);
   --rv-hand-4: var(--code-string);
   --rv-hand-5: var(--code-number);
+  /* 光标蜂群的 11 色：暗底上提亮、降饱和，像彩色铅笔压在黑纸上。 */
+  --sw-blue: #8aa4f2;
+  --sw-red: #f07b6c;
+  --sw-green: #8ec972;
+  --sw-ochre: #e8bb5e;
+  --sw-violet: #ab9df7;
+  --sw-pink: #f0a3b6;
+  --sw-rust: #e5965f;
+  --sw-pine: #79b273;
+  --sw-deep: #93a6e6;
+  --sw-olive: #bcc76f;
+  --sw-maroon: #e58499;
 }
 
 [data-theme='dark'][data-night='1'] {
@@ -3853,6 +3878,11 @@ html[data-rv-play='1'] .rv-scene [data-rv-text]:not([data-rv-done]) {
 .rv-scene {
   position: relative;
 }
+/* 每节一个选框层的宿主。层铺满这一节的 padding box，框的 left/top 就是节坐标；
+   节往哪走框往哪走，所以不需要任何「每帧同步位置」的代码。 */
+.rv-layer-host {
+  position: relative;
+}
 
 .rv-layer {
   position: absolute;
@@ -3879,18 +3909,6 @@ html[data-rv-play='1'] .rv-scene [data-rv-text]:not([data-rv-done]) {
   height: 16px;
   color: var(--hand);
   will-change: transform;
-}
-.rv-hand[data-slot='2'] {
-  --hand: var(--rv-hand-2);
-}
-.rv-hand[data-slot='3'] {
-  --hand: var(--rv-hand-3);
-}
-.rv-hand[data-slot='4'] {
-  --hand: var(--rv-hand-4);
-}
-.rv-hand[data-slot='5'] {
-  --hand: var(--rv-hand-5);
 }
 .rv-hand .rv-icon {
   position: absolute;
@@ -4210,4 +4228,144 @@ html[data-rv-play='1'] .rv-scene [data-rv-text]:not([data-rv-done]) {
   .lab-bar {
     grid-template-columns: 44px 1fr 56px;
   }
+}
+
+/* ═══ /lab/swarm 光标蜂群 ═══ */
+/*
+
+/*
+ * 11 色映射：颜色由 reveal-scene 按手指数分配（`.rv-hand` 的 --hand 在这里被覆盖）。
+ * 这套色板最初为「光标蜂群」定义，现在由多光标绘制层直接复用。
+ */
+.k-blue {
+  --hand: var(--sw-blue);
+}
+.k-red {
+  --hand: var(--sw-red);
+}
+.k-green {
+  --hand: var(--sw-green);
+}
+.k-ochre {
+  --hand: var(--sw-ochre);
+}
+.k-violet {
+  --hand: var(--sw-violet);
+}
+.k-pink {
+  --hand: var(--sw-pink);
+}
+.k-rust {
+  --hand: var(--sw-rust);
+}
+.k-pine {
+  --hand: var(--sw-pine);
+}
+.k-deep {
+  --hand: var(--sw-deep);
+}
+.k-olive {
+  --hand: var(--sw-olive);
+}
+.k-maroon {
+  --hand: var(--sw-maroon);
+}
+
+/* 舞台只是一块「场地」：光标真正画在上面的 fixed 层里，会越出这个框 */
+.sw-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: min(58vh, 460px);
+  margin: 34px 0 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--raised) 60%, transparent);
+  text-align: center;
+}
+.sw-stage-hint {
+  color: var(--muted);
+  font: 12px/1.9 var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.sw-readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  color: var(--muted);
+  font: 12px/1.8 var(--font-mono);
+}
+.sw-readout strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.sw-notes {
+  display: grid;
+  gap: 22px;
+  max-width: 660px;
+  margin: 40px 0 86px;
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
+}
+.sw-note {
+  display: grid;
+  gap: 4px;
+}
+.sw-note strong {
+  font-size: 14.5px;
+}
+.sw-note span {
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.85;
+}
+@media (max-width: 620px) {
+  .sw-stage {
+    min-height: 46vh;
+  }
+}
+
+/* /lab 结尾的「下一个实验」入口 */
+.lab-next {
+  margin: 0 0 86px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.9;
+}
+.lab-next a {
+  color: var(--violet-text);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--violet-text) 40%, transparent);
+  text-underline-offset: 3px;
+}
+.lab-next a:hover {
+  text-decoration-color: var(--violet-text);
+}
+
+/*
+ * [data-highlight]：这些块在开演前先压暗，等手扫过来才逐个亮起。
+ * 只用透明度与饱和度的变化，不新增任何颜色 token（明暗主题自动成立）。
+ */
+.rv-unlit {
+  opacity: 0.22;
+  filter: saturate(0.12);
+  transition:
+    opacity 0.34s ease,
+    filter 0.34s ease;
+}
+
+/*
+ * 蜂群场景内关掉站点自带的 Reveal 淡入。
+ *
+ * 这两层是重复的：Reveal 让内容「淡入 + 上移 18px」，而蜂群正在按当时的位置量框、
+ * 画框、写字——框量完之后内容再位移，就必然错位（参考站没有这一层，所以它不错位）。
+ *
+ * 关掉之后，场景内的内容从第一帧就在最终位置：框不用追、字不用补，
+ * 揭示全部交给光标。scene 之外（首页其他区块）的 Reveal 不受影响。
+ */
+.rv-scene .reveal,
+.rv-scene .reveal[data-reveal-ready='true']:not([data-reveal-visible='true']) {
+  opacity: 1;
+  transform: none;
+  transition: none;
 }

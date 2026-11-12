@@ -6,7 +6,8 @@ import { measureDurationMs } from '@/lib/reveal-motion';
 
 export const metadata: Metadata = {
   title: '把内容画出来 — 实验',
-  description: '几个指针先量好位置，元素才被一个字一个字写出来。一个还没放进正式页面的实验页。',
+  description:
+    '几个指针先量好位置，元素才被一个字一个字写出来。一个还没放进正式页面的实验页。',
   alternates: { canonical: '/lab' },
   // 实验页不进索引：它只是把别处的效果演一遍，自己没有可被搜到的信息。
   robots: { index: false, follow: false },
@@ -141,7 +142,11 @@ export default function LabPage() {
 
           <div className="lab-stage" data-rv-section>
             <div className="lab-metric">
-              <span className="lab-metric-value" data-rv="count" data-rv-count={measureMs}>
+              <span
+                className="lab-metric-value"
+                data-rv="count"
+                data-rv-count={measureMs}
+              >
                 {measureMs}
               </span>
               <span className="lab-metric-unit">
@@ -158,7 +163,9 @@ export default function LabPage() {
                   <span className="lab-bar-track">
                     <span
                       className="lab-bar-fill"
-                      style={{ width: `${Math.round((stage.ms / stageMax) * 100)}%` }}
+                      style={{
+                        width: `${Math.round((stage.ms / stageMax) * 100)}%`,
+                      }}
                     />
                   </span>
                   <span className="lab-bar-ms">{stage.ms} ms</span>
@@ -176,6 +183,11 @@ export default function LabPage() {
             </div>
           ))}
         </section>
+
+        <p className="lab-next">
+          另一个实验：<Link href="/lab/swarm">光标蜂群</Link>
+          ——十几支光标同时抢活，把内容一块块画出来，画完就散。
+        </p>
       </div>
     </main>
   );

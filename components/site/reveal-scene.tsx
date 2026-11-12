@@ -42,7 +42,40 @@ type Tool = 'arrow' | 'cross' | 'ibeam' | 'resize' | 'pen';
 type Point = { x: number; y: number };
 
 /** 光标名字只放拉丁名：中文名会牵动 31 个字体分片，为一个装饰层不划算。 */
-const NAMES = ['Ada', 'Leo', 'Mia', 'Kai', 'Zoe', 'Max', 'Ivy', 'Sam', 'Noa', 'Eli', 'Rui', 'Tess', 'Jun', 'Oli'];
+const NAMES = [
+  'Ada',
+  'Leo',
+  'Mia',
+  'Kai',
+  'Zoe',
+  'Max',
+  'Ivy',
+  'Sam',
+  'Noa',
+  'Eli',
+  'Rui',
+  'Tess',
+  'Jun',
+  'Oli',
+];
+
+/**
+ * 11 色印刷色板：与参考站同一组色名，色值在 globals.css 的 --sw-* 里明暗成对给出。
+ * 每支手随机分到一个，整群看起来才像「很多人各握一支彩色笔」，而不是单色演示。
+ */
+const HAND_COLORS = [
+  'blue',
+  'red',
+  'green',
+  'ochre',
+  'violet',
+  'pink',
+  'rust',
+  'pine',
+  'deep',
+  'olive',
+  'maroon',
+];
 
 /** 笔形。填充型走 body，线型走 rim（纸色）叠 ink（彩色）。 */
 const GLYPHS: Record<Tool, string> = {
@@ -115,7 +148,11 @@ type Act = {
   follow?: number;
 };
 
-type Driver = { t0: number; t1: number; fn: (progress: number, now: number) => void };
+type Driver = {
+  t0: number;
+  t1: number;
+  fn: (progress: number, now: number) => void;
+};
 type EventJob = { t: number; fn: () => void };
 /** 一次播放的「作业」：取消它就能把这一节自己造出来的东西全部收回去。 */
 type Job = {
@@ -178,11 +215,11 @@ class Hand {
   nextWander?: number;
 
   constructor(layer: HTMLElement, index: number, start: Point, freeAt: number) {
-    this.color = String((index % 5) + 1);
+    // 11 色印刷色板：与参考站一致，靠 k-<color> 类给每支手一个 --hand。
+    this.color = HAND_COLORS[index % HAND_COLORS.length];
     this.name = NAMES[index % NAMES.length];
     this.el = document.createElement('i');
-    this.el.className = 'rv-hand';
-    this.el.dataset.slot = this.color;
+    this.el.className = `rv-hand k-${this.color}`;
     this.el.setAttribute('aria-hidden', 'true');
     this.icon = document.createElement('span');
     this.icon.className = 'rv-icon';
@@ -222,7 +259,11 @@ class Hand {
     } else if (Math.hypot(dx, dy) > 0.8) {
       const want = Math.atan2(dy, dx);
       // 走最短弧，且只转 1/4：手的转向永远滞后于移动
-      this.heading += Math.atan2(Math.sin(want - this.heading), Math.cos(want - this.heading)) * 0.25;
+      this.heading +=
+        Math.atan2(
+          Math.sin(want - this.heading),
+          Math.cos(want - this.heading),
+        ) * 0.25;
     }
     this.pos = next;
     const hot = HOTSPOT[tool];
@@ -266,7 +307,11 @@ class Hand {
     this.setDown(Boolean(active.down) && now >= active.t0 && now < active.t1);
     this.aim = Boolean(active.aim) && now >= active.t0 && now < active.t1;
 
-    const progress = clamp((now - active.t0) / Math.max(active.t1 - active.t0, 1), 0, 1);
+    const progress = clamp(
+      (now - active.t0) / Math.max(active.t1 - active.t0, 1),
+      0,
+      1,
+    );
     const custom = active.path?.(progress, now);
     if (custom) {
       this.place(limitedStep(this.pos, custom, active.follow));
@@ -294,9 +339,16 @@ type RevealSceneProps = {
   children: ReactNode;
   className?: string;
   replayable?: boolean;
+  /** 蜂群模式：一群光标抢活并行把内容画出来，画完集体散场（实验页用）。 */
+  swarm?: boolean;
 };
 
-export function RevealScene({ children, className = '', replayable = false }: RevealSceneProps) {
+export function RevealScene({
+  children,
+  className = '',
+  replayable = false,
+  swarm = false,
+}: RevealSceneProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [take, setTake] = useState(0);
 
@@ -306,17 +358,43 @@ export function RevealScene({ children, className = '', replayable = false }: Re
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const targets = Array.from(root.querySelectorAll<HTMLElement>('[data-rv]'));
-    if (targets.length === 0) return;
+    // 没有任何 data-rv 标记不代表空场景：自动收集的文本叶子也算内容。
+    // （首页 #about 就没有任何标记，全靠自动收集。）
+    const hasAutoText = (root.textContent ?? '').trim().length > 0;
+    if (targets.length === 0 && !hasAutoText) return;
 
-    const supportsHighlight = 'highlights' in CSS && typeof Highlight === 'function';
+    const supportsHighlight =
+      'highlights' in CSS && typeof Highlight === 'function';
     const rng = Math.random;
 
     /* ---------------- 层 ---------------- */
-    const frameLayer = document.createElement('div');
-    frameLayer.className = 'rv-layer';
+    /*
+     * 每节一层，层就长在节里面（`inset:0` 铺满节的 padding box）。
+     *
+     * 这是参考站的做法，也是唯一没有副作用的做法：框的坐标只在「这一节的坐标系」
+     * 里算，之后卷动、重排、字体回填，框都跟着层一起走，永远不需要再同步一次。
+     * 之前那版把框画在场景根节点上、再靠一个每帧跑的同步器搬位置，等于两条路同时
+     * 在写同一个元素的 left/top：动画被覆盖、框被误判成「漂移」提前收掉，都是它。
+     */
+    const layers = new Map<HTMLElement, HTMLElement>();
+    const layerFor = (host: HTMLElement) => {
+      let layer = layers.get(host);
+      if (!layer) {
+        layer = document.createElement('div');
+        layer.className = 'rv-layer';
+        host.classList.add('rv-layer-host');
+        host.appendChild(layer);
+        layers.set(host, layer);
+      }
+      return layer;
+    };
+    /** 框（和错字）属于哪一节；没有登记过就退回场景根。 */
+    const owners = new WeakMap<HTMLElement, HTMLElement>();
+    /** 框所在层的矩形 = 这一节坐标系的零点。 */
+    const baseOf = (el: HTMLElement) =>
+      layerFor(owners.get(el) ?? root).getBoundingClientRect();
     const handLayer = document.createElement('div');
     handLayer.className = 'rv-hands';
-    root.appendChild(frameLayer);
     root.appendChild(handLayer);
 
     /* ---------------- 调度器 ---------------- */
@@ -329,6 +407,12 @@ export function RevealScene({ children, className = '', replayable = false }: Re
     let lastScrollAt = -Infinity;
     const idleSince = new Map<Hand, number>();
 
+    /*
+     * 滚动只记一个时间戳，用来让空闲的手散场。
+     *
+     * 框在滚动时什么都不用做：它就长在节自己的坐标系里，节往哪走框往哪走。
+     * （旧实现靠一个每帧同步器把框「搬」过去，滚动快了就慢半拍，看上去就是错位。）
+     */
     const onScroll = () => {
       lastScrollAt = performance.now();
     };
@@ -339,19 +423,26 @@ export function RevealScene({ children, className = '', replayable = false }: Re
       events.push(entry);
       job?.events.add(entry);
     };
-    const during = (t0: number, t1: number, fn: (progress: number, now: number) => void) => {
+    const during = (
+      t0: number,
+      t1: number,
+      fn: (progress: number, now: number) => void,
+    ) => {
       const entry = { t0, t1, fn };
       drivers.push(entry);
       job?.drivers.add(entry);
     };
+
+    /** 元素属于哪一节：框、错字、作业认领都用它。 */
+    const sectionOf = (el: HTMLElement) =>
+      el.closest<HTMLElement>('[data-rv-section]') ?? root;
 
     /** 记一次「这条内容已经出现」，取消作业时要能撤回。 */
     const markDone = (el: HTMLElement) => {
       el.setAttribute('data-rv-done', '');
       // 回调是稍后才跑的，那时 job 指针已经交还给别的节了，
       // 所以按元素所属的节去认领自己的作业。
-      const owner = el.closest<HTMLElement>('[data-rv-section]') ?? root;
-      (sections.get(owner) ?? sections.get(root))?.job?.revealed.add(el);
+      (sections.get(sectionOf(el)) ?? sections.get(root))?.job?.revealed.add(el);
     };
 
     const kick = () => {
@@ -371,9 +462,17 @@ export function RevealScene({ children, className = '', replayable = false }: Re
           continue;
         }
         const offscreen =
-          hand.pos.x < -20 || hand.pos.y < -20 || hand.pos.x > innerWidth + 20 || hand.pos.y > innerHeight + 20;
+          hand.pos.x < -20 ||
+          hand.pos.y < -20 ||
+          hand.pos.x > innerWidth + 20 ||
+          hand.pos.y > innerHeight + 20;
         const scrolled = now - lastScrollAt < SCROLL_ESCAPE_MS;
-        if (now - since > HAND_IDLE_MS || offscreen || scrolled) {
+        // 蜂群模式画完就走（600ms）：这个效果的意思就是「画完它就自己消失」。
+        if (
+          now - since > (swarm ? 600 : HAND_IDLE_MS) ||
+          offscreen ||
+          scrolled
+        ) {
           leave(hand, now);
           idleSince.delete(hand);
           hands.splice(i, 1);
@@ -393,7 +492,12 @@ export function RevealScene({ children, className = '', replayable = false }: Re
           t0: now,
           t1: end,
           from: { at: hand.pos },
-          to: { at: { x: hand.pos.x + Math.cos(angle) * radius, y: hand.pos.y + Math.sin(angle) * radius } },
+          to: {
+            at: {
+              x: hand.pos.x + Math.cos(angle) * radius,
+              y: hand.pos.y + Math.sin(angle) * radius,
+            },
+          },
           tool: 'arrow',
           bow: 0.12,
         });
@@ -404,7 +508,10 @@ export function RevealScene({ children, className = '', replayable = false }: Re
 
     /** 离场：朝最近的视口边走出去，然后移除。 */
     const leave = (hand: Hand, now: number) => {
-      const exit = edgePoint(hand.pos, { width: innerWidth, height: innerHeight });
+      const exit = edgePoint(hand.pos, {
+        width: innerWidth,
+        height: innerHeight,
+      });
       const distance = Math.hypot(exit.x - hand.pos.x, exit.y - hand.pos.y);
       const end = now + handTravelMs(distance, 40, SPEED) * 1.1;
       hand.acts = [
@@ -431,7 +538,10 @@ export function RevealScene({ children, className = '', replayable = false }: Re
       for (let i = drivers.length - 1; i >= 0; i -= 1) {
         const entry = drivers[i];
         if (now < entry.t0) continue;
-        const progress = Math.min((now - entry.t0) / Math.max(entry.t1 - entry.t0, 1), 1);
+        const progress = Math.min(
+          (now - entry.t0) / Math.max(entry.t1 - entry.t0, 1),
+          1,
+        );
         entry.fn(progress, now);
         if (progress >= 1) {
           drivers.splice(i, 1);
@@ -440,13 +550,28 @@ export function RevealScene({ children, className = '', replayable = false }: Re
       }
       for (const hand of hands) hand.update(now);
       idle(now);
-      rafId = events.length > 0 || drivers.length > 0 || hands.length > 0 ? window.requestAnimationFrame(tick) : 0;
+      rafId =
+        events.length > 0 || drivers.length > 0 || hands.length > 0
+          ? window.requestAnimationFrame(tick)
+          : 0;
     };
 
     /* ---------------- 手的管理 ---------------- */
-    const maxHands = () => handCountFor(innerWidth * innerHeight);
+    // 蜂群模式要的是「同时有很多支在画」：数量按面积给、上限更高；
+    // 单人模式沿用原来的面积公式（桌面约 12 支，但那 12 支是池子，不是同时登场）。
+    const maxHands = () =>
+      swarm
+        ? Math.min(
+            14,
+            Math.max(8, Math.round((innerWidth * innerHeight) / 42000)),
+          )
+        : handCountFor(innerWidth * innerHeight);
 
-    const claim = (target: Target, earliest: number, exclude: Hand[] = []): Hand | null => {
+    const claim = (
+      target: Target,
+      earliest: number,
+      exclude: Hand[] = [],
+    ): Hand | null => {
       const now = performance.now();
       const wanted = resolveTarget(target);
       let best: Hand | null = null;
@@ -455,7 +580,12 @@ export function RevealScene({ children, className = '', replayable = false }: Re
         if (exclude.includes(hand)) continue;
         const here = resolveTarget(hand.at);
         const ready = Math.max(
-          Math.max(hand.free, now) + handTravelMs(Math.hypot(wanted.x - here.x, wanted.y - here.y), 24, SPEED),
+          Math.max(hand.free, now) +
+            handTravelMs(
+              Math.hypot(wanted.x - here.x, wanted.y - here.y),
+              24,
+              SPEED,
+            ),
           earliest,
         );
         if (ready < bestAt) {
@@ -464,13 +594,22 @@ export function RevealScene({ children, className = '', replayable = false }: Re
         }
       }
       // 手不够就再派一支（从最近的边进来）；已经够多就复用最闲的。
-      // 只有「新开一支能早到 120ms 以上」时才新建——否则会一口气开满十几支、
-      // 每支都从屏幕外飞进来，反而比复用更吵。
+      // 蜂群模式：只要没到上限就新建——「一群光标同时干活」正是这个效果本身。
+      // 单人模式：只有新开一支能早到 120ms 以上才建，否则从屏幕外飞进来反而更吵。
       const entryReady = bestAt;
       if (hands.length < maxHands()) {
-        const entry = edgePoint(wanted, { width: innerWidth, height: innerHeight });
-        const arrive = now + handTravelMs(Math.hypot(wanted.x - entry.x, wanted.y - entry.y), 24, SPEED);
-        if (!best || arrive + 120 < entryReady) {
+        const entry = edgePoint(wanted, {
+          width: innerWidth,
+          height: innerHeight,
+        });
+        const arrive =
+          now +
+          handTravelMs(
+            Math.hypot(wanted.x - entry.x, wanted.y - entry.y),
+            24,
+            SPEED,
+          );
+        if (!best || swarm || arrive + 120 < entryReady) {
           const created = new Hand(handLayer, hands.length, entry, now);
           created.at = { at: entry };
           hands.push(created);
@@ -485,17 +624,34 @@ export function RevealScene({ children, className = '', replayable = false }: Re
      * 移动到目标：先「冲过头」再纠正（两段，转弯），全程走弧线。
      * 返回抵达时刻。这是「像手」而不是「像补间」的关键一步。
      */
-    const moveTo = (hand: Hand, target: Target, earliest: number, reference: number, tool: Tool): number => {
+    const moveTo = (
+      hand: Hand,
+      target: Target,
+      earliest: number,
+      reference: number,
+      tool: Tool,
+    ): number => {
       const now = performance.now();
       const from = resolveTarget(hand.at);
       const to = resolveTarget(target);
       const distance = Math.hypot(to.x - from.x, to.y - from.y);
-      const start = Math.max(hand.free, now, earliest - handTravelMs(distance, reference, SPEED) * 1.2);
+      const start = Math.max(
+        hand.free,
+        now,
+        earliest - handTravelMs(distance, reference, SPEED) * 1.2,
+      );
       const bow = (rng() < 0.5 ? -1 : 1) * (0.03 + rng() * 0.05);
       const end = start + handTravelMs(distance, reference, SPEED);
       const drift = detourPoint(from, to, rng);
 
-      hand.acts.push({ t0: start, t1: end, from: hand.at, to: drift ? { at: drift } : target, tool: 'arrow', bow });
+      hand.acts.push({
+        t0: start,
+        t1: end,
+        from: hand.at,
+        to: drift ? { at: drift } : target,
+        tool: 'arrow',
+        bow,
+      });
       if (!drift) {
         hand.at = target;
         hand.free = end;
@@ -503,27 +659,51 @@ export function RevealScene({ children, className = '', replayable = false }: Re
       }
       const rest = Math.hypot(to.x - drift.x, to.y - drift.y);
       const settle = end + handTravelMs(rest, reference, SPEED) * 0.8;
-      hand.acts.push({ t0: end, t1: settle, from: { at: drift }, to: target, tool, bow: bow * 0.3 });
+      hand.acts.push({
+        t0: end,
+        t1: settle,
+        from: { at: drift },
+        to: target,
+        tool,
+        bow: bow * 0.3,
+      });
       hand.at = target;
       hand.free = settle;
       return settle;
     };
 
     /** 原地按住一段时间。 */
-    const hold = (hand: Hand, t0: number, t1: number, tool: Tool, down = false) => {
+    const hold = (
+      hand: Hand,
+      t0: number,
+      t1: number,
+      tool: Tool,
+      down = false,
+    ) => {
       hand.acts.push({ t0, t1, from: hand.at, to: hand.at, tool, down });
       hand.free = Math.max(hand.free, t1);
     };
 
     /** 沿一个会实时变的目标滑过去（文字在长高时用它）。 */
-    const glide = (hand: Hand, target: Target, t0: number, t1: number, tool: Tool, down = false) => {
+    const glide = (
+      hand: Hand,
+      target: Target,
+      t0: number,
+      t1: number,
+      tool: Tool,
+      down = false,
+    ) => {
       hand.acts.push({ t0, t1, from: hand.at, to: target, tool, down, bow: 0 });
       hand.at = target;
       hand.free = Math.max(hand.free, t1);
     };
 
     /* ---------------- 选框 ---------------- */
-    const makeFrame = (variant = '') => {
+    /*
+     * 框的定位只有一条路：谁驱动它，谁就在驱动里写 left/top/width/height。
+     * 没有第二个人碰它，就不会再出现「框提前画好、钉在原处」。
+     */
+    const makeFrame = (host: HTMLElement, variant = '') => {
       const box = document.createElement('div');
       box.className = `rv-frame ${variant}`.trim();
       const badge = document.createElement('span');
@@ -536,13 +716,18 @@ export function RevealScene({ children, className = '', replayable = false }: Re
       box.appendChild(badge);
       // 先藏起来：第一帧 driver 才会把位置和尺寸写上，否则会在 (0,0) 闪一下
       box.style.display = 'none';
-      frameLayer.appendChild(box);
+      owners.set(box, host);
+      layerFor(host).appendChild(box);
       job?.frames.add(box);
       return { box, badge };
     };
 
-    const placeBox = (box: HTMLElement, rect: DOMRect) => {
-      const base = root.getBoundingClientRect();
+    /** 把视口矩形换算进「这一节」的坐标系，写进框。 */
+    const placeBox = (
+      box: HTMLElement,
+      rect: { left: number; top: number; width: number; height: number },
+    ) => {
+      const base = baseOf(box);
       box.style.cssText = `display:block;left:${rect.left - base.left}px;top:${rect.top - base.top}px;width:${rect.width}px;height:${rect.height}px`;
     };
 
@@ -552,23 +737,68 @@ export function RevealScene({ children, className = '', replayable = false }: Re
     };
 
     /* ---------------- 文字索引 ---------------- */
-    const collectText = (el: HTMLElement): { chars: string[]; nodes: Text[] } => {
+    const collectText = (
+      el: HTMLElement,
+    ): { chars: string[]; nodes: Text[] } => {
       const nodes: Text[] = [];
       const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
       while (walker.nextNode()) nodes.push(walker.currentNode as Text);
       const text = nodes.map((node) => node.data).join('');
       // CJK 补一个空占位：让它多占一拍，中西混排的节奏才不塌
-      const chars = Array.from(text).flatMap((char) => (/[\u2e80-\u9fff\u3000-\u303f\uff00-\uffef]/.test(char) ? [char, ''] : [char]));
+      const chars = Array.from(text).flatMap((char) =>
+        /[\u2e80-\u9fff\u3000-\u303f\uff00-\uffef]/.test(char)
+          ? [char, '']
+          : [char],
+      );
       return { chars, nodes };
     };
 
     /** 把「写到第 n 个 chars 单位」映射成 DOM 的 (节点, 偏移)。 */
-    const locate = (nodes: Text[], chars: string[], n: number): [Text, number] | null => {
+    const locate = (
+      nodes: Text[],
+      chars: string[],
+      n: number,
+    ): [Text, number] | null => {
       let rest = textOffsetAt(chars, n);
       for (let i = 0; i < nodes.length; i += 1) {
         const length = nodes[i].length;
-        if (rest < length || i === nodes.length - 1) return [nodes[i], Math.min(rest, length)];
+        if (rest < length || i === nodes.length - 1)
+          return [nodes[i], Math.min(rest, length)];
         rest -= length;
+      }
+      return null;
+    };
+
+    type CaretBox = { left: number; top: number; height: number };
+
+    /**
+     * 笔尖位置：直接取「还没写完那一段」Range 的起点。
+     *
+     * 这是唯一可信的插入点——CSS Custom Highlight 收口用的就是这个 Range，
+     * 所以「文字露到哪」与「笔尖停在哪」不可能不一致。
+     *
+     * 旧实现（已删）用字符下标自己再算一遍 DOM 偏移，还把偏移 clamp 到
+     * `length - 1`：只要真正的插入点落在某个文本节点的末尾（段落被行内元素
+     * 或 CJK 占位符切开时很常见），笔尖就会被拉回前一个字的左边，
+     * 看上去就是「停在下一个字的前面」。
+     */
+    const caretBox = (item: SceneItem): CaretBox | null => {
+      const untyped = item.range;
+      if (untyped) {
+        const rect = untyped.getClientRects()[0];
+        if (rect)
+          return { left: rect.left, top: rect.top, height: rect.height };
+      }
+      // 已经写完（Range 收口为 null）：笔尖停在最后一个字的右边缘。
+      for (let i = item.nodes.length - 1; i >= 0; i -= 1) {
+        const node = item.nodes[i];
+        if (node.length === 0) continue;
+        const tail = document.createRange();
+        tail.setStart(node, node.length - 1);
+        tail.setEnd(node, node.length);
+        const rect = tail.getClientRects()[0];
+        if (rect)
+          return { left: rect.right, top: rect.top, height: rect.height };
       }
       return null;
     };
@@ -602,14 +832,26 @@ export function RevealScene({ children, className = '', replayable = false }: Re
     /* ---------------- 各类内容的排程 ---------------- */
 
     /** 文字：走过去、按住、按打字计划逐字揭示，边写边量。 */
-    const scheduleText = (el: HTMLElement, startAt: number, framed: boolean, group?: { hands: Hand[]; start?: number }) => {
+    const scheduleText = (
+      el: HTMLElement,
+      startAt: number,
+      framed: boolean,
+      group?: { hands: Hand[]; start?: number },
+    ) => {
       const { chars, nodes } = collectText(el);
       if (chars.length === 0) {
         at(startAt, () => el.setAttribute('data-rv-done', ''));
         return startAt;
       }
 
-      const item: SceneItem = { el, kind: 'text', chars, nodes, range: null, shown: 0 };
+      const item: SceneItem = {
+        el,
+        kind: 'text',
+        chars,
+        nodes,
+        range: null,
+        shown: 0,
+      };
       if (highlight) {
         const range = document.createRange();
         range.selectNodeContents(el);
@@ -639,7 +881,14 @@ export function RevealScene({ children, className = '', replayable = false }: Re
        * 光标落到左上角 → 按住 → 拖到右下角（框跟着手长、徽章报数）→ 再回到文字起点写。
        */
       const boxRect = el.getBoundingClientRect();
-      if (framed && chars.length >= 16 && boxRect.width > 40 && boxRect.height > 24) {
+      // 量框的那个框：先声明，等 typeEnd 算出来再决定什么时候收
+      let textFrame: ReturnType<typeof makeFrame> | null = null;
+      if (
+        framed &&
+        chars.length >= 16 &&
+        boxRect.width > 40 &&
+        boxRect.height > 24
+      ) {
         const arrive = moveTo(
           hand,
           { el, fx: 0, fy: 0 },
@@ -648,36 +897,63 @@ export function RevealScene({ children, className = '', replayable = false }: Re
           'cross',
         );
         const press = Math.max(arrive + dwellMs(rng), startAt);
-        const measured = press + measureDurationMs(boxRect.width, boxRect.height);
+        const measured =
+          press + measureDurationMs(boxRect.width, boxRect.height);
         hold(hand, arrive, press, 'cross');
         glide(hand, { el, fx: 1, fy: 1 }, press, measured, 'cross', true);
-        const box = makeFrame('rv-frame--text');
+        const box = makeFrame(sectionOf(el), 'rv-frame--text');
+        textFrame = box;
         during(press, measured, (p) => {
-          const size = frameSizeAt(boxRect, p);
-          placeBox(box.box, new DOMRect(boxRect.left, boxRect.top, size.width, size.height));
+          // 每帧现取目标的矩形：框贴着内容长，滚动/重排都不会错位
+          const live = el.getBoundingClientRect();
+          const size = frameSizeAt(live, p);
+          placeBox(
+            box.box,
+            new DOMRect(live.left, live.top, size.width, size.height),
+          );
           box.badge.textContent = `${size.width} × ${size.height}`;
         });
-        at(measured + 420, () => retire(box.box));
+        // 不再在这里收框：等 typing 结束（见下面的 keepFrame）
         // 量完再把笔挪回文字起点写字
         startAt = measured + 80;
       }
 
       // 同一块内容的第二支手：错开 7px / 5px 站着，先「撞」一下
       if (group && group.start !== undefined && group.hands.length > 0) {
-        const offset: Target = { get: () => shift(resolveTarget(anchor), 7 * group.hands.length, 5 * (group.hands.length % 2 ? 1 : -1)) };
+        const offset: Target = {
+          get: () =>
+            shift(
+              resolveTarget(anchor),
+              7 * group.hands.length,
+              5 * (group.hands.length % 2 ? 1 : -1),
+            ),
+        };
         const bumpAt = group.start + rng() * 90;
         const arrived = moveTo(hand, offset, bumpAt, 20, 'ibeam');
         const press = Math.max(arrived, bumpAt);
         hold(hand, arrived, press, 'ibeam');
         hold(hand, press, press + 90, 'ibeam', true);
         at(group.start + 60, () => {
-          const clash = makeFrame('rv-clash');
+          const clash = makeFrame(sectionOf(el), 'rv-clash');
           clash.badge.textContent = '×';
           const rect = el.getBoundingClientRect();
-          placeBox(clash.box, new DOMRect(rect.left - 3, rect.top - 2, rect.width + 6, rect.height + 4));
+          placeBox(
+            clash.box,
+            new DOMRect(
+              rect.left - 3,
+              rect.top - 2,
+              rect.width + 6,
+              rect.height + 4,
+            ),
+          );
           window.setTimeout(() => retire(clash.box), 420);
         });
-        hold(hand, press + 90, Math.max(press + 200, group.start + 420), 'ibeam');
+        hold(
+          hand,
+          press + 90,
+          Math.max(press + 200, group.start + 420),
+          'ibeam',
+        );
         group.hands.push(hand);
         startAt = Math.max(press + 200, group.start + 420);
       } else if (group) {
@@ -698,24 +974,21 @@ export function RevealScene({ children, className = '', replayable = false }: Re
       const typeStart = pressAt + 90;
       const typeEnd = typeStart + (plan.at(-1)?.t ?? 0);
 
+      // 框活到这块内容写完（+260ms 喘息）。写字期间框保持「量出来的完整尺寸」不动：
+      // 文字是用 highlight 透出来的，布局一个像素都没变，框缩回去再长反而像抖。
+      const keepFrame = textFrame;
+      if (keepFrame) at(typeEnd + 260, () => retire(keepFrame.box));
+
       /*
        * 写字时笔尖要贴着「正在写的那一个字」走。
        * 位置每帧从 Range 现取（写到哪里、光标就在哪里，写到行尾跟到下一行），
        * 而不是"文字起点 + 固定偏移"——那是两张皮，看着不连贯。
        */
       const frontier = (): Point => {
-        // 永远取「最后一个真实字符」，绝不越过它：越过去 Range 就空了，
-        // getClientRects()[0] 会是 undefined，回退到整块元素 → 光标一瞬移到角上。
-        const last = Math.max(item.chars.length - 1, 0);
-        const spot = locate(item.nodes, item.chars, Math.min(item.shown, last));
-        if (!spot) return resolveTarget(anchor);
-        const start = Math.min(spot[1], Math.max(spot[0].length - 1, 0));
-        const range = document.createRange();
-        range.setStart(spot[0], start);
-        range.setEnd(spot[0], Math.min(start + 1, spot[0].length));
-        const rect = range.getClientRects()[0];
-        if (!rect) return resolveTarget(anchor);
-        return { x: rect.left, y: rect.top + rect.height / 2 };
+        const box = caretBox(item);
+        return box
+          ? { x: box.left, y: box.top + box.height / 2 }
+          : resolveTarget(anchor);
       };
       hand.acts.push({
         t0: typeStart,
@@ -725,19 +998,24 @@ export function RevealScene({ children, className = '', replayable = false }: Re
         tool: 'ibeam',
         down: false,
         path: () => frontier(),
-        follow: 55,
+        // 不设每帧位移上限：打字的目标位置是连续移动的，限速只会在低帧率下
+        // 把笔尖拖在文字后面（1fps 时每帧 55px，追不上约 280px/s 的写字速度）。
+        follow: 4000,
       });
       hand.at = { get: frontier };
       hand.free = Math.max(hand.free, typeEnd);
 
-
-      const slip = plan.some((step) => step.extra) ? makeSlip() : null;
+      const slip = plan.some((step) => step.extra)
+        ? makeSlip(sectionOf(el))
+        : null;
 
       during(typeStart, typeEnd, (progress, now) => {
         // 找到当前这一拍
         let index = -1;
-        while (index + 1 < plan.length && plan[index + 1].t <= now - typeStart) index += 1;
-        const step: TypingStep | undefined = progress < 1 ? plan[index] : undefined;
+        while (index + 1 < plan.length && plan[index + 1].t <= now - typeStart)
+          index += 1;
+        const step: TypingStep | undefined =
+          progress < 1 ? plan[index] : undefined;
         revealText(item, progress < 1 ? (step?.n ?? 0) : chars.length);
         if (slip) paintSlip(slip, item, step?.n ?? 0, step?.extra ?? '');
       });
@@ -753,16 +1031,22 @@ export function RevealScene({ children, className = '', replayable = false }: Re
     };
 
     /** 打错的字符：贴着原字的位置画一个「错字」，退格时逐个消失。 */
-    const makeSlip = () => {
+    const makeSlip = (host: HTMLElement) => {
       const node = document.createElement('span');
       node.className = 'rv-slip';
       node.style.display = 'none';
-      frameLayer.appendChild(node);
+      owners.set(node, host);
+      layerFor(host).appendChild(node);
       job?.slips.add(node);
       return node;
     };
 
-    const paintSlip = (slip: HTMLElement, item: SceneItem, n: number, extra: string) => {
+    const paintSlip = (
+      slip: HTMLElement,
+      item: SceneItem,
+      n: number,
+      extra: string,
+    ) => {
       if (!extra) {
         slip.style.display = 'none';
         return;
@@ -772,16 +1056,21 @@ export function RevealScene({ children, className = '', replayable = false }: Re
         slip.style.display = 'none';
         return;
       }
-      const range = document.createRange();
-      range.setStart(spot[0], Math.min(spot[1], Math.max(spot[0].length - 1, 0)));
-      range.setEnd(spot[0], Math.min(spot[1] + 1, spot[0].length));
-      const rect = range.getClientRects()[0];
+      // 错字画在「笔尖」上，而不是画在同一个字符格子里：两者在节点边界上
+      // 会差一个字（和 frontier 是同一个坑）。
+      const caret = caretBox(item);
       const host = spot[0].parentElement;
-      if (!rect || !host) {
+      if (!caret || !host) {
         slip.style.display = 'none';
         return;
       }
-      const base = root.getBoundingClientRect();
+      const rect = {
+        left: caret.left,
+        right: caret.left,
+        top: caret.top,
+        height: caret.height,
+      };
+      const base = baseOf(slip);
       const style = getComputedStyle(host);
       slip.textContent = extra;
       slip.style.display = '';
@@ -801,7 +1090,13 @@ export function RevealScene({ children, className = '', replayable = false }: Re
       const hand = claim(topLeft, startAt);
       if (!hand) return startAt;
 
-      const arrive = moveTo(hand, topLeft, startAt, Math.min(rect.width, rect.height, 48), 'cross');
+      const arrive = moveTo(
+        hand,
+        topLeft,
+        startAt,
+        Math.min(rect.width, rect.height, 48),
+        'cross',
+      );
       const press = Math.max(arrive + dwellMs(rng), startAt);
       const end = press + measureDurationMs(rect.width, rect.height);
 
@@ -809,19 +1104,32 @@ export function RevealScene({ children, className = '', replayable = false }: Re
       glide(hand, bottomRight, press, end, 'cross', true);
       hold(hand, end, end + 70, 'cross');
 
-      const frame = makeFrame(`rv-frame--${el.dataset.rv ?? 'frame'}`);
+      const frame = makeFrame(
+        sectionOf(el),
+        `rv-frame--${el.dataset.rv ?? 'frame'}`,
+      );
       during(press, end, (progress) => {
-        const box = frameSizeAt(rect, progress);
-        placeBox(frame.box, new DOMRect(rect.left, rect.top, box.width, box.height));
+        // 每帧现取目标的矩形再换算：量框的过程中页面滚了，框也不会落在旧位置。
+        const live = el.getBoundingClientRect();
+        const box = frameSizeAt(live, progress);
+        placeBox(
+          frame.box,
+          new DOMRect(live.left, live.top, box.width, box.height),
+        );
         frame.badge.textContent = `${box.width} × ${box.height}`;
       });
 
       at(end, () => {
         markDone(el);
         el.classList.add('rv-arrive');
-        el.addEventListener('animationend', () => el.classList.remove('rv-arrive'), { once: true });
+        el.addEventListener(
+          'animationend',
+          () => el.classList.remove('rv-arrive'),
+          { once: true },
+        );
       });
-      at(end + 420, () => retire(frame.box));
+      // 这里不再自己定时收框：由 play() 在本节内容全部写完后统一收，
+      // 否则框里的文字还在写，框就先没了。
       return end;
     };
 
@@ -836,11 +1144,14 @@ export function RevealScene({ children, className = '', replayable = false }: Re
 
       const hand = claim({ el, fx: 0.5, fy: 1 }, startAt);
       const end = startAt + COUNT_MS;
-      const arrive = hand ? moveTo(hand, { el, fx: 1, fy: 0.5 }, startAt, 24, 'resize') : startAt;
+      const arrive = hand
+        ? moveTo(hand, { el, fx: 1, fy: 0.5 }, startAt, 24, 'resize')
+        : startAt;
       // 数字等光标到了再出现，不要抢在手前面
       at(arrive, () => markDone(el));
       during(startAt, end, (progress) => {
-        el.textContent = progress < 1 ? countUpAt(target, progress).toFixed(decimals) : raw;
+        el.textContent =
+          progress < 1 ? countUpAt(target, progress).toFixed(decimals) : raw;
       });
       if (hand) hold(hand, arrive, end, 'resize');
       return end;
@@ -872,7 +1183,10 @@ export function RevealScene({ children, className = '', replayable = false }: Re
         el.classList.add('rv-tracing');
       });
       during(press, end, (progress) => {
-        el.style.setProperty('--rv-clip', `${Math.round((1 - progress) * 100)}%`);
+        el.style.setProperty(
+          '--rv-clip',
+          `${Math.round((1 - progress) * 100)}%`,
+        );
       });
       at(end, () => {
         el.classList.add('is-written');
@@ -906,6 +1220,66 @@ export function RevealScene({ children, className = '', replayable = false }: Re
           )
         : Array.from(sectionEl.querySelectorAll<HTMLElement>('[data-rv]'));
 
+    /* ---------------- 参考站的两条额外机制 ---------------- */
+
+    /**
+     * 自动收集「文本叶子」：没有子元素、有可见文字、且自己没被打过 `data-rv` 标记。
+     * 参考站就是靠这一条「把整页内容画出来」的——不必给每个节点手写属性；
+     * `data-instant` 里的子树跳过（立刻出现，不逐字）。
+     */
+    const autoLeaves = (sectionEl: HTMLElement): HTMLElement[] =>
+      Array.from(sectionEl.querySelectorAll<HTMLElement>('*')).filter((el) => {
+        if (el.children.length > 0) return false;
+        if (!el.textContent || el.textContent.trim() === '') return false;
+        if (el.hasAttribute('data-rv')) return false;
+        if (el.closest('[data-instant]')) return false;
+        if (el.closest('.rv-layer, .rv-hands')) return false;
+        if (sectionEl === root && el.closest('[data-rv-section]')) return false;
+        return true;
+      });
+
+    /*
+     * 自动收集到的叶子也要在开演前藏起来：否则文字先露面、光标再「写」一遍，
+     * 就成了描红。样式表的隐藏规则挂在 `html[data-rv-play=1]` 上，这里给叶子
+     * 补一个 `data-rv-text` 让规则能选中它们。
+     *
+     * 放在 effect 里做是因为这些叶子运行时才知道；被包住的区块都在折叠线以下，
+     * 不会出现「先看见、再消失」的闪烁。
+     */
+    for (const leaf of autoLeaves(root)) leaf.setAttribute('data-rv-text', '');
+
+    /** `[data-highlight]`：已存在的内容先压暗，再由一支手扫过去逐个点亮。 */
+    const scheduleHighlight = (lights: HTMLElement[], startAt: number) => {
+      // 这两件事必须一起做：压暗（视觉上「还没点亮」）+ 标 done（解除
+      // 「开演前先藏起来」那条规则）。少了后者，这些块会被 CSS 一直藏着——
+      // 高亮作业不写字，所以没有人会替它们标 done。
+      for (const el of lights) {
+        markDone(el);
+        el.classList.add('rv-unlit');
+      }
+      const first = lights[0];
+      const hand = claim({ el: first, fx: 0, fy: 0.5 }, startAt);
+      if (!hand) {
+        for (const el of lights)
+          at(startAt, () => el.classList.remove('rv-unlit'));
+        return;
+      }
+      const arrive = moveTo(
+        hand,
+        { el: first, fx: 0, fy: 0.5 },
+        startAt,
+        24,
+        'arrow',
+      );
+      hold(hand, startAt, arrive, 'arrow');
+      let t = arrive + 60;
+      for (const el of lights) {
+        glide(hand, { el, fx: 1, fy: 0.5 }, t, t + 200, 'arrow');
+        at(t + 180, () => el.classList.remove('rv-unlit'));
+        t += 190;
+      }
+    };
+
     const newJob = (): Job => ({
       events: new Set(),
       drivers: new Set(),
@@ -930,7 +1304,8 @@ export function RevealScene({ children, className = '', replayable = false }: Re
       finished.drivers.clear();
       for (const frame of finished.frames) frame.remove();
       for (const slip of finished.slips) slip.remove();
-      if (highlight) for (const range of finished.ranges) highlight.delete(range);
+      if (highlight)
+        for (const range of finished.ranges) highlight.delete(range);
       for (const el of finished.revealed) el.removeAttribute('data-rv-done');
       const now = performance.now();
       for (const hand of finished.hands) {
@@ -948,7 +1323,12 @@ export function RevealScene({ children, className = '', replayable = false }: Re
       state.job = job;
       state.played = true;
       // 同一块里的多支手共用一个 group：第二支手要错开 7px/5px、并且「撞」一下
-      const textGroups = new Map<HTMLElement, { hands: Hand[]; start?: number }>();
+      const textGroups = new Map<
+        HTMLElement,
+        { hands: Hand[]; start?: number }
+      >();
+      const frameEnds = new Map<HTMLElement, number>();
+      const lights: HTMLElement[] = [];
 
       /*
        * 一节之内的块是并行的，不串行：每块只等「自己所在的框」画完
@@ -959,16 +1339,17 @@ export function RevealScene({ children, className = '', replayable = false }: Re
         const kind = el.dataset.rv ?? 'frame';
         if (kind === 'frame') {
           const end = scheduleFrame(el, startNow);
-          // 框里的文字等框画完再写
-          for (const leaf of el.querySelectorAll<HTMLElement>('[data-rv-text]')) {
-            scheduleText(leaf, end + 80, true);
-          }
+          // 框里的文字等框画完再写（自动收集的叶子按 frameEnds 排队）
+          frameEnds.set(el, end);
         } else if (kind === 'text') {
           const group = textGroups.get(el.parentElement ?? root);
           if (group) {
             scheduleText(el, startNow + 80, true, group);
           } else {
-            const created = { hands: [] as Hand[], start: undefined as number | undefined };
+            const created = {
+              hands: [] as Hand[],
+              start: undefined as number | undefined,
+            };
             textGroups.set(el.parentElement ?? root, created);
             scheduleText(el, startNow + 80, true, created);
           }
@@ -979,7 +1360,13 @@ export function RevealScene({ children, className = '', replayable = false }: Re
           el.style.scale = String(HEADLINE_SCALE);
           const revealTitle = () => markDone(el);
           if (hand) {
-            const arrive = moveTo(hand, { el, fx: 1, fy: 1 }, startNow, 10, 'resize');
+            const arrive = moveTo(
+              hand,
+              { el, fx: 1, fy: 1 },
+              startNow,
+              10,
+              'resize',
+            );
             const start = Math.max(arrive, startNow) + dwellMs(rng);
             const end = start + 540;
             hold(hand, arrive, start, 'resize');
@@ -987,11 +1374,17 @@ export function RevealScene({ children, className = '', replayable = false }: Re
             // 标题在光标按住的那一刻才现身，之前连缩小的影子都不露
             at(start, revealTitle);
             during(start, end, (progress) => {
-              el.style.scale = String(HEADLINE_SCALE + (1 - HEADLINE_SCALE) * easeGrow(progress));
+              const eased = easeGrow(progress);
+              el.style.scale = String(
+                HEADLINE_SCALE + (1 - HEADLINE_SCALE) * eased,
+              );
+              // 参考站的 [data-type] 是 clip-path 擦除式揭示：一边拉大一边擦出来
+              el.style.clipPath = `inset(0 ${((1 - eased) * 100).toFixed(2)}% 0 0)`;
             });
             at(end, () => {
               el.style.scale = '';
               el.style.transformOrigin = '';
+              el.style.clipPath = '';
             });
           } else {
             // 没有手可用时也不能把标题永远藏着
@@ -1001,12 +1394,35 @@ export function RevealScene({ children, className = '', replayable = false }: Re
           scheduleCount(el, startNow);
         } else if (kind === 'line') {
           scheduleLine(el, startNow);
+        } else if (kind === 'highlight') {
+          lights.push(el);
         }
       }
 
+      // 没被打标的文本叶子自动逐个写：整页内容都能画，不必手写属性。
+      // 在框里的叶子等自己的框结束后 +80ms 才开写（和框内文字的旧行为一致）。
+      for (const leaf of autoLeaves(sectionEl)) {
+        const framed = leaf.closest<HTMLElement>('[data-rv="frame"]');
+        const frameEnd = framed ? frameEnds.get(framed) : undefined;
+        /*
+         * 已经在「卡片框」里的文字不再自己量一遍：一张卡一个框，卡里的字就在这个
+         * 框里写。旧版给每段文字都配一个框，四张卡叠出十一个框，一半是重复的。
+         */
+        scheduleText(leaf, (frameEnd ?? startNow) + 80, !framed);
+      }
+
+      // `[data-highlight]`：已有内容先压暗，再被一支手扫亮。
+      if (lights.length > 0) scheduleHighlight(lights, startNow);
+
+      // 框要活到这一节的内容全部写完再收：原来每块框自己 420ms 就 retire，
+      // 卡片的文字还没写完框就先消失了（这就是「东西没画完框就没了」）。
+      const contentEnd = jobEnd(job);
+      for (const frameEl of job.frames)
+        at(contentEnd + 260, () => retire(frameEl));
+
       // 排完就把指针交还：之后创建的事件/驱动都属于别的节
       playingSection = sectionEl;
-      playingUntil = jobEnd(job);
+      playingUntil = contentEnd;
       job = null;
       kick();
       pump();
@@ -1056,7 +1472,9 @@ export function RevealScene({ children, className = '', replayable = false }: Re
     const failsafe = window.setTimeout(() => {
       for (const [sectionEl, state] of sections) {
         if (!state.visible || state.played) continue;
-        for (const el of sectionEl.querySelectorAll<HTMLElement>('[data-rv], [data-rv-text]')) {
+        for (const el of sectionEl.querySelectorAll<HTMLElement>(
+          '[data-rv], [data-rv-text]',
+        )) {
           el.setAttribute('data-rv-done', '');
         }
       }
@@ -1067,10 +1485,20 @@ export function RevealScene({ children, className = '', replayable = false }: Re
      * 这是 winc.si 的做法（`[data-section]` + rootMargin -12% + 160ms 去抖 + 离场 be(job)），
      * 也是「边滚边加载边画」的来源：没滚到的节一个动作都不排。
      */
-    const sectionEls = Array.from(root.querySelectorAll<HTMLElement>('[data-rv-section]'));
-    if (itemsOf(root).length > 0) sectionEls.push(root);
+    const sectionEls = Array.from(
+      root.querySelectorAll<HTMLElement>('[data-rv-section]'),
+    );
+    // 有标记的块，或者有可自动收集的文本叶子，都算「这一节有内容要画」。
+    if (itemsOf(root).length > 0 || autoLeaves(root).length > 0)
+      sectionEls.push(root);
     for (const sectionEl of sectionEls) {
-      const state: SectionState = { job: null, timer: 0, io: null, visible: false, played: false };
+      const state: SectionState = {
+        job: null,
+        timer: 0,
+        io: null,
+        visible: false,
+        played: false,
+      };
       sections.set(sectionEl, state);
       state.io = new IntersectionObserver(
         (entries) => {
@@ -1127,7 +1555,9 @@ export function RevealScene({ children, className = '', replayable = false }: Re
       events.length = 0;
       drivers.length = 0;
       for (const hand of hands) hand.el.remove();
-      for (const el of root.querySelectorAll<HTMLElement>('[data-rv], [data-rv-text]')) {
+      for (const el of root.querySelectorAll<HTMLElement>(
+        '[data-rv], [data-rv-text]',
+      )) {
         el.removeAttribute('data-rv-done');
         el.classList.remove('rv-arrive', 'is-written', 'rv-tracing');
         el.style.removeProperty('--rv-clip');
@@ -1140,16 +1570,24 @@ export function RevealScene({ children, className = '', replayable = false }: Re
         el.style.scale = '';
         el.style.transformOrigin = '';
       }
-      frameLayer.remove();
+      for (const [host, layer] of layers) {
+        layer.remove();
+        host.classList.remove('rv-layer-host');
+      }
+      layers.clear();
       handLayer.remove();
     };
-  }, [take]);
+  }, [take, swarm]);
 
   return (
     <div ref={rootRef} className={`rv-scene ${className}`.trim()}>
       {children}
       {replayable ? (
-        <button type="button" className="rv-replay" onClick={() => setTake((n) => n + 1)}>
+        <button
+          type="button"
+          className="rv-replay"
+          onClick={() => setTake((n) => n + 1)}
+        >
           重播
         </button>
       ) : null}
