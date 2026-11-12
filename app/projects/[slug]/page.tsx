@@ -3,32 +3,8 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { CodeBlockEnhancer } from '@/components/site/code-block-enhancer';
-import {
-  ProcessPointers,
-  type ProcessHand,
-} from '@/components/site/process-pointers';
 import { getProject, projects } from '@/data/projects';
 import { siteIdentity } from '@/lib/site-content';
-
-/**
- * 工序指针的文案与落点：只给有案例的项目配，缺省则整层不渲染。
- *
- * 标签写的是这道活用了什么（内容 / 组件 / 部署），不是"谁在场"——
- * 这是它和协作光标的分界线：前者是工艺注释，后者是假社交。
- * 落点都避开标题、导语与 meta 的文字区，窄屏整层隐藏。
- */
-const PROCESS_HANDS: Record<string, readonly ProcessHand[]> = {
-  'xwsx-site': [
-    { label: '内容', tone: 'seal', x: 74, y: 26, dx: 70, dy: 26, rotate: -10 },
-    { label: '组件', tone: 'violet', x: 78, y: 58, dx: -56, dy: 38, rotate: 8 },
-    { label: '部署', tone: 'ink', x: 70, y: 86, dx: 48, dy: -30, rotate: -18 },
-  ],
-  'spider-king': [
-    { label: '协议', tone: 'violet', x: 74, y: 26, dx: 70, dy: 26, rotate: 10 },
-    { label: '样本', tone: 'seal', x: 78, y: 58, dx: -56, dy: 38, rotate: -12 },
-    { label: '构建', tone: 'ink', x: 70, y: 86, dx: 48, dy: -30, rotate: 6 },
-  ],
-};
 
 export function generateStaticParams() {
   return projects
@@ -94,8 +70,6 @@ export default async function ProjectCasePage({
                 <span key={item}>{item}</span>
               ))}
             </div>
-            {/* 装饰层：笔尖 + 工序标签，纯视觉，不参与可访问性树 */}
-            <ProcessPointers hands={PROCESS_HANDS[project.slug] ?? []} />
           </header>
           {/* 正文 Markdown：h2 自动编号分区，h3 大标题，h4 小节标题 */}
           <div
