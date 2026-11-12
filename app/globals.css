@@ -315,6 +315,18 @@
   --code-string: #56753f;
   --code-func: #274d8d;
   --code-number: #a05a2c;
+  /* ── 多光标揭示层（/lab 实验，见 components/site/reveal-scene.tsx）──
+     全部是「引用」不是新色值：选框、光标、徽章都要跟着明暗走，
+     所以它们指向已经成对的 --violet-text / --seal / --code-*。
+     明暗两块都写一遍，即使内容一样——lib/css-integrity.ts 的成对断言
+     只认字面出现，而历史上「只写一半」正是踩过两次的坑。 */
+  --rv-select: var(--violet-text);
+  --rv-select-ink: var(--paper);
+  --rv-hand-1: var(--violet-text);
+  --rv-hand-2: var(--seal);
+  --rv-hand-3: var(--code-func);
+  --rv-hand-4: var(--code-string);
+  --rv-hand-5: var(--code-number);
 }
 
 /* 墨黑纸感的暗色主题 */
@@ -355,6 +367,15 @@
   --code-string: #a3c47f;
   --code-func: #8db1e8;
   --code-number: #e0a56e;
+  /* 多光标揭示层：与亮色同款引用。--violet-text 在暗色里等于更亮的 --violet，
+     --seal / --code-* 也各自换成了暗底可读的一档，所以这里不需要另给色值。 */
+  --rv-select: var(--violet-text);
+  --rv-select-ink: var(--paper);
+  --rv-hand-1: var(--violet-text);
+  --rv-hand-2: var(--seal);
+  --rv-hand-3: var(--code-func);
+  --rv-hand-4: var(--code-string);
+  --rv-hand-5: var(--code-number);
 }
 
 [data-theme='dark'][data-night='1'] {
@@ -3793,4 +3814,400 @@ button.search-item {
 .select-ask-pop:focus-visible {
   color: var(--violet-text);
   border-color: var(--violet);
+}
+
+/* ═══ 多光标揭示层（/lab 实验） ════════════════════════════
+   结构对齐 winc.si 的真实实现：
+   - 选框画在 `.rv-layer`（相对场景，绝对定位）；
+   - 手画在 `.rv-hands`（**fixed**，视口坐标），因为手要在整屏游走；
+   - 文字的逐字揭示不用 span，用 CSS Custom Highlight：
+     `::highlight(rv-untyped) { color: transparent }` 让「还没写到」的部分透明，
+     收口靠改 Range 的起点。**DOM 一个节点都不动**，所以绝不会重排、也不会把
+     拉丁词拆出新的断行点——这是它比「拆 span」高明的地方。 */
+
+html[data-rv-play='1'] .rv-scene [data-rv]:not([data-rv-done]),
+html[data-rv-play='1'] .rv-scene [data-rv-text]:not([data-rv-done]) {
+  visibility: hidden;
+}
+/* 注意：不要给文字单独开 visibility。
+   之前为了让 Range 量到矩形，把 [data-rv='text'] 一直设为 visible、靠 JS 注册的
+   ::highlight 让它透明——结果是**页面一加载文字先完整出现**，等 play() 注册完高亮
+   才被藏起来，于是内容在前、光标在后，顺序反了。
+   实测 visibility:hidden 不影响 getClientRects()，所以这里统一先藏，按各自的时刻放开。 */
+
+::highlight(rv-untyped) {
+  color: transparent;
+}
+
+.rv-arrive {
+  animation: rv-arrive 0.22s ease-out;
+}
+@keyframes rv-arrive {
+  0% {
+    opacity: 0;
+  }
+}
+
+/* 选框层的定位基准。少了这一条，`.rv-layer` 会以视口为基准，
+   所有选框整体偏移到页面顶部——上一版就是这么错的。 */
+.rv-scene {
+  position: relative;
+}
+
+.rv-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  pointer-events: none;
+}
+.rv-hands {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* --- 手 --- */
+.rv-hand {
+  --hand: var(--rv-hand-1);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--hand);
+  will-change: transform;
+}
+.rv-hand[data-slot='2'] {
+  --hand: var(--rv-hand-2);
+}
+.rv-hand[data-slot='3'] {
+  --hand: var(--rv-hand-3);
+}
+.rv-hand[data-slot='4'] {
+  --hand: var(--rv-hand-4);
+}
+.rv-hand[data-slot='5'] {
+  --hand: var(--rv-hand-5);
+}
+.rv-hand .rv-icon {
+  position: absolute;
+  inset: 0;
+}
+.rv-hand svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  overflow: visible;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.22));
+  transform-origin: inherit;
+  transition: scale 90ms ease-out;
+}
+/* 按下时缩一圈，转轴是这一笔的热点（不在左上角） */
+.rv-hand.is-down svg {
+  scale: 0.88;
+}
+.rv-hand .rv-body {
+  fill: var(--hand);
+  stroke: var(--rv-select-ink);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+.rv-hand .rv-rim,
+.rv-hand .rv-ink {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.rv-hand .rv-rim {
+  stroke: var(--rv-select-ink);
+  stroke-width: 2.6;
+}
+.rv-hand .rv-ink {
+  stroke: var(--hand);
+  stroke-width: 1;
+}
+/* 名字牌只在按住时出现：常驻就成了假社交 */
+.rv-tag {
+  position: absolute;
+  top: 13px;
+  left: 12px;
+  padding: 1px 5px 2px;
+  border-radius: 3px;
+  background: var(--hand);
+  color: var(--rv-select-ink);
+  font: 500 10px/1.3 var(--font-mono);
+  white-space: nowrap;
+  opacity: 0;
+  scale: 0.8;
+  transform-origin: 0 0;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+  transition:
+    opacity 0.12s ease-out,
+    scale 0.12s ease-out;
+}
+.rv-hand.is-down .rv-tag {
+  opacity: 1;
+  scale: 1;
+}
+
+/* --- 选框 --- */
+.rv-frame {
+  position: absolute;
+  box-shadow: inset 0 0 0 1px var(--rv-select);
+  background: color-mix(in srgb, var(--rv-select) 5%, transparent);
+  transition: opacity 0.3s ease-out;
+}
+.rv-frame.rv-text {
+  background: color-mix(in srgb, var(--rv-select) 3%, transparent);
+}
+.rv-frame.rv-clash {
+  background: color-mix(in srgb, var(--seal) 10%, transparent);
+  box-shadow: inset 0 0 0 1px var(--seal);
+  animation: rv-clash 0.32s ease-out;
+}
+@keyframes rv-clash {
+  20%,
+  60% {
+    translate: -3px;
+  }
+  40%,
+  80% {
+    translate: 3px;
+  }
+}
+.rv-frame i {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px;
+  background: var(--rv-select-ink);
+  box-shadow: inset 0 0 0 1px var(--rv-select);
+}
+.rv-frame .tl {
+  top: 0;
+  left: 0;
+}
+.rv-frame .tr {
+  top: 0;
+  right: 0;
+  margin-right: -3.5px;
+}
+.rv-frame .bl {
+  bottom: 0;
+  left: 0;
+  margin-bottom: -3.5px;
+}
+.rv-frame .br {
+  right: 0;
+  bottom: 0;
+  margin: 0 -3.5px -3.5px 0;
+}
+.rv-badge {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  padding: 1px 5px 2px;
+  border-radius: 3px;
+  background: var(--rv-select);
+  color: var(--rv-select-ink);
+  font: 400 10px/1.3 var(--font-mono);
+  white-space: nowrap;
+  translate: -50% 7px;
+}
+.rv-leaving {
+  opacity: 0;
+}
+
+/* 打错的那个字：贴着原字位置画，字体度量从宿主元素抄过来 */
+.rv-slip {
+  position: absolute;
+  white-space: pre;
+  pointer-events: none;
+}
+
+/* 图表：笔扫到哪里，行就露出到哪里 */
+.rv-tracing {
+  clip-path: inset(0 var(--rv-clip, 100%) 0 0);
+}
+
+.rv-replay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 5;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--muted);
+  cursor: pointer;
+  font: 11px/1.6 var(--font-mono);
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+.rv-replay:hover,
+.rv-replay:focus-visible {
+  border-color: var(--violet);
+  color: var(--violet-text);
+}
+@media (prefers-reduced-motion: reduce) {
+  /* 动效整体退场时按钮没有意义：留着只会让人以为坏了 */
+  .rv-replay {
+    display: none;
+  }
+  .rv-hand svg,
+  .rv-tag {
+    transition: none;
+  }
+}
+/* ═══ /lab 演示页 ═══════════════════════════════════════ */
+.lab-head {
+  padding: 82px 0 44px;
+}
+.lab-head h1 {
+  margin: 16px 0 0;
+  font: 500 clamp(38px, 6vw, 64px) / 1.1 var(--font-serif);
+  letter-spacing: var(--tracking-cjk-display);
+}
+.lab-head h1 em {
+  color: var(--violet-text);
+  font-style: normal;
+  font-weight: 400;
+}
+.lab-lede {
+  max-width: 540px;
+  margin: 18px 0 0;
+  color: var(--body-text);
+  font-size: 16px;
+  line-height: 1.9;
+}
+.lab-scene {
+  margin: 0 0 30px;
+  padding-top: 46px;
+  border-top: 1px solid var(--line);
+}
+/*
+ * 每节一个「舞台」：占大半个视口。参考站 [data-section] 就是这么排的，
+ * 也是「边滚边加载边画」成立的前提——几节挤在一起时，首屏会同时装下两三节，
+ * 它们会一起开演，等于没有懒加载。
+ */
+.lab-stage {
+  display: grid;
+  align-content: center;
+  min-height: min(78vh, 620px);
+}
+.lab-block {
+  max-width: 640px;
+  margin: 0;
+  color: var(--body-text);
+  font-size: 17px;
+  line-height: 1.95;
+}
+/* 场景内的小标题：演示「缩到 46% 再被 resize 光标拉大」 */
+.lab-intro {
+  margin: 0;
+}
+.lab-title {
+  margin: 0 0 20px;
+  font: 500 clamp(26px, 4.2vw, 38px) / 1.15 var(--font-serif);
+  letter-spacing: var(--tracking-cjk-heading);
+}
+.lab-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.lab-card {
+  display: grid;
+  gap: 6px;
+  padding: 16px 15px 18px;
+  border: 1px solid var(--line);
+  background: var(--raised);
+}
+.lab-card-label {
+  color: var(--muted);
+  font: 11px/1.5 var(--font-mono);
+  letter-spacing: 0.12em;
+}
+.lab-card strong {
+  font: 500 26px/1.2 var(--font-serif);
+}
+.lab-card-note {
+  color: var(--muted);
+  font: 11.5px/1.6 var(--font-mono);
+}
+.lab-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.lab-metric-value {
+  font: 500 clamp(44px, 7vw, 64px) / 1 var(--font-serif);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.lab-metric-unit {
+  color: var(--muted);
+  font: 12px/1.6 var(--font-mono);
+}
+.lab-chart {
+  display: grid;
+  gap: 9px;
+}
+.lab-bar {
+  display: grid;
+  grid-template-columns: 56px 1fr 64px;
+  align-items: center;
+  gap: 12px;
+}
+.lab-bar-label {
+  color: var(--muted);
+  font: 11px/1.6 var(--font-mono);
+}
+.lab-bar-track {
+  height: 10px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+.lab-bar-fill {
+  height: 100%;
+  background: var(--rv-select);
+}
+.lab-bar-ms {
+  color: var(--muted);
+  font: 11px/1.6 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.lab-notes {
+  display: grid;
+  gap: 16px;
+  margin: 40px 0 86px;
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
+}
+.lab-note-item {
+  display: grid;
+  gap: 4px;
+  max-width: 620px;
+}
+.lab-note-item strong {
+  font-size: 14.5px;
+}
+.lab-note-item span {
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.85;
+}
+@media (max-width: 620px) {
+  .lab-cards {
+    grid-template-columns: 1fr;
+  }
+  .lab-bar {
+    grid-template-columns: 44px 1fr 56px;
+  }
 }
