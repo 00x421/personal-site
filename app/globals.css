@@ -3895,7 +3895,13 @@ html[data-rv-play='1'] [data-rv-text]:not([data-rv-done]) {
   position: absolute;
   inset: 0;
   z-index: 50;
-  overflow: hidden;
+  /*
+   * 必须是 visible。这一层的高度等于被框住的那块内容（首屏 motto 只有 19px），
+   * 而选框比它每边大 6px、四角还各伸出 7px。overflow: hidden 会把上下两条
+   * 边线整个裁掉，只剩中间一层底色——站主两次反馈「只有底色没有线」「好像被挡住」
+   * 都是这一条造成的：实测框线上采样到的像素全是页面背景色。
+   */
+  overflow: visible;
   pointer-events: none;
 }
 .rv-hands {
@@ -4009,42 +4015,52 @@ html[data-rv-play='1'] [data-rv-text]:not([data-rv-done]) {
   }
 }
 /*
- * 角上的裁切标记，不是实心手柄。
- * 每个 i 是两条 1px 的线在角点交叉，各向内外各伸一个 --rv-ext：
- * 线因此会「长出矩形之外」，四角连起来看就是井字的交叉点。
- * 早先是 7×7 实心块 + 外凸 3.5px，在 19px 高的单行框里上下一对几乎顶满，
- * 站主看到的是「两头各凸出一块」——那不像选框，像坏掉的角标。
+ * 角上的裁切标记：两条线在角点交叉，各向内外伸一个 --rv-ext。
+ * 线因此会「长出矩形之外」，四角连起来就是井字的交叉点。
+ *
+ * 用伪元素画两条细线，而不是拿 background 渐变去铺：渐变那版实测不对称
+ * （左上角的水平臂只有右半边有像素，左边一半是空的），排查成本远高于写两条线。
  */
 .rv-frame i {
   position: absolute;
+  width: 0;
+  height: 0;
+}
+.rv-frame i::before,
+.rv-frame i::after {
+  content: '';
+  position: absolute;
+  background: var(--rv-select);
+}
+/* 水平臂：以角点为中点，左右各伸 --rv-ext */
+.rv-frame i::before {
   width: calc(var(--rv-ext) * 2);
+  height: 2px;
+  left: calc(var(--rv-ext) * -1);
+  top: -1px;
+}
+/* 垂直臂：以角点为中点，上下各伸 --rv-ext */
+.rv-frame i::after {
+  width: 2px;
   height: calc(var(--rv-ext) * 2);
-  /* 十字也是 2px：1px 在角上只有 7px 长，细到看不出「超出矩形」。 */
-  background:
-    linear-gradient(var(--rv-select), var(--rv-select)) center / 100% 2px
-      no-repeat,
-    linear-gradient(var(--rv-select), var(--rv-select)) center / 2px 100%
-      no-repeat;
+  left: -1px;
+  top: calc(var(--rv-ext) * -1);
 }
 .rv-frame .tl {
   top: 0;
   left: 0;
-  margin: calc(var(--rv-ext) * -1) 0 0 calc(var(--rv-ext) * -1);
 }
 .rv-frame .tr {
   top: 0;
   right: 0;
-  margin: calc(var(--rv-ext) * -1) calc(var(--rv-ext) * -1) 0 0;
 }
 .rv-frame .bl {
   bottom: 0;
   left: 0;
-  margin: 0 0 calc(var(--rv-ext) * -1) calc(var(--rv-ext) * -1);
 }
 .rv-frame .br {
   right: 0;
   bottom: 0;
-  margin: 0 calc(var(--rv-ext) * -1) calc(var(--rv-ext) * -1) 0;
 }
 .rv-badge {
   position: absolute;
