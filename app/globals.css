@@ -3850,8 +3850,15 @@ button.search-item {
      收口靠改 Range 的起点。**DOM 一个节点都不动**，所以绝不会重排、也不会把
      拉丁词拆出新的断行点——这是它比「拆 span」高明的地方。 */
 
-html[data-rv-play='1'] .rv-scene [data-rv]:not([data-rv-done]),
-html[data-rv-play='1'] .rv-scene [data-rv-text]:not([data-rv-done]) {
+/*
+ * 不限 `.rv-scene` 后代：首屏那句 motto 要在服务端 HTML 就已经是隐藏的。
+ * SwarmSection 是客户端组件，它渲染出的 `.rv-scene` 要等 hydration 才出现，
+ * 而 data-rv-play 由页内脚本在首帧前就设好了。若选择器要求 `.rv-scene` 存在，
+ * 首帧到 hydration 之间 motto 是可见的——读者会看到它闪一下再消失再被敲出来。
+ * 只有会设这个属性的页面（首页、/lab）才有 [data-rv]，所以放宽不误伤别处。
+ */
+html[data-rv-play='1'] [data-rv]:not([data-rv-done]),
+html[data-rv-play='1'] [data-rv-text]:not([data-rv-done]) {
   visibility: hidden;
 }
 /* 注意：不要给文字单独开 visibility。

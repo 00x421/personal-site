@@ -32,9 +32,40 @@ const heroTags = [
   'AUTOMATION',
 ];
 
+/**
+ * 在首屏绘制**之前**裁决「这次演不演」，并给 `<html>` 打上 data-rv-play。
+ *
+ * 为什么必须是页内脚本：首屏那句 motto 现在也由光标打出来，它要先藏起来。
+ * 如果等到 React 的 effect 才藏，读者会看到文字先完整显示、再闪一下消失、
+ * 然后被重新敲一遍。这里判断一次，样式表里的隐藏规则从第一帧起就生效。
+ *
+ * 条件与 lib/swarm-gate.ts 的 shouldDraw 一一对应（脚本里不能 import）：
+ * 减少动态效果优先；`?draw=1` 可绕过后三项，但绕不过减少动态效果。
+ * SWARM_MIN_WIDTH 改动时要同步这里的 900。
+ *
+ * 末尾那个 4 秒兜底是给「脚本正常但场景没挂上」留的退路：真到那一步就把
+ * 隐藏撤掉，宁可没有动画，也不能让首屏出现一句话都看不到的白块。
+ */
+const swarmPlayScript = `(function(){try{
+  var d=document.documentElement;
+  var forced=new URLSearchParams(location.search).get('draw')==='1';
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  if(!forced){
+    if(window.matchMedia('(pointer: coarse)').matches)return;
+    var c=navigator.connection;
+    if(c&&c.saveData)return;
+    if(innerWidth<900)return;
+  }
+  d.dataset.rvPlay='1';
+  setTimeout(function(){try{
+    if(!document.querySelector('.rv-scene'))d.removeAttribute('data-rv-play');
+  }catch(e){}},4000);
+}catch(e){}})();`;
 export default function Home() {
   return (
     <main>
+      {/* 必须在 hero 之前就地执行：决定这一页要不要演，并在首帧前藏好 motto */}
+      <script dangerouslySetInnerHTML={{ __html: swarmPlayScript }} />
       <nav className="site-nav" aria-label="主导航">
         <div className="nav-brand-group">
           <a className="brand" href="#top">
@@ -80,10 +111,13 @@ export default function Home() {
               你好，我是 <strong>{siteIdentity.name}</strong>。
               这里记录我的产品、代码与思考；我在设计、代码与 AI 的交界处工作。
             </p>
-            <div className="code-line">
-              <span>const</span> motto = <b>&quot;{siteIdentity.motto}&quot;</b>
-              ;
-            </div>
+            {/* 只把这一句交给光标敲出来：首屏的自我介绍照旧立即可读 */}
+            <SwarmSection>
+              <div className="code-line" data-rv="text">
+                <span>const</span> motto = <b>&quot;{siteIdentity.motto}&quot;</b>
+                ;
+              </div>
+            </SwarmSection>
             <a href="#work" className="text-link">
               看看我在做什么 <ArrowDownRight size={17} />
             </a>
