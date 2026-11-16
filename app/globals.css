@@ -3995,8 +3995,11 @@ html[data-rv-play='1'] [data-rv-text]:not([data-rv-done]) {
 .rv-frame {
   --rv-ext: 7px;
   position: absolute;
-  /* 2px：1px 的浅紫线在浅底上会被抗锯齿吃掉一半，动图里基本看不见。 */
-  box-shadow: inset 0 0 0 2px var(--rv-select);
+  /*
+   * 1px。曾经为了「看得见」加到 2px——那次是误判：线其实被 .rv-layer 的
+   * overflow:hidden 裁掉了，与粗细无关。裁切修好后 1px 就够清楚，也才像选框。
+   */
+  box-shadow: inset 0 0 0 1px var(--rv-select);
   transition: opacity 0.3s ease-out;
 }
 .rv-frame.rv-clash {
@@ -4032,18 +4035,18 @@ html[data-rv-play='1'] [data-rv-text]:not([data-rv-done]) {
   position: absolute;
   background: var(--rv-select);
 }
-/* 水平臂：以角点为中点，左右各伸 --rv-ext */
+/* 水平臂：以角点为中点，左右各伸 --rv-ext（1px 线用 -0.5px 居中） */
 .rv-frame i::before {
   width: calc(var(--rv-ext) * 2);
-  height: 2px;
+  height: 1px;
   left: calc(var(--rv-ext) * -1);
-  top: -1px;
+  top: -0.5px;
 }
 /* 垂直臂：以角点为中点，上下各伸 --rv-ext */
 .rv-frame i::after {
-  width: 2px;
+  width: 1px;
   height: calc(var(--rv-ext) * 2);
-  left: -1px;
+  left: -0.5px;
   top: calc(var(--rv-ext) * -1);
 }
 .rv-frame .tl {
