@@ -887,7 +887,9 @@ export function RevealScene({
         framed &&
         chars.length >= 16 &&
         boxRect.width > 40 &&
-        boxRect.height > 24
+        // 单行代码（如首屏 motto，实测 291×19）也要有选框：门槛 24 会让它直接跳过，
+        // 读者看到的就是「字自己长出来、没有框」。16 只排除真正的细碎元素。
+        boxRect.height >= 16
       ) {
         const arrive = moveTo(
           hand,
@@ -974,10 +976,15 @@ export function RevealScene({
       const typeStart = pressAt + 90;
       const typeEnd = typeStart + (plan.at(-1)?.t ?? 0);
 
-      // 框活到这块内容写完（+260ms 喘息）。写字期间框保持「量出来的完整尺寸」不动：
-      // 文字是用 highlight 透出来的，布局一个像素都没变，框缩回去再长反而像抖。
+      /*
+       * 框活到这块内容写完再停留一会儿。写字期间框保持「量出来的完整尺寸」不动：
+       * 文字是用 highlight 透出来的，布局一个像素都没变，框缩回去再长反而像抖。
+       *
+       * 停留从 260 提到 620：首屏 motto 只有一行（291×19），框本身出现得快，
+       * 260ms 的尾巴在 60fps 下一晃就没了，站主验收时直接判断成「没有框线」。
+       */
       const keepFrame = textFrame;
-      if (keepFrame) at(typeEnd + 260, () => retire(keepFrame.box));
+      if (keepFrame) at(typeEnd + 620, () => retire(keepFrame.box));
 
       /*
        * 写字时笔尖要贴着「正在写的那一个字」走。
@@ -1232,6 +1239,13 @@ export function RevealScene({
         if (el.children.length > 0) return false;
         if (!el.textContent || el.textContent.trim() === '') return false;
         if (el.hasAttribute('data-rv')) return false;
+        /*
+         * 祖先已经声明 `data-rv="text"`（整块交给光标逐字写）：里面的 strong/span
+         * 由那个块统一写，别再拆成独立块。不排除的话一句话会派出三支笔——首屏
+         * `const motto = "信我所行";` 里的 <span> 和 <b> 各算一块，实测同时起 3 支手。
+         * 只排除 text：`data-rv="frame"` 的卡片里，文字仍要各自排队写（等框画完）。
+         */
+        if (el.closest('[data-rv="text"]')) return false;
         if (el.closest('[data-instant]')) return false;
         if (el.closest('.rv-layer, .rv-hands')) return false;
         if (sectionEl === root && el.closest('[data-rv-section]')) return false;
