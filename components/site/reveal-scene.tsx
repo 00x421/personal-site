@@ -729,6 +729,12 @@ export function RevealScene({
     ) => {
       const base = baseOf(box);
       box.style.cssText = `display:block;left:${rect.left - base.left}px;top:${rect.top - base.top}px;width:${rect.width}px;height:${rect.height}px`;
+      /*
+       * 矮框不画四个角手柄。手柄是 7×7 且各向外凸 3.5px，在只有 19px 高的
+       * 单行框里，上下一对手柄几乎顶满整条边，看上去像「两端各凸出一块」。
+       * 阈值 28：单行代码 19px 落在下面，两行以上（段落约 56px）照旧带手柄。
+       */
+      box.classList.toggle('is-short', rect.height < 28);
     };
 
     const retire = (box: HTMLElement) => {

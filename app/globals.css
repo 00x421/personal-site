@@ -4031,6 +4031,13 @@ html[data-rv-play='1'] [data-rv-text]:not([data-rv-done]) {
   bottom: 0;
   margin: 0 -3.5px -3.5px 0;
 }
+
+/* 矮框（单行，实测高 19px）只留 1px 边框。
+   四个角手柄是 7×7、各自向外凸 3.5px，在这么窄的框里上下一对几乎顶满，
+   看上去像「两头各凸出一块」，不像选框。 */
+.rv-frame.is-short i {
+  display: none;
+}
 .rv-badge {
   position: absolute;
   top: 100%;
