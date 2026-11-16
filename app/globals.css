@@ -3989,7 +3989,8 @@ html[data-rv-play='1'] [data-rv-text]:not([data-rv-done]) {
 .rv-frame {
   --rv-ext: 7px;
   position: absolute;
-  box-shadow: inset 0 0 0 1px var(--rv-select);
+  /* 2px：1px 的浅紫线在浅底上会被抗锯齿吃掉一半，动图里基本看不见。 */
+  box-shadow: inset 0 0 0 2px var(--rv-select);
   transition: opacity 0.3s ease-out;
 }
 .rv-frame.rv-clash {
@@ -4018,10 +4019,11 @@ html[data-rv-play='1'] [data-rv-text]:not([data-rv-done]) {
   position: absolute;
   width: calc(var(--rv-ext) * 2);
   height: calc(var(--rv-ext) * 2);
+  /* 十字也是 2px：1px 在角上只有 7px 长，细到看不出「超出矩形」。 */
   background:
-    linear-gradient(var(--rv-select), var(--rv-select)) center / 100% 1px
+    linear-gradient(var(--rv-select), var(--rv-select)) center / 100% 2px
       no-repeat,
-    linear-gradient(var(--rv-select), var(--rv-select)) center / 1px 100%
+    linear-gradient(var(--rv-select), var(--rv-select)) center / 2px 100%
       no-repeat;
 }
 .rv-frame .tl {

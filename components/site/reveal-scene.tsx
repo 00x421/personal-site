@@ -994,14 +994,14 @@ export function RevealScene({
       const typeEnd = typeStart + (plan.at(-1)?.t ?? 0);
 
       /*
-       * 框活到这块内容写完再停留一会儿。写字期间框保持「量出来的完整尺寸」不动：
+       * 框活到这块内容写完，再多留 1.5 秒。写字期间框保持「量出来的完整尺寸」不动：
        * 文字是用 highlight 透出来的，布局一个像素都没变，框缩回去再长反而像抖。
        *
-       * 停留从 260 提到 620：首屏 motto 只有一行（291×19），框本身出现得快，
-       * 260ms 的尾巴在 60fps 下一晃就没了，站主验收时直接判断成「没有框线」。
+       * 停留从 260 → 620 → 1500：站主两次反馈「没有框线」，一次是框根本没画（门槛
+       * 24px 跳过了 19px 的行），一次就是尾巴太短——620ms 在验收时仍然容易错过。
        */
       const keepFrame = textFrame;
-      if (keepFrame) at(typeEnd + 620, () => retire(keepFrame.box));
+      if (keepFrame) at(typeEnd + 1500, () => retire(keepFrame.box));
 
       /*
        * 写字时笔尖要贴着「正在写的那一个字」走。
