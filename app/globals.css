@@ -3981,6 +3981,7 @@ html[data-rv-play='1'] [data-rv-text]:not([data-rv-done]) {
 
 /* --- 选框 --- */
 .rv-frame {
+  --rv-ext: 7px;
   position: absolute;
   box-shadow: inset 0 0 0 1px var(--rv-select);
   background: color-mix(in srgb, var(--rv-select) 5%, transparent);
@@ -4004,39 +4005,42 @@ html[data-rv-play='1'] [data-rv-text]:not([data-rv-done]) {
     translate: 3px;
   }
 }
+/*
+ * 角上的裁切标记，不是实心手柄。
+ * 每个 i 是两条 1px 的线在角点交叉，各向内外各伸一个 --rv-ext：
+ * 线因此会「长出矩形之外」，四角连起来看就是井字的交叉点。
+ * 早先是 7×7 实心块 + 外凸 3.5px，在 19px 高的单行框里上下一对几乎顶满，
+ * 站主看到的是「两头各凸出一块」——那不像选框，像坏掉的角标。
+ */
 .rv-frame i {
   position: absolute;
-  width: 7px;
-  height: 7px;
-  margin: -3.5px;
-  background: var(--rv-select-ink);
-  box-shadow: inset 0 0 0 1px var(--rv-select);
+  width: calc(var(--rv-ext) * 2);
+  height: calc(var(--rv-ext) * 2);
+  background:
+    linear-gradient(var(--rv-select), var(--rv-select)) center / 100% 1px
+      no-repeat,
+    linear-gradient(var(--rv-select), var(--rv-select)) center / 1px 100%
+      no-repeat;
 }
 .rv-frame .tl {
   top: 0;
   left: 0;
+  margin: calc(var(--rv-ext) * -1) 0 0 calc(var(--rv-ext) * -1);
 }
 .rv-frame .tr {
   top: 0;
   right: 0;
-  margin-right: -3.5px;
+  margin: calc(var(--rv-ext) * -1) calc(var(--rv-ext) * -1) 0 0;
 }
 .rv-frame .bl {
   bottom: 0;
   left: 0;
-  margin-bottom: -3.5px;
+  margin: 0 0 calc(var(--rv-ext) * -1) calc(var(--rv-ext) * -1);
 }
 .rv-frame .br {
   right: 0;
   bottom: 0;
-  margin: 0 -3.5px -3.5px 0;
-}
-
-/* 矮框（单行，实测高 19px）只留 1px 边框。
-   四个角手柄是 7×7、各自向外凸 3.5px，在这么窄的框里上下一对几乎顶满，
-   看上去像「两头各凸出一块」，不像选框。 */
-.rv-frame.is-short i {
-  display: none;
+  margin: 0 calc(var(--rv-ext) * -1) calc(var(--rv-ext) * -1) 0;
 }
 .rv-badge {
   position: absolute;

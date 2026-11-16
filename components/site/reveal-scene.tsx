@@ -735,13 +735,6 @@ export function RevealScene({
     ) => {
       const base = baseOf(box);
       box.style.cssText = `display:block;left:${rect.left - base.left}px;top:${rect.top - base.top}px;width:${rect.width}px;height:${rect.height}px`;
-      /*
-       * 矮框不画四个角手柄。手柄是 7×7 且各向外凸 3.5px，在外面只留 31px 高的
-       * 单行框里，上下两个几乎顶满整条边，看上去像「两端各凸出一块」。
-       * 阈值 40 是加了 FRAME_PAD 之后的数：单行 19+12=31 落在下面，
-       * 两行正文 56+12=68、标题 110+12=122 在上面，照旧带手柄。
-       */
-      box.classList.toggle('is-short', rect.height < 40);
     };
 
     const retire = (box: HTMLElement) => {
