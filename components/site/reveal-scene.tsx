@@ -805,8 +805,15 @@ export function RevealScene({
 
     let highlight: Highlight | null = null;
     if (supportsHighlight) {
-      highlight = new Highlight();
-      CSS.highlights.set(HIGHLIGHT_NAME, highlight);
+      /*
+       * 必须复用同一个 Highlight 对象。`CSS.highlights` 是全局命名表，同名 set 会
+       * 直接覆盖：页面上有两个 RevealScene（首屏 motto 与关于区），后挂载的那个
+       * 若 new 一个空对象 set 进来，先挂载的 range 就悬空在那个被丢弃的对象里——
+       * 实测 rv-untyped 的 size 恒为 0，逐字彻底失效，motto 一变成 visible 就整段全露。
+       */
+      const shared = CSS.highlights.get(HIGHLIGHT_NAME);
+      highlight = shared ?? new Highlight();
+      if (!shared) CSS.highlights.set(HIGHLIGHT_NAME, highlight);
     }
 
     /** 揭示到第 n 个单位。有 Highlight 就用 Range 收口（不动 DOM）。 */
@@ -1556,7 +1563,11 @@ export function RevealScene({
         state.job = null;
       }
       window.removeEventListener('scroll', onScroll);
-      if (highlight) CSS.highlights.delete(HIGHLIGHT_NAME);
+      /*
+       * 只清自己加进去的 range，不删整个命名项：这个 Highlight 是和页面上其它
+       * RevealScene 共用的，删掉会让还在运行的那一个立刻失去逐字能力。
+       */
+      if (highlight) for (const range of Array.from(highlight)) highlight.delete(range);
       events.length = 0;
       drivers.length = 0;
       for (const hand of hands) hand.el.remove();
