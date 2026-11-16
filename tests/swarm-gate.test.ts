@@ -3,23 +3,20 @@ import { describe, it } from 'node:test';
 import { SWARM_MIN_WIDTH, shouldDraw } from '../lib/swarm-gate.ts';
 import type { SwarmEnv } from '../lib/swarm-gate.ts';
 
-/** 桌面、首次、非省流量、非触屏：默认该演一场。 */
+/** 桌面、非省流量、非触屏：默认该演一场。 */
 const desktop: SwarmEnv = {
   reducedMotion: false,
   coarsePointer: false,
   saveData: false,
-  seenBefore: false,
   viewportWidth: 1440,
   forced: false,
 };
 
 describe('shouldDraw', () => {
-  it('桌面首次访问：播', () => {
+  it('桌面访问：每次都播（没有「看过就不再播」的记忆）', () => {
     assert.equal(shouldDraw(desktop), true);
-  });
-
-  it('看过一次之后不再播（老访客不该每次重看）', () => {
-    assert.equal(shouldDraw({ ...desktop, seenBefore: true }), false);
+    // 同一个环境连问两次答案相同：说明决策不依赖历史状态
+    assert.equal(shouldDraw({ ...desktop }), true);
   });
 
   it('减少动效优先于一切：即使 ?draw=1 也不播', () => {
@@ -46,27 +43,18 @@ describe('shouldDraw', () => {
     );
   });
 
-  it('?draw=1 可以绕过「已看过」，但绕不过触屏/窄屏的观感判断', () => {
+  it('?draw=1 可以绕过触屏/省流量/窄屏的观感判断', () => {
+    assert.equal(shouldDraw({ ...desktop, forced: true }), true);
     assert.equal(
-      shouldDraw({ ...desktop, seenBefore: true, forced: true }),
+      shouldDraw({ ...desktop, forced: true, coarsePointer: true }),
       true,
     );
     assert.equal(
-      shouldDraw({
-        ...desktop,
-        seenBefore: true,
-        forced: true,
-        coarsePointer: true,
-      }),
+      shouldDraw({ ...desktop, forced: true, saveData: true }),
       true,
     );
     assert.equal(
-      shouldDraw({
-        ...desktop,
-        seenBefore: true,
-        forced: true,
-        viewportWidth: 390,
-      }),
+      shouldDraw({ ...desktop, forced: true, viewportWidth: 390 }),
       true,
     );
   });
