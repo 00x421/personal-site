@@ -412,6 +412,8 @@ export function RevealScene({
     let stopped = false;
     let lastScrollAt = -Infinity;
     const idleSince = new Map<Hand, number>();
+    /** 正在离场的手 → 预计走完的时刻。见 idle() 里的说明。 */
+    const leaving = new Map<Hand, number>();
 
     /*
      * 滚动只记一个时间戳，用来让空闲的手散场。
@@ -460,6 +462,20 @@ export function RevealScene({
     const idle = (now: number) => {
       for (let i = hands.length - 1; i >= 0; i -= 1) {
         const hand = hands[i];
+        /*
+         * 离场中的手：留在 hands 里继续被 tick 驱动，走完才真正摘掉。
+         * （以前这里下面直接 splice，那支手就再没人 update——「走出去」
+         * 变成「停在原地几百毫秒，然后凭空消失」。）
+         */
+        const exitAt = leaving.get(hand);
+        if (exitAt !== undefined) {
+          if (now >= exitAt) {
+            hand.el.remove();
+            leaving.delete(hand);
+            hands.splice(i, 1);
+          }
+          continue;
+        }
         const busyUntil = Math.max(hand.free, hand.acts.at(-1)?.t1 ?? 0);
         if (busyUntil > now) continue;
         const since = idleSince.get(hand);
@@ -479,9 +495,9 @@ export function RevealScene({
           offscreen ||
           scrolled
         ) {
-          leave(hand, now);
+          leaving.set(hand, leave(hand, now));
           idleSince.delete(hand);
-          hands.splice(i, 1);
+          // 不 splice：交给上面的离场分支，等它真的走出去再摘
           continue;
         }
         // 每 1.2–2.6s 有 20% 几率挪一小步：手不会钉死在原地
@@ -530,7 +546,13 @@ export function RevealScene({
           bow: 0.06 * (rng() < 0.5 ? -1 : 1),
         },
       ];
-      at(end + 50, () => hand.el.remove());
+      /*
+       * 只负责把「走出去」这段动作安排上，返回走完的时刻。
+       * 摘手由 idle() 做——它必须先在 hands 里被 tick 驱动完这段路，
+       * 早先在这里挂 at(end) 去 remove，而 idle() 已经把手机从数组里删了，
+       * 于是没人 update 它，动作播不出来。
+       */
+      return end;
     };
 
     const tick = (now: number) => {
@@ -563,7 +585,8 @@ export function RevealScene({
     };
 
     /* ---------------- 手的管理 ---------------- */
-    // 蜂群模式要的是「同时有很多支在画」：数量按面积给、上限更高；
+    // 蜂群模式要的是「同时有很多支在画」：数量按面积给，下限抬到 8（单人模式是 4），
+    // 上限两边都是 14——差别在下限，不在上限。
     // 单人模式沿用原来的面积公式（桌面约 12 支，但那 12 支是池子，不是同时登场）。
     const maxHands = () =>
       swarm
@@ -583,6 +606,8 @@ export function RevealScene({
       let best: Hand | null = null;
       let bestAt = Infinity;
       for (const hand of hands) {
+        // 正在离场的手不再接新活：它的动作已经被离场那一段占住了
+        if (leaving.has(hand)) continue;
         if (exclude.includes(hand)) continue;
         const here = resolveTarget(hand.at);
         const ready = Math.max(
@@ -603,7 +628,8 @@ export function RevealScene({
       // 蜂群模式：只要没到上限就新建——「一群光标同时干活」正是这个效果本身。
       // 单人模式：只有新开一支能早到 120ms 以上才建，否则从屏幕外飞进来反而更吵。
       const entryReady = bestAt;
-      if (hands.length < maxHands()) {
+      // 离场中的手不占名额，否则它们走出去的那几百毫秒里新节派不出手
+      if (hands.length - leaving.size < maxHands()) {
         const entry = edgePoint(wanted, {
           width: innerWidth,
           height: innerHeight,
@@ -620,9 +646,12 @@ export function RevealScene({
           created.at = { at: entry };
           hands.push(created);
           idleSince.delete(created);
+          job?.hands.add(created);
           return created;
         }
       }
+      // 复用的手同样要登记：这一节被滚走时得能把它停住
+      if (best) job?.hands.add(best);
       return best;
     };
 
@@ -810,6 +839,12 @@ export function RevealScene({
     };
 
     let highlight: Highlight | null = null;
+    /*
+     * 本实例自己加进共享 Highlight 的 range。清理时只能删这些——
+     * `Array.from(highlight)` 拿到的是**全页面**的 range，多个 RevealScene
+     * 共用同一个命名项，一个实例卸载会把另一个正在逐字的那段一起清掉。
+     */
+    const ownedRanges = new Set<Range>();
     if (supportsHighlight) {
       /*
        * 必须复用同一个 Highlight 对象。`CSS.highlights` 是全局命名表，同名 set 会
@@ -834,7 +869,9 @@ export function RevealScene({
         return;
       }
       if (done) {
-        highlight.delete(item.range);
+        const spent = item.range;
+        highlight.delete(spent);
+        ownedRanges.delete(spent);
         item.range = null;
         return;
       }
@@ -869,6 +906,7 @@ export function RevealScene({
         const range = document.createRange();
         range.selectNodeContents(el);
         highlight.add(range);
+        ownedRanges.add(range);
         item.range = range;
         job?.ranges.add(range);
       }
@@ -884,7 +922,22 @@ export function RevealScene({
       };
 
       const hand = claim(anchor, startAt, group?.hands);
-      if (!hand) return startAt;
+      if (!hand) {
+        /*
+         * 派不出手也不能把这段文字永远藏着——这条路径以前什么都不做，
+         * 元素就一直是 visibility:hidden。
+         * 同时要撤掉自己的高亮 range：否则元素虽然可见，整段仍被
+         * ::highlight(rv-untyped) 涂成透明，看起来仍然是空白。
+         */
+        at(startAt, () => {
+          if (item.range) {
+            highlight?.delete(item.range);
+            item.range = null;
+          }
+          el.setAttribute('data-rv-done', '');
+        });
+        return startAt;
+      }
 
       /*
        * 文字块也先「量」一遍再写。
@@ -1112,7 +1165,11 @@ export function RevealScene({
       const bottomRight: Target = { el, fx: 1, fy: 1 };
 
       const hand = claim(topLeft, startAt);
-      if (!hand) return startAt;
+      // 派不出手也不能把卡片永远藏着：直接放开（这条路径以前什么都不做）
+      if (!hand) {
+        at(startAt, () => el.setAttribute('data-rv-done', ''));
+        return startAt;
+      }
 
       const arrive = moveTo(
         hand,
@@ -1146,11 +1203,22 @@ export function RevealScene({
       at(end, () => {
         markDone(el);
         el.classList.add('rv-arrive');
-        el.addEventListener(
-          'animationend',
-          () => el.classList.remove('rv-arrive'),
-          { once: true },
-        );
+        /*
+         * 一次播放只挂一个监听器。{ once: true } 只在动画正常跑完时自动移除；
+         * 这一节若中途被取消（元素转回 hidden，动画根本不触发），监听器会留在
+         * 元素上，反复滚动就一个个叠起来。cancelJob 那边另外会把 rv-arrive 摘掉。
+         */
+        if (!el.dataset.rvArriveHook) {
+          el.dataset.rvArriveHook = '1';
+          el.addEventListener(
+            'animationend',
+            () => {
+              el.classList.remove('rv-arrive');
+              delete el.dataset.rvArriveHook;
+            },
+            { once: true },
+          );
+        }
       });
       // 这里不再自己定时收框：由 play() 在本节内容全部写完后统一收，
       // 否则框里的文字还在写，框就先没了。
@@ -1185,7 +1253,11 @@ export function RevealScene({
     const scheduleLine = (el: HTMLElement, startAt: number) => {
       const hand = claim({ el, fx: 0, fy: 0.5 }, startAt);
       if (!hand) {
-        at(startAt, () => el.classList.add('is-written'));
+        // 派不出手也得让这一行露出来：is-written 只是视觉，markDone 才解除隐藏
+        at(startAt, () => {
+          markDone(el);
+          el.classList.add('is-written');
+        });
         return startAt;
       }
       const arrive = moveTo(hand, { el, fx: 0, fy: 0.5 }, startAt, 12, 'pen');
@@ -1277,7 +1349,20 @@ export function RevealScene({
      * 放在 effect 里做是因为这些叶子运行时才知道；被包住的区块都在折叠线以下，
      * 不会出现「先看见、再消失」的闪烁。
      */
-    for (const leaf of autoLeaves(root)) leaf.setAttribute('data-rv-text', '');
+    const markLeaves = (host: HTMLElement) => {
+      for (const leaf of autoLeaves(host)) leaf.setAttribute('data-rv-text', '');
+    };
+    markLeaves(root);
+    /*
+     * 每一节也要各自跑一遍。只标记 root 直系叶子的话，[data-rv-section] 里的叶子
+     * （例如关于区那两行「03 /」「关于」）在 IO 去抖的 160ms 里是完整可见的，
+     * play() 一跑才被高亮涂成透明——就成了「先看见、再消失、再打一遍」。
+     */
+    for (const sectionEl of root.querySelectorAll<HTMLElement>(
+      '[data-rv-section]',
+    )) {
+      markLeaves(sectionEl);
+    }
 
     /** `[data-highlight]`：已存在的内容先压暗，再由一支手扫过去逐个点亮。 */
     const scheduleHighlight = (lights: HTMLElement[], startAt: number) => {
@@ -1336,10 +1421,25 @@ export function RevealScene({
       for (const frame of finished.frames) frame.remove();
       for (const slip of finished.slips) slip.remove();
       if (highlight)
-        for (const range of finished.ranges) highlight.delete(range);
-      for (const el of finished.revealed) el.removeAttribute('data-rv-done');
+        for (const range of finished.ranges) {
+          highlight.delete(range);
+          ownedRanges.delete(range);
+        }
+      for (const el of finished.revealed) {
+        el.removeAttribute('data-rv-done');
+        /*
+         * 一并撤掉「进行中」的视觉状态。这些 class / 变量本来由 driver 或 at 事件移除，
+         * 而那些事件正属于这份作业，取消时已经被丢弃——不收就会永久留在元素上：
+         *   .rv-unlit   → opacity 0.22，内容永久压暗（等高亮扫过才恢复）
+         *   .rv-tracing → clip-path 停在 --rv-clip，图表行永久只露一半
+         */
+        el.classList.remove('rv-unlit', 'rv-tracing', 'is-written', 'rv-arrive');
+        el.style.removeProperty('--rv-clip');
+      }
       const now = performance.now();
       for (const hand of finished.hands) {
+        // 已经在离场路上的手别打断：它承载的是「走出去」，不属于这份作业
+        if (leaving.has(hand)) continue;
         hand.acts = [];
         hand.at = { at: hand.pos };
         hand.free = now;
@@ -1418,6 +1518,13 @@ export function RevealScene({
           scheduleLine(el, startNow);
         } else if (kind === 'highlight') {
           lights.push(el);
+        } else {
+          /*
+           * 未知的 data-rv 取值（笔误写成 "txt" 之类）没有任何 schedule 认领，
+           * 元素就永远拿不到 data-rv-done，在 html[data-rv-play='1'] 下永久隐藏。
+           * 兜底：立刻放开。
+           */
+          at(startNow, () => el.setAttribute('data-rv-done', ''));
         }
       }
 
@@ -1490,6 +1597,10 @@ export function RevealScene({
     /*
      * 兜底：8 秒后把「已经滚到、却一个动作都没排上」的节直接放开。
      * 只放这些——把还没滚到的节一起放开，懒加载就白做了。
+     *
+     * 刻意不随着开演 clearTimeout：早先一派活就把它清掉，于是 8 秒之后才滚进
+     * 视口的节完全没有兜底，播放中途出错就是永久隐藏。代价只是一次遍历，
+     * 换的是「内容不可能永久不可见」这条底线。
      */
     const failsafe = window.setTimeout(() => {
       for (const [sectionEl, state] of sections) {
@@ -1530,7 +1641,6 @@ export function RevealScene({
               if (state.job || queue.includes(sectionEl)) continue;
               window.clearTimeout(state.timer);
               state.timer = window.setTimeout(() => {
-                window.clearTimeout(failsafe);
                 if (state.job || queue.includes(sectionEl)) return;
                 queue.push(sectionEl);
                 pump();
@@ -1574,13 +1684,17 @@ export function RevealScene({
       }
       window.removeEventListener('scroll', onScroll);
       /*
-       * 只清自己加进去的 range，不删整个命名项：这个 Highlight 是和页面上其它
-       * RevealScene 共用的，删掉会让还在运行的那一个立刻失去逐字能力。
+       * 只清自己加进去的 range。这条注释早就这么写，但代码一直用的是
+       * `Array.from(highlight)`——那是共享对象里的**全部** range，会把另一个
+       * 实例正在逐字的那段一起清掉（它只会瞬间整段可见，之后只动手不动字）。
+       * Highlight 本身也不删：共用对象，删了整个命名项就没了。
        */
-      if (highlight) for (const range of Array.from(highlight)) highlight.delete(range);
+      if (highlight) for (const range of ownedRanges) highlight.delete(range);
+      ownedRanges.clear();
       events.length = 0;
       drivers.length = 0;
       for (const hand of hands) hand.el.remove();
+      leaving.clear();
       for (const el of root.querySelectorAll<HTMLElement>(
         '[data-rv], [data-rv-text]',
       )) {
