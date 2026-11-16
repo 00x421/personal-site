@@ -108,6 +108,12 @@ const HAND_IDLE_MS = 2400;
 const SCROLL_ESCAPE_MS = 250;
 /** 数字滚到真值的时间。 */
 const COUNT_MS = 1400;
+
+/**
+ * 文字选框每边外扩多少 px。框线不压在字上，否则再细也像给每个字描边；
+ * 留一圈空隙，选框才像「框住了一块内容」。实测单行 291×19 → 303×31。
+ */
+const FRAME_PAD = 6;
 /** 标题从多小长到 1。 */
 const HEADLINE_SCALE = 0.46;
 /** 高亮区的名字：`::highlight(rv-untyped)` 在样式表里与之对应。 */
@@ -730,11 +736,12 @@ export function RevealScene({
       const base = baseOf(box);
       box.style.cssText = `display:block;left:${rect.left - base.left}px;top:${rect.top - base.top}px;width:${rect.width}px;height:${rect.height}px`;
       /*
-       * 矮框不画四个角手柄。手柄是 7×7 且各向外凸 3.5px，在只有 19px 高的
-       * 单行框里，上下一对手柄几乎顶满整条边，看上去像「两端各凸出一块」。
-       * 阈值 28：单行代码 19px 落在下面，两行以上（段落约 56px）照旧带手柄。
+       * 矮框不画四个角手柄。手柄是 7×7 且各向外凸 3.5px，在外面只留 31px 高的
+       * 单行框里，上下两个几乎顶满整条边，看上去像「两端各凸出一块」。
+       * 阈值 40 是加了 FRAME_PAD 之后的数：单行 19+12=31 落在下面，
+       * 两行正文 56+12=68、标题 110+12=122 在上面，照旧带手柄。
        */
-      box.classList.toggle('is-short', rect.height < 28);
+      box.classList.toggle('is-short', rect.height < 40);
     };
 
     const retire = (box: HTMLElement) => {
@@ -922,11 +929,15 @@ export function RevealScene({
           // 每帧现取目标的矩形：框贴着内容长，滚动/重排都不会错位
           const live = el.getBoundingClientRect();
           const size = frameSizeAt(live, p);
-          placeBox(
-            box.box,
-            new DOMRect(live.left, live.top, size.width, size.height),
-          );
-          box.badge.textContent = `${size.width} × ${size.height}`;
+          /*
+           * 框线不压在字上：每边外扩一圈，并跟着生长进度一起张开（p=0 时贴住起点）。
+           * 这样选框落在文字外侧，像设计软件里框住一块内容，而不是给每个字描边。
+           */
+          const pad = FRAME_PAD * p;
+          const w = size.width + pad * 2;
+          const h = size.height + pad * 2;
+          placeBox(box.box, new DOMRect(live.left - pad, live.top - pad, w, h));
+          box.badge.textContent = `${Math.round(w)} × ${Math.round(h)}`;
         });
         // 不再在这里收框：等 typing 结束（见下面的 keepFrame）
         // 量完再把笔挪回文字起点写字
