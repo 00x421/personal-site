@@ -176,10 +176,10 @@ export default function Home() {
               <br />
               应该既<strong>聪明</strong>，也<strong>有人味</strong>。
             </p>
-            <p>
+            <p data-rv="text">
               我喜欢拆解模糊的问题：先理解人在什么情境下行动，再用可靠的系统和克制的界面，让每一步都自然发生。
             </p>
-            <p>
+            <p data-rv="text">
               这里不仅收录最终产出，也记录问题、取舍与思考。因为真正有价值的工作，通常发生在“看起来简单”之前。
             </p>
             <MailLink className="text-link" email={siteIdentity.email}>

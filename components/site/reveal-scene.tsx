@@ -1322,11 +1322,6 @@ export function RevealScene({
       job = newJob();
       state.job = job;
       state.played = true;
-      // 同一块里的多支手共用一个 group：第二支手要错开 7px/5px、并且「撞」一下
-      const textGroups = new Map<
-        HTMLElement,
-        { hands: Hand[]; start?: number }
-      >();
       const frameEnds = new Map<HTMLElement, number>();
       const lights: HTMLElement[] = [];
 
@@ -1342,17 +1337,13 @@ export function RevealScene({
           // 框里的文字等框画完再写（自动收集的叶子按 frameEnds 排队）
           frameEnds.set(el, end);
         } else if (kind === 'text') {
-          const group = textGroups.get(el.parentElement ?? root);
-          if (group) {
-            scheduleText(el, startNow + 80, true, group);
-          } else {
-            const created = {
-              hands: [] as Hand[],
-              start: undefined as number | undefined,
-            };
-            textGroups.set(el.parentElement ?? root, created);
-            scheduleText(el, startNow + 80, true, created);
-          }
+          /*
+           * 每个文字块各自一支笔，不共享 group。
+           * 早先按 el.parentElement 分组，本意是「同一个框里的多支手」，但同一节里
+           * 排在一起的段落（比如关于区的标题段 + 两段正文）也有同一个父元素，
+           * 于是第二块开始写时会被当成「抢同一处」，还额外画一个「×」碰撞徽章。
+           */
+          scheduleText(el, startNow + 80, true);
         } else if (kind === 'type') {
           // 标题：先缩到 46%，再用 resize 光标把它「拉大」
           const hand = claim({ el, fx: 1, fy: 1 }, startNow);
